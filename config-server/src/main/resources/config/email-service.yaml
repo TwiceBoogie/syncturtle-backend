@@ -1,0 +1,30 @@
+server:
+  port: 8020
+spring:
+  application:
+    name: email-service
+  rabbitmq:
+    addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
+  mail:
+    host: smtp.gmail.com
+    username: salsebastian13@gmail.com
+    password: dwgx trqd nebn ecsf
+    port: 465
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+mail:
+  debug: true
+
+rabbitmq:
+  exchanges:
+    internal: internal.exchange
+  queues:
+    mail: mail.queue
+  routing-keys:
+    internal-mail: internal.mail.routing-key

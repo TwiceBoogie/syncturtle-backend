@@ -1,0 +1,35 @@
+package dev.twiceb.common.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
+import lombok.Getter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+@MappedSuperclass
+@Getter
+@EntityListeners(AuditingEntityListener.class)
+public class AuditableEntity {
+    @Column(name = "created_by")
+    @CreatedBy
+    private String createdBy;
+
+    @Column(nullable = false, updatable = false, name = "created_date")
+    @CreatedDate
+    private Timestamp createdDate;
+
+    @Column(name = "modified_by")
+    @LastModifiedBy
+    private String modifiedBy;
+
+    @Column(name = "modified_date")
+    @LastModifiedDate
+    private Timestamp modifiedDate;
+}
