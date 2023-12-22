@@ -29,7 +29,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
         return ((exchange, chain) -> {
             String token = jwtProvider.resolveToken(exchange.getRequest());
             boolean isTokenValid = jwtProvider.validateToken(token);
-//
+
             if (token != null && isTokenValid) {
                 String email = jwtProvider.parseToken(token);
                 UserPrincipleResponse user = restTemplate.getForObject(
@@ -48,6 +48,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
 
                 return chain.filter(exchange.mutate().request(builder.build()).build());
             } else {
+                System.out.println("it throw an error here");
                 throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED);
             }
         });

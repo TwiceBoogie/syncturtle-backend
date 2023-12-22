@@ -5,4 +5,11 @@ public interface UserPrincipalProjection {
     String getEmail();
     boolean isActive();
     String getRole();
+
+    default String getFullName() {
+        return getFirstName() + " " + getLastName();
+    }
+
+    String getFirstName();
+    String getLastName();
 }

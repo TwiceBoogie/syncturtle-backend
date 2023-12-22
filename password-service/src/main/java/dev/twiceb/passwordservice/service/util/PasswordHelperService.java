@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice.service.util;
+package dev.twiceb.passwordservice.service.util;
 
 import static dev.twiceb.common.constants.ErrorMessage.PASSWORDS_NOT_MATCH;
 import static dev.twiceb.common.constants.ErrorMessage.PASSWORD_LENGTH_ERROR;

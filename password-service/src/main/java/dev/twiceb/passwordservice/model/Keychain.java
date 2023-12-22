@@ -1,11 +1,11 @@
-package dev.twiceb.passwordsservice.model;
+package dev.twiceb.passwordservice.model;
 
 import java.time.LocalDate;
 import java.sql.Date;
 
 import org.hibernate.annotations.ColumnTransformer;
 
-import dev.twiceb.passwordsservice.enums.DomainStatus;
+import dev.twiceb.passwordservice.enums.DomainStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -55,6 +55,15 @@ public class Keychain {
 
     @Column(name = "update_date", nullable = false)
     private Date date;
+
+    public Keychain() {}
+
+    public Keychain(Accounts account, EncryptionKey encryptionKey, String domain, byte[] password) {
+        this.account = account;
+        this.encryptionKey = encryptionKey;
+        this.domain = domain;
+        this.password = password;
+    }
 
     @PrePersist
     private void prePersist() {

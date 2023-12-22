@@ -4,10 +4,7 @@ import dev.twiceb.common.dto.request.EmailRequest;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,9 +30,9 @@ public class AmqpConsumerConfiguration {
     private String internalMailRoutingKey;
 
     @Bean
-    public TopicExchange internalTopicExchange() {
+    public DirectExchange internalDirectExchange() {
         logger.info("Topic Exchange is created.");
-        return new TopicExchange(this.internalExchange);
+        return new DirectExchange(this.internalExchange);
     }
 
     @Bean
@@ -49,7 +46,7 @@ public class AmqpConsumerConfiguration {
         logger.info("new bindingBuilder created");
         return BindingBuilder
                 .bind(mailQueue())
-                .to(internalTopicExchange())
+                .to(internalDirectExchange())
                 .with(this.internalMailRoutingKey);
     }
 

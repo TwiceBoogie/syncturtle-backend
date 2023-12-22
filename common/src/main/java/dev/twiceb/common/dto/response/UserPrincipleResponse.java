@@ -8,4 +8,5 @@ public class UserPrincipleResponse {
     private String email;
     private boolean active;
     private String role;
+    private String fullName;
 }

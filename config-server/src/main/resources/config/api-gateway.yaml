@@ -34,6 +34,12 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/ui/v1/auth/**
+        - id: password-service
+          uri: lb://password-service
+          predicates:
+            - Path=/ui/v1/dashboard/password/**
+          filters:
+            - name: Auth
         # - id: retry
         #   uri: lb://user-service
         #   predicates:

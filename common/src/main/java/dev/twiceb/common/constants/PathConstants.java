@@ -2,7 +2,7 @@ package dev.twiceb.common.constants;
 
 public class PathConstants {
     public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
-    public static final String USER_SERVICE = "user-service";
+    public static final String USER_SERVICE = "localhost";
     public static final String DOMAIN = "localhost:8080";
 
     public static final String API_V1 = "/api/v1";

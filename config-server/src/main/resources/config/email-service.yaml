@@ -23,8 +23,8 @@ mail:
 
 rabbitmq:
   exchanges:
-    internal: internal.exchange
+    internal: direct.exchange
   queues:
-    mail: mail.queue
+    mail: q.mail
   routing-keys:
-    internal-mail: internal.mail.routing-key
+    internal-mail: user.mail-token

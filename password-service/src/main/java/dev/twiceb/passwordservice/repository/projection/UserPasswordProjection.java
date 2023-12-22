@@ -1,8 +1,8 @@
-package dev.twiceb.passwordsservice.repository.projection;
+package dev.twiceb.passwordservice.repository.projection;
 
 import java.util.Date;
 
-import dev.twiceb.passwordsservice.enums.DomainStatus;
+import dev.twiceb.passwordservice.enums.DomainStatus;
 
 public interface UserPasswordProjection {
     Long getId();

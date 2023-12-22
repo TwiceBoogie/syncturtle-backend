@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice.dto.request;
+package dev.twiceb.passwordservice.dto.request;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 

@@ -8,6 +8,7 @@ import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.UserRepository;
 import dev.twiceb.userservice.repository.projection.AuthUserProjection;
+import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.service.AuthenticationService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +41,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public UserPrincipleResponse getUserPrincipleByEmail(String email) {
-        return userRepository.getUserByEmail(email, UserPrincipleResponse.class)
+    public UserPrincipalProjection getUserPrincipleByEmail(String email) {
+        return userRepository.getUserByEmail(email, UserPrincipalProjection.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
@@ -52,7 +53,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(
                         () -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.BAD_REQUEST));
 
-        if (!user.getPassword().equals(passwordEncoder.encode(request.getPassword()))) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ApiRequestException(INCORRECT_PASSWORD, HttpStatus.BAD_REQUEST);
         }
 

@@ -5,6 +5,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -13,6 +16,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.Signature;
 import java.util.Base64;
 import java.util.Date;
 
@@ -23,7 +29,7 @@ public class JwtProvider {
     @Value("${jwt.header:Authorization}")
     private String authorizationHeader;
 
-    @Value("${jwt.secret:randomSecretKey}")
+    @Value("${jwt.secretKey:tIlqaaFuXA7v6lxReXzO6+DxJ65azbXHdovliEcDYgk=}")
     private String secretKeyString;
 
     private SecretKey secretKey;
@@ -31,13 +37,22 @@ public class JwtProvider {
     @Value("${jwt.expiration:36000000}") // 10 hours in milliseconds
     private long validityInMilliseconds;
 
-    @PostConstruct
-    protected void init() {
-        byte[] decodedKey = Base64.getDecoder().decode(secretKeyString);
-        secretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+    private String generatedSafeToken() {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[32];
+        random.nextBytes(keyBytes);
+        return Base64.getEncoder().encodeToString(keyBytes);
     }
 
+    @PostConstruct
+    protected void init() {
+        System.out.println(secretKeyString);
+        secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
+    }
+
+    // https://stackoverflow.com/questions/55102937/how-to-create-a-spring-security-key-for-signing-a-jwt-token
     public String createToken(String email, String role) {
+        System.out.println(secretKey);
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + validityInMilliseconds * 1000);
         return Jwts.builder()
@@ -50,12 +65,18 @@ public class JwtProvider {
     }
 
     public String resolveToken(ServerHttpRequest request) {
-        return request.getHeaders().getFirst(authorizationHeader);
+        String bearerToken = request.getHeaders().getFirst(authorizationHeader);
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 
     public boolean validateToken(String token) {
         try {
+            System.out.println("token: " + token);
             Jws<Claims> claimsJws = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            System.out.println(claimsJws);
             return !claimsJws.getPayload().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException exception) {
             throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);

@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice.service.util;
+package dev.twiceb.passwordservice.service.util;
 
 public class DomainStatusConverter {
 

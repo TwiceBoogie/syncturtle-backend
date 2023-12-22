@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice;
+package dev.twiceb.passwordservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice.enums;
+package dev.twiceb.passwordservice.enums;
 
 public enum DomainStatus {
     ACTIVE,

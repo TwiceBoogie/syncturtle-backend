@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.controller.api;
 
+import dev.twiceb.common.dto.response.UserPrincipleResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.service.AuthenticationService;
@@ -20,9 +21,9 @@ public class AuthenticationApiController {
     private final BasicMapper mapper;
 
     @GetMapping(USER_EMAIL)
-    public UserPrincipalProjection getUserPrincipalById(@PathVariable("email") String email) {
+    public UserPrincipleResponse getUserPrincipalById(@PathVariable("email") String email) {
         return mapper.convertToResponse(
-                authenticationService.getUserPrincipleByEmail(email), UserPrincipalProjection.class
+                authenticationService.getUserPrincipleByEmail(email), UserPrincipleResponse.class
         );
     }
 }

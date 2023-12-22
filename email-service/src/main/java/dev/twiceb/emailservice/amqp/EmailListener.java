@@ -26,7 +26,7 @@ public class EmailListener {
     private String username;
 
     @SneakyThrows
-    @RabbitListener(queues = "mail.queue")
+    @RabbitListener(queues = "q.mail")
     public void sendMessageHtml(EmailRequest emailRequest) {
         logger.info("SENDMESSAGEHTML() is invoked");
         Context thymeleafContext = new Context();

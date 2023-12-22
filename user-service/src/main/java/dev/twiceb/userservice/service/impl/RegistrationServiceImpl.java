@@ -12,6 +12,7 @@ import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.ActivationCodeRepository;
 import dev.twiceb.userservice.repository.UserRepository;
 import dev.twiceb.userservice.repository.projection.AuthUserProjection;
+import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.service.RegistrationService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             user.setEmail(request.getEmail());
             user.setFirstName(request.getFirstName());
             user.setLastName(request.getLastName());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
             userRepository.save(user);
             return Map.of("message", "Account created successfully");
         }
@@ -91,6 +93,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
+    @Transactional
     public Map<String, String> checkRegistrationCode(String code) {
         ActivationCode ac = activationCodeRepository.getActivationCodeByHashedCode(code, ActivationCode.class)
                 .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.BAD_REQUEST));
@@ -99,14 +102,22 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (currentTime.isAfter(ac.getExpirationTime()))
             throw new ApiRequestException(ACTIVATION_CODE_EXPIRED, HttpStatus.GONE);
 
-        User user = userRepository.findById(ac.getUser().getId())
-                .orElseThrow((() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)));
+        UserPrincipalProjection user = userRepository
+                .getUserByEmail(ac.getUser().getEmail(), UserPrincipalProjection.class)
+                .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
 
         if (user.isActive())
             throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
 
-        user.setActive(true);
-        userRepository.save(user);
+        // user.setActive(true);
+        // userRepository.save(user);
+        userRepository.updateActiveUserProfile(user.getId());
+        //
+        UserPrincipalProjection updatedUser = userRepository
+                .getUserByEmail(user.getEmail(), UserPrincipalProjection.class)
+                .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
+        // if error = rollback changes to database
+        amqpPublisher.userCreated(updatedUser);
 
         return Map.of("message", "Activation Successful! Please log in again to access your account.");
     }

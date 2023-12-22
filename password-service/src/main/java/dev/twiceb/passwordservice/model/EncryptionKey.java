@@ -1,12 +1,7 @@
-package dev.twiceb.passwordsservice.model;
+package dev.twiceb.passwordservice.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import dev.twiceb.passwordservice.service.util.TransitConverter;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,8 +18,16 @@ public class EncryptionKey {
     private Long id;
     // dek = data encryption key
     @Column(name = "dek")
+    @Convert(converter = TransitConverter.class)
     private String dek;
 
     @Column(name = "vector", columnDefinition = "bytea")
     private byte[] vector;
+
+    public EncryptionKey() {}
+
+    public EncryptionKey(String dek, byte[] vector) {
+        this.dek = dek;
+        this.vector = vector;
+    }
 }

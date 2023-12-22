@@ -1,8 +1,8 @@
-package dev.twiceb.passwordsservice.dto.response;
+package dev.twiceb.passwordservice.dto.response;
 
 import java.util.Date;
 
-import dev.twiceb.passwordsservice.enums.DomainStatus;
+import dev.twiceb.passwordservice.enums.DomainStatus;
 import lombok.Data;
 
 @Data

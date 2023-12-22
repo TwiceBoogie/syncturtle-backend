@@ -30,8 +30,14 @@ spring:
 
 rabbitmq:
   exchanges:
-    internal: internal.exchange
-  queues:
-    mail: mail.queue
+    internal-direct: direct.exchange
+    internal-fanout: fanout.exchange
   routing-keys:
-    internal-mail: internal.mail.routing-key
+    internal-created: user.created
+    internal-deleted: user.deleted
+    internal-mail: user.mail-token
+  queues:
+    internal-fanout-queue: q.fanout-user-created
+    internal-created: q.user-created
+    internal-deleted: q.user-deleted
+    internal-mail: q.mail

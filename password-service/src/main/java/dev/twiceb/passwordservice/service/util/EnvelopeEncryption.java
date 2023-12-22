@@ -1,4 +1,4 @@
-package dev.twiceb.passwordsservice.service.util;
+package dev.twiceb.passwordservice.service.util;
 
 import org.springframework.stereotype.Component;
 
@@ -8,13 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
+// https://mkyong.com/java/java-aes-encryption-and-decryption/
 @Component
 public class EnvelopeEncryption {
 
     // Method to generate a SecretKey for AES encryption
     public SecretKey generateKey() throws NoSuchAlgorithmException {
         KeyGenerator keygenerator = KeyGenerator.getInstance("AES");
-        keygenerator.init(256); // Using AES with a key size of 256 bits
+        keygenerator.init(256, SecureRandom.getInstanceStrong()); // Using AES with a key size of 256 bits
         return keygenerator.generateKey(); // Generating the SecretKey
     }
 

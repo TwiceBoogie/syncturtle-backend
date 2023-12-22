@@ -61,4 +61,5 @@ public class ErrorMessage {
     public static final String ACTIVATION_CODE_GENERATION_FAIL = "Error generating activation code, please try again later.";
 
     public static final String INTERNAL_SERVER_ERROR = "Internal server error occurred, please try again later.";
+    public static final String UNAUTHORIZED = "Unauthorized access to user resource.";
 }
