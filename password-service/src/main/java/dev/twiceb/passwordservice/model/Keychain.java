@@ -8,6 +8,9 @@ import org.hibernate.annotations.ColumnTransformer;
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +26,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "unique_account_domain", uniqueConstraints = {
+@Table(name = "keychain", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "account_id", "domain" })
 })
 public class Keychain {
@@ -32,11 +35,11 @@ public class Keychain {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     private Accounts account;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "encryption_key_id")
     private EncryptionKey encryptionKey;
 
@@ -50,13 +53,14 @@ public class Keychain {
     private String fakePassword;
 
     @Column(name = "status")
-    @ColumnTransformer(read = "status::text", write = "?::domain_Status")
+    @Enumerated(EnumType.STRING)
     private DomainStatus status;
 
     @Column(name = "update_date", nullable = false)
     private Date date;
 
-    public Keychain() {}
+    public Keychain() {
+    }
 
     public Keychain(Accounts account, EncryptionKey encryptionKey, String domain, byte[] password) {
         this.account = account;
@@ -70,8 +74,11 @@ public class Keychain {
         LocalDate currentTime = LocalDate.now();
         LocalDate date90DaysFromNow = currentTime.plusDays(90);
 
+        System.out.println("Before setting status: " + this.status); // Print before setting the status
         this.date = Date.valueOf(date90DaysFromNow);
+        System.out.println("DomainStatus.ACTIVE: " + DomainStatus.ACTIVE); // Print DomainStatus.ACTIVE to compare
         this.status = DomainStatus.ACTIVE;
+        System.out.println("After setting status: " + this.status);
     }
 
     public String getFakePassword() {

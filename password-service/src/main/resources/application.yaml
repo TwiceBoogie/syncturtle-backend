@@ -19,7 +19,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: hvs.azfjWWDF3WcBSKYaAJCzugW8
+      token: hvs.gcnTfrayxJ1HaLB4chcHfcQA
       fail-fast: true
       config.lifecycle.enabled: true
       database:
@@ -67,7 +67,5 @@ rabbitmq:
     internal-deleted: user.deleted
     internal-mail: user.mail-token
   queues:
-    internal-fanout-queue: q.fanout-user-created
-    internal-created: q.user-created
-    internal-deleted: q.user-deleted
+    internal-fanout-queue: q.passwordsvc
     internal-mail: q.mail

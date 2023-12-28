@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -29,7 +31,9 @@ public class UserServiceHelper extends ServiceHelper {
             byte[] randomBytes = new byte[16];
 
             secureRandom.nextBytes(randomBytes);
-            return Base64.getEncoder().encodeToString(randomBytes);
+            String base64Encoded = Base64.getEncoder().encodeToString(randomBytes);
+
+            return URLEncoder.encode(base64Encoded, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new ApiRequestException(ACTIVATION_CODE_GENERATION_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
         }

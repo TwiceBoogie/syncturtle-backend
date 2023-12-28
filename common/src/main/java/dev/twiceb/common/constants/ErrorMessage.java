@@ -5,7 +5,7 @@ public class ErrorMessage {
 
     public static final String USER_NOT_FOUND = "User not found";
     public static final String USER_ID_NOT_FOUND = "User (id:%s) not found";
-    public static final String AUTHENTICATION_ERROR = "";
+    public static final String AUTHENTICATION_ERROR = "Authentication required to access this resource.";
 
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
@@ -25,6 +25,7 @@ public class ErrorMessage {
     public static final String SHORT_PASSWORD = "Your password needs to be at least 8 characters. Please enter a longer one.";
     public static final String SAME_SAVED_PASSWORD = "Your new password cannot be the same as your old password";
     public static final String NO_DOMAIN_PASSWORDS = "You do not have any passwords saved.";
+    public static final String NO_PASSWORD_FOR_DOMAIN = "No password exists for ";
     public static final String DOMAIN_ALREADY_EXIST = "Domain Already Exist";
     public static final String EMPTY_DOMAIN = "Domain cannot be empty.";
 

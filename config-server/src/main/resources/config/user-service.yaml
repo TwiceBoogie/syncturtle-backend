@@ -28,6 +28,10 @@ spring:
   rabbitmq:
     addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
 
+logging:
+  level:
+    "[org.springframework.cloud.amqp]": DEBUG
+
 rabbitmq:
   exchanges:
     internal-direct: direct.exchange
@@ -37,7 +41,7 @@ rabbitmq:
     internal-deleted: user.deleted
     internal-mail: user.mail-token
   queues:
-    internal-fanout-queue: q.fanout-user-created
+    internal-fanout-queue: q.passwordsvc
     internal-created: q.user-created
     internal-deleted: q.user-deleted
     internal-mail: q.mail
