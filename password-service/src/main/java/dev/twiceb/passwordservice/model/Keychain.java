@@ -6,7 +6,9 @@ import java.sql.Date;
 import org.hibernate.annotations.ColumnTransformer;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
+import dev.twiceb.passwordservice.service.util.DomainStatusConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -53,7 +55,7 @@ public class Keychain {
     private String fakePassword;
 
     @Column(name = "status")
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DomainStatusConverter.class)
     private DomainStatus status;
 
     @Column(name = "update_date", nullable = false)
@@ -84,4 +86,5 @@ public class Keychain {
     public String getFakePassword() {
         return "**********";
     }
+
 }

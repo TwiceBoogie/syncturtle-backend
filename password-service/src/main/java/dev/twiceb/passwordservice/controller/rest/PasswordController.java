@@ -45,4 +45,25 @@ public class PasswordController {
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
+    @GetMapping(MAIN_EXPIRING_PASSWORDS)
+    public ResponseEntity<List<AllPasswordsResponse>> getExpiringPasswords(
+            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
+            @PageableDefault(size = 5) Pageable Pageable) {
+        HeaderResponse<AllPasswordsResponse> res = passwordMapper.getExpiringPasswords(userId, Pageable);
+        return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
+    }
+
+    @GetMapping(MAIN_RECENT_PASSWORDS)
+    public ResponseEntity<List<AllPasswordsResponse>> getRecentPasswords(
+            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
+            @PageableDefault(size = 5) Pageable Pageable) {
+        HeaderResponse<AllPasswordsResponse> res = passwordMapper.getRecentPasswords(userId, Pageable);
+        return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
+    }
+
+    @GetMapping("password/test")
+    public ResponseEntity<GenericResponse> testing() {
+        return ResponseEntity.ok(passwordMapper.testing());
+    }
+
 }

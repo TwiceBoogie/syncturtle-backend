@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <artifactId>tasks-service</artifactId>
+    <artifactId>task-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>tasks-service</name>
-    <description>tasks-service</description>
+    <name>task-service</name>
+    <description>task-service</description>
     <properties>
         <java.version>21</java.version>
     </properties>
@@ -57,6 +57,12 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.twiceb</groupId>
+            <artifactId>common</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -1,10 +1,10 @@
-package dev.twiceb.tasksservice;
+package dev.twiceb.taskservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class TasksServiceApplicationTests {
+class TaskServiceApplicationTests {
 
     @Test
     void contextLoads() {

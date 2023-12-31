@@ -13,18 +13,20 @@ import dev.twiceb.passwordservice.repository.projection.UserPasswordProjection;
 
 public interface PasswordService {
 
-    Map<String, String> createPasswordForDomain(Long userId, CreatePasswordRequest request,
-            BindingResult bindingResult);
+        Map<String, String> testingStuff();
 
-    Page<KeychainProjection> getPasswords(Long userId, Pageable pageable);
+        Map<String, String> createPasswordForDomain(Long userId, CreatePasswordRequest request,
+                        BindingResult bindingResult);
 
-    Page<KeychainProjection> getExpiringPasswords(Long userId, Pageable pageable);
+        Page<KeychainProjection> getPasswords(Long userId, Pageable pageable);
 
-    Page<KeychainProjection> getRecentPasswords(Long userId, Pageable pageable);
+        Page<KeychainProjection> getExpiringPasswords(Long userId, Pageable pageable);
 
-    Map<String, String> updatePasswordForDomain(Long userId, UpdatePasswordRequest request,
-            BindingResult bindingResult);
+        Page<KeychainProjection> getRecentPasswords(Long userId, Pageable pageable);
 
-    Map<String, String> getDecryptedPassword(Long userId, Long passwordId);
+        Map<String, String> updatePasswordForDomain(Long userId, UpdatePasswordRequest request,
+                        BindingResult bindingResult);
+
+        Map<String, String> getDecryptedPassword(Long userId, Long passwordId);
 
 }

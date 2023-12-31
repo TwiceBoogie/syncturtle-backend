@@ -1,5 +1,7 @@
 package dev.twiceb.passwordservice.repository.projection;
 
+import java.util.Date;
+
 import dev.twiceb.passwordservice.enums.DomainStatus;
 
 public interface KeychainProjection {
@@ -9,5 +11,7 @@ public interface KeychainProjection {
 
     String getFakePassword();
 
-    DomainStatus geStatus();
+    Date getDate();
+
+    DomainStatus getStatus();
 }

@@ -2,7 +2,6 @@ package dev.twiceb.userservice.controller.api;
 
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
 import dev.twiceb.common.mapper.BasicMapper;
-import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +22,6 @@ public class AuthenticationApiController {
     @GetMapping(USER_EMAIL)
     public UserPrincipleResponse getUserPrincipalById(@PathVariable("email") String email) {
         return mapper.convertToResponse(
-                authenticationService.getUserPrincipleByEmail(email), UserPrincipleResponse.class
-        );
+                authenticationService.getUserPrincipleByEmail(email), UserPrincipleResponse.class);
     }
 }

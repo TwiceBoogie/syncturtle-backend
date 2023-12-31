@@ -1,9 +1,7 @@
 package dev.twiceb.passwordservice.service.impl;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
-import java.util.List;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.passwordservice.model.Accounts;
@@ -43,6 +41,20 @@ public class PasswordServiceImpl implements PasswordService {
     private final EnvelopeEncryption envelopeEncryption;
     private final AccountsRepository accountsRepository;
     private final EncryptionKeyRepository encryptionKeyRepository;
+
+    @Override
+    public Map<String, String> testingStuff() {
+        Keychain keychain = keychainRepository.findById(1L)
+                .orElseThrow(() -> new ApiRequestException(ACCOUNT_ALREADY_VERIFIED));
+        System.out.println(keychain);
+        System.out.println(keychain.getStatus());
+        KeychainProjection kc = keychainRepository.getPasswordByDomain(1L, "Google.com", KeychainProjection.class)
+                .orElseThrow(() -> new ApiRequestException(ACCOUNT_ALREADY_VERIFIED));
+        System.out.println(kc);
+        System.out.println("domain: " + kc.getDomain());
+
+        return Map.of("message", "test");
+    }
 
     @Override
     @Transactional

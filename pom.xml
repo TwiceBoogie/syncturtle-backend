@@ -22,7 +22,7 @@
 		<module>config-server</module>
 		<module>contacts-server</module>
 		<module>goals-service</module>
-		<module>tasks-service</module>
+		<module>task-service</module>
 		<module>email-service</module>
 		<module>common</module>
 

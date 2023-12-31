@@ -1,0 +1,47 @@
+server:
+  port: 8003
+spring:
+  application:
+    name: task-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/task
+    username: sebastian
+    password: Twice_Mina1
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    generate-ddl: false
+    properties:
+      hibernate:
+        temp:
+          "[use_jdbc_metadata_defaults]": false
+  liquibase:
+    enabled: true
+    user: sebastian
+    password: Twice_Mina1
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  rabbitmq:
+    addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
+
+logging:
+  level:
+    "[org.springframework.cloud.amqp]": DEBUG
+
+rabbitmq:
+  exchanges:
+    internal-direct: direct.exchange
+    internal-fanout: fanout.exchange
+  routing-keys:
+    internal-created: user.created
+    internal-deleted: user.deleted
+    internal-mail: user.mail-token
+  queues:
+    internal-fanout-queue: q.passwordsvc
+    internal-created: q.user-created
+    internal-deleted: q.user-deleted
+    internal-mail: q.mail
