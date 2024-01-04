@@ -16,4 +16,7 @@ public class Tags {
     @Column(name = "tag_name", nullable = false)
     private String tagName;
 
+    public Tags() {}
+
+    public Tags(String tagName) {}
 }

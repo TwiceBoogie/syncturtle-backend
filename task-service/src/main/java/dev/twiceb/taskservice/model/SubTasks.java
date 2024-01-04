@@ -16,13 +16,13 @@ public class SubTasks {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id", nullable = false)
     private Tasks task;
 
-    @Column(name = "subtask_title")
+    @Column(name = "subtask_title", nullable = false)
     private String subtaskTitle;
 
-    @Column(name = "subtask_description")
+    @Column(name = "subtask_description", nullable = false)
     private String subtaskDescription;
 
     @Column(name = "status", nullable = false)
@@ -31,12 +31,13 @@ public class SubTasks {
     @Column(name = "priority", nullable = false)
     private PriorityStatus priority;
 
-    public SubTasks() {}
-
-    public SubTasks(Tasks task, String subtaskTitle, String subtaskDescription) {
+    public SubTasks(Tasks task, String title, String description) {
         this.task = task;
-        this.subtaskTitle = subtaskTitle;
-        this.subtaskDescription = subtaskDescription;
+        this.subtaskTitle = title;
+        this.subtaskDescription = description;
+    }
+
+    public SubTasks() {
     }
 
     @PrePersist

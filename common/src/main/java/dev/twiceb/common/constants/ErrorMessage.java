@@ -43,12 +43,17 @@ public class ErrorMessage {
     public static final String INVALID_ID_PROVIDED = "Please enter a valid goal id.";
 
     public static final String EXCEED_SUBGOAL_SIZE = "You can only have a max of 10 subgoals for each goal";
+    public static final String EXCEED_SUBTASK_SIZE = "You can only have a max of 10 Subtasks per task.";
 
-    public static final String EMPTY_TASK_TITLE = "Plase enter a valid title.";
+    public static final String NO_TASK_FOUND = "No task has been found.";
+    public static final String EMPTY_TASK_TITLE = "Please enter a valid title.";
     public static final String EMPTY_TASK_TARGET_DATE = "Goal must have a target date.";
+    public static final String EMPTY_TASK_DESC = "Please enter a valid Description.";
     public static final String EXCEED_TASK_TITLE_SIZE = "Title must not exceed 100 characters.";
     public static final String EXCEED_TASK_DESC_SIZE = "Description must not exceed 255 characters.";
     public static final String EMPTY_DUE_DATE = "Please enter a due date.";
+    public static final String EMPTY_RECURRENCE_PATTERN = "Please enter 1 of the following options provided.";
+    public static final String DUPLICATE_RECURRENCE_TASK = "A recurring task with the same name already exist.";
 
     public static final String EMPTY_SUBTASK_TITLE = "Please enter a valid title.";
     public static final String EMPTY_SUBTASK_DUE_DATE = "Goal must have a due date.";

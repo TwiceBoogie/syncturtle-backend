@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS recurring_tasks (
     task_title VARCHAR(255) NOT NULL,
     task_description VARCHAR(255) NOT NULL,
     recurrence_pattern VARCHAR(50) NOT NULL,
-    recurrence_end_date DATE,
+    recurrence_freq INT NULL,
+    recurrence_end_date DATE NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     PRIMARY KEY (id)
 );
@@ -65,11 +66,20 @@ CREATE TABLE IF NOT EXISTS user_tasks_progress (
     completed_tasks INT NOT NULL,
     total_tasks INT NOT NULL,
     completion_percentage DECIMAL(5,2),
-    completed_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS user_task_milestones (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    account_id BIGINT NOT NULL,
+    milestone_event VARCHAR(255) NOT NULL, -- Description of the milestone event
+    milestone_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Date of the milestone
+    FOREIGN KEY (account_id) REFERENCES accounts(id),
+    PRIMARY KEY (id)
+);
+
 
 CREATE TABLE IF NOT EXISTS user_task_completion_trends (
     id BIGINT GENERATED ALWAYS AS IDENTITY,

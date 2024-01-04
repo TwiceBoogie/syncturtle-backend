@@ -19,14 +19,17 @@ public class RecurringTasks {
     @JoinColumn(name = "account_id")
     private Accounts account;
 
-    @Column(name = "task_title")
+    @Column(name = "task_title", nullable = false)
     private String taskTitle;
 
-    @Column(name = "task_description")
+    @Column(name = "task_description", nullable = false)
     private String taskDescription;
 
     @Column(name = "recurrence_pattern", nullable = false)
     private String recurrencePattern;
+
+    @Column(name = "recurrence_freq")
+    private Integer recurrenceFreq;
 
     @Column(name = "recurrence_end_date")
     private Date recurrenceEndDate;

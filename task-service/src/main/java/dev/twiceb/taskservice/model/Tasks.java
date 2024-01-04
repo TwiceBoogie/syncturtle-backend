@@ -10,7 +10,6 @@ import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -48,7 +47,7 @@ public class Tasks {
     )
     private TaskStatus taskStatus = TaskStatus.IN_PROGRESS;
 
-    @OneToMany(mappedBy = "tasks", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubTasks> subtasks;
 
     @ManyToMany
@@ -57,62 +56,14 @@ public class Tasks {
             joinColumns = @JoinColumn(name = "task_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<Tags> tags;
+    private List<Tags> tags;
 
-    private Tasks(Builder builder) {
-        this.account = builder.account;
-        this.taskTitle = builder.taskTitle;
-        this.taskDescription = builder.taskDescription;
-        this.dueDate = builder.dueDate;
-        this.priority = builder.priority;
-        this.taskStatus = builder.status;
-        this.subtasks = builder.subtasks;
-        this.tags = builder.tags;
-    }
+    public Tasks() {}
 
-    protected Tasks() {
-    }
-
-    public static class Builder {
-        private final Accounts account;
-        private final String taskTitle;
-        private final String taskDescription;
-        private final Date dueDate;
-        private PriorityStatus priority;
-        private TaskStatus status;
-        private List<SubTasks> subtasks;
-        private Set<Tags> tags;
-
-        public Builder(Accounts account, String taskTitle, String taskDescription, Date dueDate) {
-            if (account == null || taskTitle == null || taskDescription == null || dueDate == null) {
-                throw new IllegalArgumentException("User account must be present");
-            }
-            this.account = account;
-            this.taskTitle = taskTitle;
-            this.taskDescription = taskDescription;
-            this.dueDate = dueDate;
-        }
-
-        public Builder withSubtasks(List<SubTasks> subtasks) {
-            this.subtasks = subtasks;
-            return this;
-        }
-
-        public Builder withTags(Set<Tags> tags) {
-            this.tags = tags;
-            return this;
-        }
-
-        public Builder withPriority(PriorityStatus priority) {
-            this.priority = priority;
-            return this;
-        }
-
-        public Builder withTaskStatus(TaskStatus status) {
-            this.status = status;
-            return this;
-        }
-
-        public Tasks build() { return new Tasks(this);}
+    public Tasks(Accounts account, String taskTitle, String taskDescription, Date dueDate) {
+        this.account = account;
+        this.taskTitle = taskTitle;
+        this.taskDescription = taskDescription;
+        this.dueDate = dueDate;
     }
 }

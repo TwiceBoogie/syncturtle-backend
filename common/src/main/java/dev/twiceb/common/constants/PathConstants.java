@@ -41,16 +41,20 @@ public class PathConstants {
     public static final String DELETE_SUBGOAL = "/subgoal/delete/{subgoalId}";
     public static final String DELETE_ALL_SUBGOAL = "/subgoal/delete/all/{goalId}";
 
-    public static final String CREATE_TASK = "/Task/new";
-    public static final String UPDATE_TASK = "/Task/update/{taskId}";
-    public static final String DELETE_TASK = "/Task/delete/{taskId}";
-    public static final String DELETE_ALL_TASKS = "/Task/delete/all";
-    public static final String GET_ALL_TASKS = "/Task/all";
+    public static final String CREATE_TASK = "/task/new";
+    public static final String UPDATE_TASK = "/task/update/{taskId}";
+    public static final String DELETE_TASK = "/task/delete/{taskId}";
+    public static final String DELETE_ALL_TASKS = "/task/delete/all";
+    public static final String GET_TASKS = "/task";
 
     public static final String CREATE_SUBTASK = "/subtask/new/{taskId}";
     public static final String UDPATE_SUBTASK = "/subtask/update/{subtaskId}";
     public static final String DELETE_SUBTASK = "/subtask/delete/{subtaskId}";
     public static final String DELETE_ALL_SUBTASK = "/subtask/delete/all/{taskId}";
+    public static final String GET_SUBTASKS_FOR_TASK = "/subtask/{taskId}";
+
+    public static final String CREATE_RECURRING_TASK = "/recurringtask/new";
+    public static final String GET_RECURRING_TASKS = "/reccuringtask";
 
     public static final String GET_ALL_TAGS = "/tags/all";
     public static final String GET_TAGS_TASK = "/tags/{task}";
