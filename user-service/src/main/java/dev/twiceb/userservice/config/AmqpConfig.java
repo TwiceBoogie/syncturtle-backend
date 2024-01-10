@@ -21,31 +21,6 @@ import java.util.Map;
 @Configuration
 public class AmqpConfig {
 
-    // @Value("${rabbitmq.exchanges.internal-fanout}")
-    // private String fanoutExchange;
-
-    // @Value("${rabbitmq.queues.internal-fanout-queue}")
-    // private String fanoutQueue;
-
-    // @Bean
-    // FanoutExchange internalFanoutExchange() {
-    // System.out.println(this.fanoutExchange);
-    // return new FanoutExchange(this.fanoutExchange);
-    // }
-
-    // @Bean
-    // Queue userCreatedQueue() {
-    // System.out.println(this.fanoutQueue);
-    // return new Queue(this.fanoutQueue, false);
-    // }
-
-    // @Bean
-    // Binding internalToUserCreatedBinding() {
-    // return BindingBuilder
-    // .bind(userCreatedQueue())
-    // .to(internalFanoutExchange());
-    // }
-
     @Bean
     Jackson2JsonMessageConverter jsonMessageConverter() {
         Jackson2JsonMessageConverter jsonConverter = new Jackson2JsonMessageConverter();

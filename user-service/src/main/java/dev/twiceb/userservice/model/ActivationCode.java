@@ -27,4 +27,12 @@ public class ActivationCode extends AuditableEntity {
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    public ActivationCode() {}
+
+    public ActivationCode(String hashedCode, LocalDateTime expirationTime, User user) {
+        this.hashedCode = hashedCode;
+        this.expirationTime = expirationTime;
+        this.user = user;
+    }
 }

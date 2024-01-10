@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Table(name = "tags")
 @Getter
 @Setter
 public class Tags {
@@ -18,5 +19,7 @@ public class Tags {
 
     public Tags() {}
 
-    public Tags(String tagName) {}
+    public Tags(String tagName) {
+        this.tagName = tagName;
+    }
 }

@@ -36,7 +36,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final ActivationCodeRepository activationCodeRepository;
     private final JwtProvider jwtProvider;
     private final AmqpPublisher amqpPublisher;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -45,11 +44,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         userServiceHelper.isPasswordSame(request.getPassword(), request.getPasswordConfirm());
 
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
-            User user = new User();
-            user.setEmail(request.getEmail());
-            user.setFirstName(request.getFirstName());
-            user.setLastName(request.getLastName());
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            User user = userServiceHelper.createUserEntity(request);
             userRepository.save(user);
             return Map.of("message", "Account created successfully");
         }
@@ -62,29 +57,20 @@ public class RegistrationServiceImpl implements RegistrationService {
         userServiceHelper.processInputErrors(bindingResult);
         User user = userRepository.getUserByEmail(request.getEmail(), User.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-        if (user.isActive()) {
+        if (user.isVerified()) {
             throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
         }
         // either on service or api-gateway implement feature to deal with multiple
         // request to this function, in order to not generate multiple codes for a
         // single user.
-        String generatedCode = userServiceHelper.generateActivationCode();
-
-        ActivationCode code = new ActivationCode();
-        code.setHashedCode(generatedCode);
-        code.setExpirationTime(LocalDateTime.now().plusHours(24));
-        code.setUser(user);
-
+        ActivationCode code = userServiceHelper.createActivationCodeEntity(user);
         activationCodeRepository.save(code);
 
-        // if everything worked well, publish message to rabbitmq so email service can
-        // pick it up and
-        // send it by email to user.
         EmailRequest emailRequest = new EmailRequest.Builder(
                 user.getEmail(), "Registration Code", "registration-template").attributes(
                         Map.of(
                                 "fullName", user.getFirstName() + " " + user.getLastName(),
-                                "registrationCode", generatedCode))
+                                "registrationCode", code.getHashedCode()))
                 .build();
 
         amqpPublisher.sendEmail(emailRequest);
@@ -98,23 +84,10 @@ public class RegistrationServiceImpl implements RegistrationService {
         ActivationCode ac = activationCodeRepository.getActivationCodeByHashedCode(code, ActivationCode.class)
                 .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.BAD_REQUEST));
 
-        LocalDateTime currentTime = LocalDateTime.now();
-        if (currentTime.isAfter(ac.getExpirationTime()))
-            throw new ApiRequestException(ACTIVATION_CODE_EXPIRED, HttpStatus.GONE);
+        userRepository.save(userServiceHelper.processUser(ac.getUser(), ac.getExpirationTime()));
 
-        UserPrincipalProjection user = userRepository
-                .getUserByEmail(ac.getUser().getEmail(), UserPrincipalProjection.class)
-                .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
-
-        if (user.isActive())
-            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
-
-        // user.setActive(true);
-        // userRepository.save(user);
-        userRepository.updateActiveUserProfile(user.getId());
-        //
         UserPrincipalProjection updatedUser = userRepository
-                .getUserByEmail(user.getEmail(), UserPrincipalProjection.class)
+                .getUserByEmail(ac.getUser().getEmail(), UserPrincipalProjection.class)
                 .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
         // if error = rollback changes to database
         amqpPublisher.userCreated(updatedUser);
@@ -124,6 +97,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
+    @Deprecated
     public Map<String, Object> endRegistration(AuthenticationRequest request, BindingResult bindingResult) {
         userServiceHelper.processInputErrors(bindingResult);
         AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
@@ -131,7 +105,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         () -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         userRepository.updateActiveUserProfile(user.getId());
-        userRepository.updatePassword(passwordEncoder.encode(request.getPassword()), user.getId());
+        userRepository.updatePassword(userServiceHelper.encodePassword(request.getPassword()), user.getId());
 
         String token = jwtProvider.createToken(request.getEmail(), "USER");
 
@@ -139,5 +113,4 @@ public class RegistrationServiceImpl implements RegistrationService {
                 "user", user,
                 "token", token);
     }
-
 }

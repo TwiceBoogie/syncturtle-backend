@@ -24,22 +24,26 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/ui/v1/user/**, /api/v1/auth/**
-          filters:
-            - name: Auth
         - id: public
           uri: lb://user-service
           predicates:
             - Path=/ui/v1/auth/**
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/user/**, /api/v1/auth/**
+          filters:
+            - name: Auth
         - id: password-service
           uri: lb://password-service
           predicates:
-            - Path=/ui/v1/dashboard/password/**
+            - Path=/ui/v1/password/**
           filters:
             - name: Auth
+        - id: task-service
+          uri: lb://task-service
+          predicates:
+            - Path=/ui/v1/task/**, /api/v1/task/**
         # - id: retry
         #   uri: lb://user-service
         #   predicates:
@@ -57,12 +61,14 @@ spring:
         #           basedOnPreviousValue: false
 management:
   endpoint:
+    shutdown:
+      enabled: true
     gateway:
       enabled: true
   endpoints:
     web:
       exposure:
-        include: gateway
+        include: "*"
 
 eureka:
   client:

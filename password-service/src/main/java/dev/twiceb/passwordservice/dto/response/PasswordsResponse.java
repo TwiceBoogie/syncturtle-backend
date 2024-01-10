@@ -6,7 +6,7 @@ import dev.twiceb.passwordservice.enums.DomainStatus;
 import lombok.Data;
 
 @Data
-public class AllPasswordsResponse {
+public class PasswordsResponse {
     private Long id;
     private String domain;
     private String fakePassword;

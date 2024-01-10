@@ -3,22 +3,34 @@ package dev.twiceb.taskservice.service.util;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.model.Tags;
 import dev.twiceb.common.util.ServiceHelper;
+import dev.twiceb.common.util.UpdateQueryResult;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.TagsRequest;
 import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
+import dev.twiceb.taskservice.enums.TaskStatus;
 import dev.twiceb.taskservice.model.SubTasks;
 import dev.twiceb.taskservice.model.Tasks;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static dev.twiceb.common.constants.ErrorMessage.INTERNAL_SERVER_ERROR;
 
 @Component
+@RequiredArgsConstructor
 public class TaskServiceHelper extends ServiceHelper {
+
+    @PersistenceContext
+    private final EntityManager entityManager;
 
     public List<SubTasks> handleSubtasks(List<NewSubTaskRequest> subTasks, Tasks task) {
         List<SubTasks> newSubtaskList = new ArrayList<>();
@@ -50,7 +62,7 @@ public class TaskServiceHelper extends ServiceHelper {
         return tagsList;
     }
 
-    public String buildQuery(Object entity, String tableName, String identifierColumn) {
+    public UpdateQueryResult buildQuery(Object entity, String tableName, String identifierColumn) {
         try {
             return this.buildUpdateQuery(entity, tableName, identifierColumn);
         } catch (IllegalAccessException e) {
@@ -59,4 +71,17 @@ public class TaskServiceHelper extends ServiceHelper {
         }
     }
 
+    public void executeQuery(UpdateQueryResult result, String identifierColumn) {
+        try {
+            this.executeUpdateQuery(result, identifierColumn);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return entityManager;
+    }
 }

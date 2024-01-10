@@ -10,7 +10,14 @@ spring:
       server:
         native:
           search-locations: classpath:/config
-#management:
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
 #  zipkin:
 #    tracing:
 #      endpoint: http://${ZIPKIN_HOST:localhost}:9412

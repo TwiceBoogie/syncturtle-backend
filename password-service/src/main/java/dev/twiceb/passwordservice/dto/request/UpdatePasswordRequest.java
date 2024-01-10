@@ -1,16 +1,19 @@
 package dev.twiceb.passwordservice.dto.request;
 
-import static dev.twiceb.common.constants.ErrorMessage.EMPTY_DOMAIN;
-import static dev.twiceb.common.constants.ErrorMessage.EMPTY_PASSWORD;
-import static dev.twiceb.common.constants.ErrorMessage.EMPTY_PASSWORD_CONFIRMATION;
-import static dev.twiceb.common.constants.ErrorMessage.SHORT_PASSWORD;
-
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import static dev.twiceb.common.constants.ErrorMessage.*;
+
 @Data
 public class UpdatePasswordRequest {
+    @NotNull
+    @Pattern(regexp = "^\\d+$", message = INVALID_ID_PROVIDED)
+    private Long id;
+
     @NotBlank(message = EMPTY_DOMAIN)
     private String domain;
 

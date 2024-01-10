@@ -15,12 +15,12 @@ import static dev.twiceb.common.constants.PathConstants.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(API_V1_DASHBOARD)
+@RequestMapping(API_V1_TASK)
 public class TaskApiController {
 
     private final TaskMapper taskMapper;
 
-    @GetMapping(GET_TASKS)
+    @GetMapping
     public HeaderResponse<TasksResponse> getTasks(
             @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
             Pageable pageable
@@ -37,7 +37,7 @@ public class TaskApiController {
     }
 
     @GetMapping(GET_RECURRING_TASKS)
-    public HeaderResponse<RecurringTasksResponse> getRecurringTask(
+    public HeaderResponse<RecurringTasksResponse> getRecurringTasks(
             @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
             Pageable pageable
     ) {

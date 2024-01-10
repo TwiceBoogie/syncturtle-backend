@@ -4,7 +4,9 @@ import dev.twiceb.common.dto.request.NewRecurringEventRequest;
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.dto.response.HeaderResponse;
 import dev.twiceb.common.mapper.BasicMapper;
+import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.NewTaskRequest;
+import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
 import dev.twiceb.taskservice.dto.response.RecurringTasksResponse;
 import dev.twiceb.taskservice.dto.response.SubtasksResponse;
 import dev.twiceb.taskservice.dto.response.TasksResponse;
@@ -33,6 +35,15 @@ public class TaskMapper {
         return basicMapper.convertToResponse(
                 taskService.createNewRecurringTask(userId, request, bindingResult), GenericResponse.class
         );
+    }
+
+    public GenericResponse addSubTaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(taskService.addSubtaskToTask(
+                userId, taskId, request, bindingResult), GenericResponse.class);
+    }
+
+    public GenericResponse updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(taskService.updateTask(userId, request, bindingResult), GenericResponse.class);
     }
 
     public HeaderResponse<TasksResponse> getTasks(Long userId, Pageable pageable) {

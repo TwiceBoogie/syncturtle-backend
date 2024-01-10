@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.model;
 
+import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.model.AuditableEntity;
 import dev.twiceb.userservice.enums.Role;
 import jakarta.persistence.*;
@@ -32,15 +33,27 @@ public class User extends AuditableEntity {
     @Column(name="password")
     private String password;
 
-    @Column(name="active", columnDefinition="boolean default false")
-    private boolean active = false;
+    @Column(name="verified", columnDefinition="boolean default false")
+    private boolean verified = false;
 
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(
             read = "role::text",
             write = "?::user_role"
     )
-    private Role role = Role.USER;
+    private UserRole role = UserRole.USER;
+
+    @Column(name="user_status")
+    private String userStatus;
+
+    public User() {}
+
+    public User(String email, String firstName, String lastName, String password) {
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+    }
 
     @Override
     public String toString() {
@@ -50,7 +63,7 @@ public class User extends AuditableEntity {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", password='" + password + '\'' +
-                ", active=" + active +
+                ", active=" + verified +
                 ", role=" + role +
                 '}';
     }
@@ -60,17 +73,18 @@ public class User extends AuditableEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return active == user.active &&
+        return verified == user.verified &&
                 Objects.equals(id, user.id) &&
                 Objects.equals(email, user.email) &&
                 Objects.equals(firstName, user.firstName) &&
                 Objects.equals(lastName, user.lastName) &&
                 Objects.equals(password, user.password) &&
+                Objects.equals(userStatus, user.userStatus) &&
                 role == user.role;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, email, firstName, lastName, password, active, role);
+        return Objects.hash(id, email, firstName, lastName, password, verified, userStatus, role);
     }
 }

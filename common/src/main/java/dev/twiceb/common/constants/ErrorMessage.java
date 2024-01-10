@@ -6,6 +6,7 @@ public class ErrorMessage {
     public static final String USER_NOT_FOUND = "User not found";
     public static final String USER_ID_NOT_FOUND = "User (id:%s) not found";
     public static final String AUTHENTICATION_ERROR = "Authentication required to access this resource.";
+    public static final String AUTHORIZATION_ERROR = "Access Denied: You are not authorized to view/access this resource.";
 
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";

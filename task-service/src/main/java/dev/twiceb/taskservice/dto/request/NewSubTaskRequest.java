@@ -1,5 +1,6 @@
 package dev.twiceb.taskservice.dto.request;
 
+import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
 import dev.twiceb.common.validators.ValidPriorityStatus;
 import dev.twiceb.common.validators.ValidStatus;
@@ -29,7 +30,7 @@ public class NewSubTaskRequest {
     private Date dueDate;
 
     @ValidStatus
-    private TaskStatus status;
+    private EventStatus status;
 
     @ValidPriorityStatus
     private PriorityStatus priority;

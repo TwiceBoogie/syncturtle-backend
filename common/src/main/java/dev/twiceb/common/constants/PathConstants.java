@@ -22,11 +22,11 @@ public class PathConstants {
     public static final String REGISTRATION_ACTIVATE_CODE = "/registration/activate/{code}";
     public static final String REGISTRATION_CONFIRM = "/registration/confirm";
 
-    public static final String CREATE_PASSWORD = "/password/new";
-    public static final String ALL_PASSWORDS_USER = "/password/all";
-    public static final String MAIN_EXPIRING_PASSWORDS = "/password/expiring";
-    public static final String MAIN_RECENT_PASSWORDS = "/password/recent";
-    public static final String TABLE_DOMAIN_PASSWORDS = "/password/{domain}";
+    public static final String PASSWORD = "/password";
+    public static final String API_V1_PASSWORD = API_V1 + PASSWORD;
+    public static final String UI_V1_PASSWORD = UI_V1 + PASSWORD;
+    public static final String GET_PASSWORD_WITH_CRITERIA = "/{criteria}";
+    public static final String TABLE_DOMAIN_PASSWORDS = "/domain/{domain}";
     public static final String UPDATE_DOMAIN_PASSWORD = "/password/update";
     public static final String GET_DECRYPTED_PASSWORD = "/password/{passwordId}";
 
@@ -41,19 +41,23 @@ public class PathConstants {
     public static final String DELETE_SUBGOAL = "/subgoal/delete/{subgoalId}";
     public static final String DELETE_ALL_SUBGOAL = "/subgoal/delete/all/{goalId}";
 
-    public static final String CREATE_TASK = "/task/new";
-    public static final String UPDATE_TASK = "/task/update/{taskId}";
+
+    public static final String TASK = "/task";
+    public static final String UI_V1_TASK = UI_V1 + TASK;
+    public static final String API_V1_TASK = API_V1 + TASK;
+    public static final String UPDATE_TASK = "/task/update";
     public static final String DELETE_TASK = "/task/delete/{taskId}";
     public static final String DELETE_ALL_TASKS = "/task/delete/all";
     public static final String GET_TASKS = "/task";
 
-    public static final String CREATE_SUBTASK = "/subtask/new/{taskId}";
-    public static final String UDPATE_SUBTASK = "/subtask/update/{subtaskId}";
+    public static final String CREATE_SUBTASK = "/subtask/{taskId}";
+    public static final String UDPATE_SUBTASK = "/subtask/{subtaskId}";
     public static final String DELETE_SUBTASK = "/subtask/delete/{subtaskId}";
     public static final String DELETE_ALL_SUBTASK = "/subtask/delete/all/{taskId}";
     public static final String GET_SUBTASKS_FOR_TASK = "/subtask/{taskId}";
 
-    public static final String CREATE_RECURRING_TASK = "/recurringtask/new";
+    public static final String RECURRING_TASK = "/recurring";
+    public static final String CREATE_RECURRING_TASK = "/recurring";
     public static final String GET_RECURRING_TASKS = "/reccuringtask";
 
     public static final String GET_ALL_TAGS = "/tags/all";

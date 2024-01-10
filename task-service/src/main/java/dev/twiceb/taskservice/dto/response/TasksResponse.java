@@ -1,5 +1,6 @@
 package dev.twiceb.taskservice.dto.response;
 
+import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
 import dev.twiceb.taskservice.enums.TaskStatus;
 import lombok.Data;
@@ -12,6 +13,6 @@ public class TasksResponse {
     private String taskTitle;
     private String taskDescription;
     private Date dueDate;
-    private TaskStatus taskStatus;
+    private EventStatus taskStatus;
     private PriorityStatus priority;
 }

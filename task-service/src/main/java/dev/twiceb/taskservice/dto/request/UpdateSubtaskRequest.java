@@ -1,9 +1,9 @@
 package dev.twiceb.taskservice.dto.request;
 
+import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
 import dev.twiceb.common.validators.ValidPriorityStatus;
 import dev.twiceb.common.validators.ValidStatus;
-import dev.twiceb.taskservice.enums.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -35,7 +35,7 @@ public class UpdateSubtaskRequest {
     private Date dueDate;
 
     @ValidStatus
-    private TaskStatus status;
+    private EventStatus status;
 
     @ValidPriorityStatus
     private PriorityStatus priority;

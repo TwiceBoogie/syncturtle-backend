@@ -1,13 +1,14 @@
 package dev.twiceb.taskservice.model;
 
+import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
 import dev.twiceb.common.model.Tags;
-import dev.twiceb.taskservice.enums.TaskStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -45,18 +46,19 @@ public class Tasks {
             read = "status",
             write = "?::task_status"
     )
-    private TaskStatus taskStatus = TaskStatus.IN_PROGRESS;
+    private EventStatus taskStatus = EventStatus.IN_PROGRESS;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubTasks> subtasks;
 
+    @Transient
     @ManyToMany
     @JoinTable(
             name = "task_tags",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
+            joinColumns = {@JoinColumn(name = "task_id")},
+            inverseJoinColumns = {@JoinColumn(name = "tag_id")}
     )
-    private List<Tags> tags;
+    private List<Tags> tags = new ArrayList<>();
 
     public Tasks() {}
 

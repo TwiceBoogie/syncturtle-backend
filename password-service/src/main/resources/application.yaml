@@ -19,7 +19,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: hvs.gcnTfrayxJ1HaLB4chcHfcQA
+      token: ${VAULT_TOKEN:0c1bfed61a94164029a3ad7765e26b08e9ed19449fe12214f459a595ab353144}
       fail-fast: true
       config.lifecycle.enabled: true
       database:
@@ -46,12 +46,12 @@ spring:
         temp:
           "[use_jdbc_metadata_defaults]": false
   liquibase:
-    enabled: true
+    enabled: false
     user: sebastian
     password: Twice_Mina1
     change-log: classpath:db/changelog/db.changelog-master.xml
   rabbitmq:
-    addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
+    addresses: amqp://password-service:${PASSWORD_SERVICE_PW:V9cPuZqvq5sGQjpysXqVEgZzGY}@${RABBITMQ_HOST:localhost}
 logging:
   level:
     root: INFO
@@ -60,12 +60,10 @@ logging:
 
 rabbitmq:
   exchanges:
-    internal-direct: direct.exchange
-    internal-fanout: fanout.exchange
+    internal-direct: email.exchange
+    internal-fanout: user.events
   routing-keys:
-    internal-created: user.created
-    internal-deleted: user.deleted
-    internal-mail: user.mail-token
+    internal-mail: high_priority.mail
   queues:
-    internal-fanout-queue: q.passwordsvc
+    internal-fanout-queue: q.tasksvc
     internal-mail: q.mail

@@ -2,6 +2,7 @@ package dev.twiceb.passwordservice.service.impl;
 
 import java.util.Base64;
 import java.util.Map;
+import java.util.Objects;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.passwordservice.model.Accounts;
@@ -9,6 +10,7 @@ import dev.twiceb.passwordservice.model.EncryptionKey;
 import dev.twiceb.passwordservice.model.Keychain;
 import dev.twiceb.passwordservice.repository.AccountsRepository;
 import dev.twiceb.passwordservice.repository.EncryptionKeyRepository;
+import dev.twiceb.passwordservice.service.util.SecureDataKeyResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,9 +40,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     private final KeychainRepository keychainRepository;
     private final PasswordHelperService passwordHelperService;
-    private final EnvelopeEncryption envelopeEncryption;
     private final AccountsRepository accountsRepository;
-    private final EncryptionKeyRepository encryptionKeyRepository;
 
     @Override
     public Map<String, String> testingStuff() {
@@ -69,28 +69,12 @@ public class PasswordServiceImpl implements PasswordService {
             throw new ApiRequestException(DOMAIN_ALREADY_EXIST, HttpStatus.BAD_REQUEST);
         }
 
-        try {
-            SecretKey randomKey = envelopeEncryption.generateKey();
-            IvParameterSpec vector = envelopeEncryption.generateIv();
-            byte[] encryptedPass = envelopeEncryption.encrypt(request.getPassword(), randomKey, vector);
+        Keychain keychain = passwordHelperService.generateSecureDataKey(
+                request.getPassword(), request.getDomain(), account
+        );
+        keychainRepository.save(keychain);
 
-            EncryptionKey encryptionKey = new EncryptionKey(
-                    Base64.getEncoder().encodeToString(randomKey.getEncoded()),
-                    vector.getIV());
-            EncryptionKey savedEncryptionKey = encryptionKeyRepository.save(encryptionKey);
-
-            Keychain keychain = new Keychain(
-                    account,
-                    savedEncryptionKey,
-                    request.getDomain(),
-                    encryptedPass);
-            keychainRepository.save(keychain);
-
-            return Map.of("message", "Password saved for " + request.getDomain());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return Map.of("message", "Password saved for " + request.getDomain());
     }
 
     @Override
@@ -117,39 +101,15 @@ public class PasswordServiceImpl implements PasswordService {
 
         Accounts userAccount = fetchAccount(userId);
 
-        Keychain keychain = keychainRepository
+        Keychain keychainFromDb = keychainRepository
                 .getPasswordByDomain(userAccount.getId(), request.getDomain(), Keychain.class)
                 .orElseThrow(() -> new ApiRequestException(NO_PASSWORD_FOR_DOMAIN, HttpStatus.NOT_FOUND));
 
-        IvParameterSpec vector = envelopeEncryption.regenerateIvFromBytes(keychain.getEncryptionKey().getVector());
-        byte[] decodedBytes = Base64.getDecoder().decode(keychain.getEncryptionKey().getVector());
-        SecretKey secretKey = new SecretKeySpec(decodedBytes, "AES");
-        try {
-            String decryptedPassword = envelopeEncryption.decrypt(keychain.getPassword(), secretKey, vector);
+        Keychain updatedKeychain = passwordHelperService.updateSecureDataKey(
+                keychainFromDb, keychainFromDb.getEncryptionKey(), request.getPassword()
+        );
+        keychainRepository.save(updatedKeychain);
 
-            if (request.getPassword().equals(decryptedPassword)) {
-                throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.BAD_REQUEST);
-            }
-
-            SecretKey randomKey = envelopeEncryption.generateKey();
-            IvParameterSpec newVector = envelopeEncryption.generateIv();
-            byte[] encryptedPass = envelopeEncryption.encrypt(request.getPassword(), randomKey, newVector);
-
-            keychain.setPassword(encryptedPass);
-
-            EncryptionKey encryptionKey = encryptionKeyRepository.findById(keychain.getEncryptionKey().getId())
-                    .orElseThrow(
-                            () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
-            encryptionKey.setDek(Base64.getEncoder().encodeToString(randomKey.getEncoded()));
-            encryptionKey.setVector(newVector.getIV());
-            EncryptionKey savedEncryptionKey = encryptionKeyRepository.save(encryptionKey);
-            keychain.setEncryptionKey(savedEncryptionKey);
-            keychainRepository.save(keychain);
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
         return Map.of("message", "New Password saved for " + request.getDomain());
     }
 
@@ -158,37 +118,27 @@ public class PasswordServiceImpl implements PasswordService {
         Accounts userAccount = fetchAccount(userId);
         DecryptedPasswordProjection userPassword = keychainRepository.getPasswordById(userAccount.getId(), passwordId);
 
-        byte[] decodedBytes = Base64.getDecoder().decode(userPassword.getEncryptionKey().getDek());
-        SecretKey secretKey = new SecretKeySpec(decodedBytes, "AES");
-        IvParameterSpec vector = new IvParameterSpec(userPassword.getEncryptionKey().getVector());
-
-        try {
-            String decryptedPassword = envelopeEncryption.decrypt(decodedBytes, secretKey, vector);
-            return Map.of("message", decryptedPassword);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return Map.of("message", passwordHelperService.decryptPassword(userPassword));
     }
 
     private Page<KeychainProjection> fetchKeychain(Long userId, Pageable pageable, String grabInstance) {
         Accounts userAccount = fetchAccount(userId);
 
-        switch (grabInstance) {
-            case "Expired":
-                return keychainRepository.getPasswordsExpiringSoon(userAccount.getId(), pageable,
-                        KeychainProjection.class);
-            case "Recent":
-                return keychainRepository.getRecentPasswords(userAccount.getId(), pageable, KeychainProjection.class);
-            case "Generic":
-            default:
-                return keychainRepository.findAllByAccountId(userAccount.getId(), pageable, KeychainProjection.class);
-        }
+        return switch (grabInstance) {
+            case "Expired" -> keychainRepository.getPasswordsExpiringSoon(userAccount.getId(), pageable,
+                    KeychainProjection.class);
+            case "Recent" ->
+                    keychainRepository.getRecentPasswords(userAccount.getId(), pageable, KeychainProjection.class);
+            default -> keychainRepository.findAllByAccountId(userAccount.getId(), pageable, KeychainProjection.class);
+        };
     }
 
     private Accounts fetchAccount(Long userId) {
-        return accountsRepository.findAccountByUserId(userId, Accounts.class)
-                .orElseThrow(() -> new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.FORBIDDEN));
+        Accounts userAccount = accountsRepository.findAccountByUserId(userId, Accounts.class)
+                .orElseThrow(() -> new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED));
+        if (!userAccount.getUserStatus().equals("Active")) {
+            throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+        return userAccount;
     }
-
 }

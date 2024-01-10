@@ -1,2 +1,6 @@
-package dev.twiceb.common.enums;public enum UserRole {
+package dev.twiceb.common.enums;
+
+public enum UserRole {
+    USER,
+    ADMIN
 }

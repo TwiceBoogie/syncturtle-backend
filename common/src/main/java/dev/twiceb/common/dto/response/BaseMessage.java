@@ -1,5 +1,9 @@
 package dev.twiceb.common.dto.response;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public abstract class BaseMessage {
 
     private String messageType;
@@ -8,7 +12,4 @@ public abstract class BaseMessage {
         this.messageType = messageType;
     }
 
-    public String getMessageType() {
-        return messageType;
-    }
 }

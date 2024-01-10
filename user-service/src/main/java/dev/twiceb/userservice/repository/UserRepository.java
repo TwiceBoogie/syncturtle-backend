@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean isUserExistByEmail(@Param("email") String email);
 
     @Modifying
-    @Query("UPDATE User user SET user.active = true WHERE user.id = :userId")
+    @Query("UPDATE User user SET user.verified = true WHERE user.id = :userId")
     void updateActiveUserProfile(@Param("userId") Long userId);
 
     @Modifying

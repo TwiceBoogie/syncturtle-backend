@@ -4,8 +4,10 @@ import dev.twiceb.common.dto.request.NewRecurringEventRequest;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.model.Tags;
 import dev.twiceb.common.repository.TagsRepository;
+import dev.twiceb.common.util.UpdateQueryResult;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.NewTaskRequest;
+import dev.twiceb.taskservice.dto.request.UpdateSubtaskRequest;
 import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
 import dev.twiceb.taskservice.model.Accounts;
 import dev.twiceb.taskservice.model.RecurringTasks;
@@ -20,8 +22,6 @@ import dev.twiceb.taskservice.repository.projection.SubtaskProjection;
 import dev.twiceb.taskservice.repository.projection.TaskProjection;
 import dev.twiceb.taskservice.service.TaskService;
 import dev.twiceb.taskservice.service.util.TaskServiceHelper;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,8 +40,6 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
-    @PersistenceContext
-    private final EntityManager entityManager;
     private final TasksRepository tasksRepository;
     private final SubtasksRepository subtasksRepository;
     private final TagsRepository tagsRepository;
@@ -80,6 +78,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public Map<String, String> createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
         taskServiceHelper.processInputErrors(bindingResult);
@@ -107,6 +106,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
         Tasks taskFromDB = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), taskId, Tasks.class).orElseThrow(
@@ -136,8 +136,15 @@ public class TaskServiceImpl implements TaskService {
         Accounts userAccount = getUserAccount(userId);
         Tasks taskFromDb = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), request.getId(), Tasks.class)
                 .orElseThrow(() -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
-        String dynamicQuery = taskServiceHelper.buildQuery(request, "tasks", "id");
-        entityManager.createNativeQuery(dynamicQuery).executeUpdate();
+
+        UpdateQueryResult result = taskServiceHelper.buildQuery(request, "tasks", "id");
+        taskServiceHelper.executeQuery(result, "id");
+
+        return Map.of("message", "Task updated successfully");
+    }
+
+    @Override
+    public Map<String, String> updateSubTask(Long userId, UpdateSubtaskRequest request, BindingResult bindingResult) {
         return null;
     }
 

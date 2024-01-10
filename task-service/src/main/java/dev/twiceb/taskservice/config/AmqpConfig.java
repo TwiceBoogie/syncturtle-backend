@@ -1,39 +1,32 @@
-package dev.twiceb.taskservice.amqp;
+package dev.twiceb.taskservice.config;
 
+import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
-import dev.twiceb.taskservice.model.Accounts;
-import dev.twiceb.taskservice.repository.AccountsRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Configuration
-@RequiredArgsConstructor
 public class AmqpConfig {
 
-    private final AmqpTemplate amqpTemplate;
-    private final AccountsRepository accountsRepository;
+    @Bean
+    Jackson2JsonMessageConverter jsonMessageConverter() {
+        Jackson2JsonMessageConverter jsonConverter = new Jackson2JsonMessageConverter();
+        jsonConverter.setClassMapper(classMapper());
+        return jsonConverter;
+    }
 
-    @Value("${rabbitmq.exchanges.internal-fanout}")
-    private String fanoutExchange;
-
-    @Value("${rabbitmq.queues.internal-fanout-queue}")
-    private String fanoutQueue;
-
-    @SneakyThrows
-    @RabbitListener(queues = "q.tasksvc")
-    public void userCreatedListener(UserPrincipleResponse res) {
-        if (accountsRepository.isAccountExist(res.getId())) {
-            throw new RuntimeException("User already exist.");
-        }
-
-        Accounts account = new Accounts();
-        account.setUserId(res.getId());
-
-
-        accountsRepository.save(account);
+    private DefaultClassMapper classMapper() {
+        DefaultClassMapper classMapper = new DefaultClassMapper();
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put("emailRequest", EmailRequest.class);
+        idClassMapping.put("userPrincipalResponse", UserPrincipleResponse.class);
+        classMapper.setTrustedPackages("*");
+        classMapper.setIdClassMapping(idClassMapping);
+        return classMapper;
     }
 }

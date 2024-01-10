@@ -3,25 +3,11 @@ package dev.twiceb.passwordservice.model;
 import java.time.LocalDate;
 import java.sql.Date;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnTransformer;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import dev.twiceb.passwordservice.service.util.DomainStatusConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,7 +27,7 @@ public class Keychain {
     @JoinColumn(name = "account_id")
     private Accounts account;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "encryption_key_id")
     private EncryptionKey encryptionKey;
 

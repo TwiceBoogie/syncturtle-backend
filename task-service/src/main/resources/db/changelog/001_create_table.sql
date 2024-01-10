@@ -1,4 +1,5 @@
 CREATE TYPE priority_status AS ENUM ('HIGH', 'MEDIUM', 'LOW', 'NONE');
+CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
 CREATE TYPE task_status AS ENUM (
     'TODO',
     'UPCOMING',
@@ -10,7 +11,8 @@ CREATE TYPE task_status AS ENUM (
 CREATE TABLE IF NOT EXISTS accounts (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT NOT NULL,
-    user_status VARCHAR(255) NOT NULL,
+    user_status VARCHAR(36) NOT NULL,
+    role user_role DEFAULT 'USER',
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS tasks (

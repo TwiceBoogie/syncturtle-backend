@@ -21,27 +21,32 @@ spring:
         temp:
           "[use_jdbc_metadata_defaults]": false
   liquibase:
-    enabled: true
+    enabled: false
     user: sebastian
     password: Twice_Mina1
     change-log: classpath:db/changelog/db.changelog-master.xml
   rabbitmq:
-    addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
-
+    addresses: amqp://task-service:${TASK_SERVICE_PW:fMK239wfugQeivEwwgNjzfR6ek}@${RABBITMQ_HOST:localhost}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
 logging:
   level:
-    "[org.springframework.cloud.amqp]": DEBUG
+    root: INFO
+    "[org.springframework.web]": DEBUG
+    "[org.springframework.amqp]": DEBUG
 
 rabbitmq:
   exchanges:
-    internal-direct: direct.exchange
-    internal-fanout: fanout.exchange
+    internal-direct: email.exchange
+    internal-fanout: user.events
   routing-keys:
-    internal-created: user.created
-    internal-deleted: user.deleted
-    internal-mail: user.mail-token
+    internal-mail: high_priority.mail
   queues:
-    internal-fanout-queue: q.passwordsvc
-    internal-created: q.user-created
-    internal-deleted: q.user-deleted
+    internal-fanout-queue: q.tasksvc
     internal-mail: q.mail

@@ -1,5 +1,6 @@
 package dev.twiceb.common.dto.response;
 
+import dev.twiceb.common.enums.UserRole;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -8,8 +9,9 @@ import lombok.EqualsAndHashCode;
 public class UserPrincipleResponse extends BaseMessage {
     private Long id;
     private String email;
-    private boolean active;
-    private String role;
+    private boolean verified;
+    private String userStatus;
+    private UserRole role;
     private String fullName;
 
     public UserPrincipleResponse() {

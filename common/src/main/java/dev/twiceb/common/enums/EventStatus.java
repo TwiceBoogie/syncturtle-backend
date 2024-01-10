@@ -1,2 +1,9 @@
-package dev.twiceb.common.enums;public enum EventStatus {
+package dev.twiceb.common.enums;
+
+public enum EventStatus {
+    TODO,
+    UPCOMING,
+    IN_PROGRESS,
+    COMPLETE,
+    OVERDUE
 }

@@ -3,6 +3,7 @@ package dev.twiceb.taskservice.service;
 import dev.twiceb.common.dto.request.NewRecurringEventRequest;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.NewTaskRequest;
+import dev.twiceb.taskservice.dto.request.UpdateSubtaskRequest;
 import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
 import dev.twiceb.taskservice.repository.projection.RecurringTaskProjection;
 import dev.twiceb.taskservice.repository.projection.SubtaskProjection;
@@ -24,7 +25,7 @@ public interface TaskService {
 
     public Map<String, String> updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult);
 
-
+    public Map<String, String> updateSubTask(Long userId, UpdateSubtaskRequest request, BindingResult bindingResult);
 
     public Page<TaskProjection> getTasks(Long userId, Pageable pageable);
 

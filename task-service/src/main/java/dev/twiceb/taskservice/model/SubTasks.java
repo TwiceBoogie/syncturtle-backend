@@ -1,5 +1,6 @@
 package dev.twiceb.taskservice.model;
 
+import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
 import dev.twiceb.taskservice.enums.TaskStatus;
 import jakarta.persistence.*;
@@ -26,7 +27,7 @@ public class SubTasks {
     private String subtaskDescription;
 
     @Column(name = "status", nullable = false)
-    private TaskStatus status;
+    private EventStatus status;
 
     @Column(name = "priority", nullable = false)
     private PriorityStatus priority;
@@ -42,7 +43,7 @@ public class SubTasks {
 
     @PrePersist
     private void prePersist() {
-        this.status = TaskStatus.TODO;
+        this.status = EventStatus.TODO;
         this.priority = PriorityStatus.NONE;
     }
 }

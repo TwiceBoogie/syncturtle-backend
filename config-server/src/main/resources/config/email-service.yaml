@@ -4,7 +4,7 @@ spring:
   application:
     name: email-service
   rabbitmq:
-    addresses: amqp://sebastian:Twice_Mina1@${RABBITMQ_HOST:localhost}
+    addresses: amqp://email-service:${EMAIL_SERVICE_PW:6cct9rVawlKtBkDwoE2ITl3niIU}@${RABBITMQ_HOST:localhost}
   mail:
     host: smtp.gmail.com
     username: salsebastian13@gmail.com
@@ -17,14 +17,23 @@ spring:
           auth: true
           starttls:
             enable: true
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
 mail:
   debug: true
 
 rabbitmq:
   exchanges:
-    internal: direct.exchange
-  queues:
-    mail: q.mail
+    internal-direct: email.exchange
+    internal-fanout: user.events
   routing-keys:
-    internal-mail: user.mail-token
+    internal-mail: high_priority.mail
+  queues:
+    internal-fanout-queue: q.usersvc
+    internal-mail: q.mail

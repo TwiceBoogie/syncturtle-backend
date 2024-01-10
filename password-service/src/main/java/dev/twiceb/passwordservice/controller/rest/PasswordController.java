@@ -3,7 +3,7 @@ package dev.twiceb.passwordservice.controller.rest;
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.dto.response.HeaderResponse;
 import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
-import dev.twiceb.passwordservice.dto.response.AllPasswordsResponse;
+import dev.twiceb.passwordservice.dto.response.PasswordsResponse;
 import dev.twiceb.passwordservice.mapper.PasswordMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +22,13 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping(UI_V1_DASHBOARD)
+@RequestMapping(UI_V1_PASSWORD)
 @RequiredArgsConstructor
 public class PasswordController {
 
     private final PasswordMapper passwordMapper;
 
-    @PostMapping(CREATE_PASSWORD)
+    @PostMapping
     public ResponseEntity<GenericResponse> createNewPassword(
             @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
             @Valid @RequestBody CreatePasswordRequest request,
@@ -37,27 +37,21 @@ public class PasswordController {
                 .body(passwordMapper.createNewPassword(userId, request, bindingResult));
     }
 
-    @GetMapping(ALL_PASSWORDS_USER)
-    public ResponseEntity<List<AllPasswordsResponse>> getPasswords(
+    @GetMapping
+    public ResponseEntity<List<PasswordsResponse>> getPasswords(
             @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
             @PageableDefault(size = 10) Pageable Pageable) {
-        HeaderResponse<AllPasswordsResponse> res = passwordMapper.getPasswords(userId, Pageable);
+        HeaderResponse<PasswordsResponse> res = passwordMapper.getPasswords(userId, Pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
-    @GetMapping(MAIN_EXPIRING_PASSWORDS)
-    public ResponseEntity<List<AllPasswordsResponse>> getExpiringPasswords(
+    @GetMapping(GET_PASSWORD_WITH_CRITERIA)
+    public ResponseEntity<List<PasswordsResponse>> getPasswordsByCriteria(
             @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-            @PageableDefault(size = 5) Pageable Pageable) {
-        HeaderResponse<AllPasswordsResponse> res = passwordMapper.getExpiringPasswords(userId, Pageable);
-        return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
-    }
-
-    @GetMapping(MAIN_RECENT_PASSWORDS)
-    public ResponseEntity<List<AllPasswordsResponse>> getRecentPasswords(
-            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-            @PageableDefault(size = 5) Pageable Pageable) {
-        HeaderResponse<AllPasswordsResponse> res = passwordMapper.getRecentPasswords(userId, Pageable);
+            @PathVariable("criteria") String criteria,
+            @PageableDefault(size = 10) Pageable Pageable
+    ) {
+        HeaderResponse<PasswordsResponse> res = passwordMapper.getPasswordsByCriteria(userId, criteria, Pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 

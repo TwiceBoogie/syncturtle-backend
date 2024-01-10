@@ -39,7 +39,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
                 );
 
                 assert user != null;
-                if (!user.isActive()) {
+                if (!user.isVerified()) {
                     throw new JwtAuthenticationException("Email not activated");
                 }
 //                exchange.getRequest().mutate().header(AUTH_USER_ID_HEADER, String.valueOf(user.getId())).build();

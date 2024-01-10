@@ -10,6 +10,6 @@ public class ValidStatusImpl implements ConstraintValidator<ValidStatus, String>
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        return Arrays.asList("TODO", "IN-PROGRESS", "COMPLETE", "OVERDUE").contains(value);
+        return Arrays.asList("TODO", "UPCOMMING", "IN-PROGRESS", "COMPLETE", "OVERDUE").contains(value);
     }
 }

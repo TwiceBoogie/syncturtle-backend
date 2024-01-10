@@ -8,7 +8,7 @@
         <groupId>dev.twiceb</groupId>
         <artifactId>personavault</artifactId>
         <version>0.0.1-SNAPSHOT</version>
-        <relativePath /> <!-- lookup parent from repository -->
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>email-service</artifactId>
