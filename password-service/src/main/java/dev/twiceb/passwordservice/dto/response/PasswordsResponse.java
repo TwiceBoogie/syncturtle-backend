@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class PasswordsResponse {
     private Long id;
+    private String username;
     private String domain;
     private String fakePassword;
     private Date date;

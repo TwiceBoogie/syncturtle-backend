@@ -1,16 +1,14 @@
 package dev.twiceb.passwordservice.service.impl;
 
-import java.util.Base64;
+import java.security.SecureRandom;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
 import dev.twiceb.passwordservice.model.Accounts;
-import dev.twiceb.passwordservice.model.EncryptionKey;
 import dev.twiceb.passwordservice.model.Keychain;
 import dev.twiceb.passwordservice.repository.AccountsRepository;
-import dev.twiceb.passwordservice.repository.EncryptionKeyRepository;
-import dev.twiceb.passwordservice.service.util.SecureDataKeyResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -24,13 +22,8 @@ import dev.twiceb.passwordservice.repository.KeychainRepository;
 import dev.twiceb.passwordservice.repository.projection.DecryptedPasswordProjection;
 import dev.twiceb.passwordservice.repository.projection.KeychainProjection;
 import dev.twiceb.passwordservice.service.PasswordService;
-import dev.twiceb.passwordservice.service.util.EnvelopeEncryption;
 import dev.twiceb.passwordservice.service.util.PasswordHelperService;
 import lombok.RequiredArgsConstructor;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
@@ -39,29 +32,16 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 public class PasswordServiceImpl implements PasswordService {
 
     private final KeychainRepository keychainRepository;
-    private final PasswordHelperService passwordHelperService;
     private final AccountsRepository accountsRepository;
-
-    @Override
-    public Map<String, String> testingStuff() {
-        Keychain keychain = keychainRepository.findById(1L)
-                .orElseThrow(() -> new ApiRequestException(ACCOUNT_ALREADY_VERIFIED));
-        System.out.println(keychain);
-        System.out.println(keychain.getStatus());
-        KeychainProjection kc = keychainRepository.getPasswordByDomain(1L, "Google.com", KeychainProjection.class)
-                .orElseThrow(() -> new ApiRequestException(ACCOUNT_ALREADY_VERIFIED));
-        System.out.println(kc);
-        System.out.println("domain: " + kc.getDomain());
-
-        return Map.of("message", "test");
-    }
+    private final PasswordHelperService passwordHelperService;
 
     @Override
     @Transactional
-    public Map<String, String> createPasswordForDomain(Long userId, CreatePasswordRequest request,
-            BindingResult bindingResult) {
-        passwordHelperService.processInputErrors(bindingResult);
-        passwordHelperService.processPassword(request.getPassword(), request.getConfirmPassword());
+    public Map<String, String> createNewPassword(Long userId, CreatePasswordRequest request,
+                                                 BindingResult bindingResult) {
+        passwordHelperService.processBindingResults(bindingResult).processPassword(
+                request.getPassword(), request.getConfirmPassword()
+        );
 
         Accounts account = fetchAccount(userId);
 
@@ -69,9 +49,14 @@ public class PasswordServiceImpl implements PasswordService {
             throw new ApiRequestException(DOMAIN_ALREADY_EXIST, HttpStatus.BAD_REQUEST);
         }
 
-        Keychain keychain = passwordHelperService.generateSecureDataKey(
-                request.getPassword(), request.getDomain(), account
+        Keychain keychain = passwordHelperService.generateSecureKeychain(request, account);
+        keychain.setUserPasswordExpirySetting(
+                passwordHelperService.createUserPasswordExpirySetting(request.getPasswordExpiryPolicy())
         );
+        keychain.getUserPasswordExpirySetting().setKeychain(keychain);
+
+        passwordHelperService.buildAnalyticEntities(keychain, request.getPassword());
+
         keychainRepository.save(keychain);
 
         return Map.of("message", "Password saved for " + request.getDomain());
@@ -95,22 +80,28 @@ public class PasswordServiceImpl implements PasswordService {
     @Override
     @Transactional
     public Map<String, String> updatePasswordForDomain(Long userId, UpdatePasswordRequest request,
-            BindingResult bindingResult) {
-        passwordHelperService.processInputErrors(bindingResult);
-        passwordHelperService.processPassword(request.getPassword(), request.getConfirmPassword());
+                                                       BindingResult bindingResult) {
+        passwordHelperService.processBindingResults(bindingResult)
+                .processPassword(request.getPassword(), request.getConfirmPassword());
 
-        Accounts userAccount = fetchAccount(userId);
-
-        Keychain keychainFromDb = keychainRepository
-                .getPasswordByDomain(userAccount.getId(), request.getDomain(), Keychain.class)
-                .orElseThrow(() -> new ApiRequestException(NO_PASSWORD_FOR_DOMAIN, HttpStatus.NOT_FOUND));
-
-        Keychain updatedKeychain = passwordHelperService.updateSecureDataKey(
-                keychainFromDb, keychainFromDb.getEncryptionKey(), request.getPassword()
+        Keychain keychainFromDb = keychainRepository.findById(request.getId()).orElseThrow(
+                () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND)
         );
-        keychainRepository.save(updatedKeychain);
 
-        return Map.of("message", "New Password saved for " + request.getDomain());
+        Accounts account = keychainFromDb.getAccount();
+
+        if (!account.getUserId().equals(userId)) {
+            throw new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
+        } else if (!account.getUserStatus().equals("Active")) {
+            throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+
+        passwordHelperService.updateSecureDataKey(
+                account, keychainFromDb, keychainFromDb.getEncryptionKey(), request.getPassword());
+
+        keychainRepository.save(keychainFromDb);
+
+        return Map.of("message", "Username and/or Password updated successfully.");
     }
 
     @Override
@@ -119,6 +110,55 @@ public class PasswordServiceImpl implements PasswordService {
         DecryptedPasswordProjection userPassword = keychainRepository.getPasswordById(userAccount.getId(), passwordId);
 
         return Map.of("message", passwordHelperService.decryptPassword(userPassword));
+    }
+
+    @Override
+    public Map<String, String> generateSecurePassword(GenerateRandomPasswordRequest request) {
+        String alphanumericChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        String specialChars = "!@#$%^&*()-_=+[]{}|;:'\",.<>/?";
+        int length = request.getRandomPasswordLength();
+        String allChars = alphanumericChars + specialChars;
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+
+        // Ensure at least one alphanumeric and one special character in the password
+        password.append(alphanumericChars.charAt(random.nextInt(alphanumericChars.length())));
+        password.append(specialChars.charAt(random.nextInt(specialChars.length())));
+
+        // Generate the rest of the password
+        for (int i = 2; i < length; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+
+        return Map.of("message", password.toString());
+    }
+
+    @Override
+    @Transactional
+    public Map<String, String> deletePassword(Long userId, Long passwordId) {
+        Keychain keychainToDelete = keychainRepository.findById(passwordId).orElseThrow(
+                () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND)
+        );
+        Accounts userAccount = keychainToDelete.getAccount();
+        if (!userAccount.getUserId().equals(userId)) {
+            throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+        if (!userAccount.getUserStatus().equals("Active")) {
+            throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+        keychainRepository.delete(keychainToDelete);
+
+        return Map.of("message", "Password deleted Successfully.");
+    }
+
+    @Override
+    @Transactional
+    public Map<String, String> deleteAllPasswords(Long userId) {
+        Accounts userAccount = fetchAccount(userId);
+        List<Keychain> keychainsToDelete = keychainRepository.findAllKeychain(userAccount.getId());
+        keychainRepository.deleteAll(keychainsToDelete);
+
+        return Map.of("message", "All passwords deleted successfully.");
     }
 
     private Page<KeychainProjection> fetchKeychain(Long userId, Pageable pageable, String grabInstance) {
@@ -134,8 +174,12 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private Accounts fetchAccount(Long userId) {
-        Accounts userAccount = accountsRepository.findAccountByUserId(userId, Accounts.class)
-                .orElseThrow(() -> new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED));
+        Accounts userAccount = accountsRepository.findAccountByUserId(userId);
+
+        if (userAccount == null) {
+            throw new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
         if (!userAccount.getUserStatus().equals("Active")) {
             throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
         }

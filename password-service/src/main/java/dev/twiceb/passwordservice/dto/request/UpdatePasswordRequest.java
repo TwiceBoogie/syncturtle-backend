@@ -14,8 +14,8 @@ public class UpdatePasswordRequest {
     @Pattern(regexp = "^\\d+$", message = INVALID_ID_PROVIDED)
     private Long id;
 
-    @NotBlank(message = EMPTY_DOMAIN)
-    private String domain;
+    @NotBlank(message = EMPTY_USERNAME)
+    private String username;
 
     @NotBlank(message = EMPTY_PASSWORD)
     @Size(min = 8, message = SHORT_PASSWORD)

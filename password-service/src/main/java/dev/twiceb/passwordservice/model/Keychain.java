@@ -1,10 +1,9 @@
 package dev.twiceb.passwordservice.model;
 
-import java.time.LocalDate;
-import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnTransformer;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import dev.twiceb.passwordservice.service.util.DomainStatusConverter;
@@ -27,12 +26,26 @@ public class Keychain {
     @JoinColumn(name = "account_id")
     private Accounts account;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "encryption_key_id")
+    @OneToOne(mappedBy = "keychain", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private EncryptionKey encryptionKey;
+
+    @OneToMany(mappedBy = "keychain", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PasswordChangeLog> passwordChangeLogs = new ArrayList<>();
+
+    @OneToOne(mappedBy = "keychain", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private PasswordComplexityMetric passwordComplexityMetric;
+
+    @OneToOne(mappedBy = "keychain", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserPasswordExpirySetting userPasswordExpirySetting;
+
+    @Column(name = "username", nullable = false)
+    private String username;
 
     @Column(nullable = false)
     private String domain;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     @Column(name = "encrypted_password", columnDefinition = "bytea")
     private byte[] password;
@@ -44,29 +57,17 @@ public class Keychain {
     @Convert(converter = DomainStatusConverter.class)
     private DomainStatus status;
 
-    @Column(name = "update_date", nullable = false)
-    private Date date;
-
     public Keychain() {
     }
 
-    public Keychain(Accounts account, EncryptionKey encryptionKey, String domain, byte[] password) {
+    public Keychain(Accounts account, EncryptionKey encryptionKey, String username, String domain, byte[] password) {
         this.account = account;
         this.encryptionKey = encryptionKey;
+        this.username = username;
         this.domain = domain;
         this.password = password;
-    }
 
-    @PrePersist
-    private void prePersist() {
-        LocalDate currentTime = LocalDate.now();
-        LocalDate date90DaysFromNow = currentTime.plusDays(90);
-
-        System.out.println("Before setting status: " + this.status); // Print before setting the status
-        this.date = Date.valueOf(date90DaysFromNow);
-        System.out.println("DomainStatus.ACTIVE: " + DomainStatus.ACTIVE); // Print DomainStatus.ACTIVE to compare
-        this.status = DomainStatus.ACTIVE;
-        System.out.println("After setting status: " + this.status);
+        encryptionKey.setKeychain(this);
     }
 
     public String getFakePassword() {

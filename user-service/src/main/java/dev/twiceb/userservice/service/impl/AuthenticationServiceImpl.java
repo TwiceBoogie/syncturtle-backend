@@ -48,7 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userServiceHelper.processBindingResults(bindingResult);
         AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
                 .orElseThrow(
                         () -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.BAD_REQUEST));

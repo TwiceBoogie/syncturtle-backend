@@ -8,6 +8,8 @@ public class ErrorMessage {
     public static final String AUTHENTICATION_ERROR = "Authentication required to access this resource.";
     public static final String AUTHORIZATION_ERROR = "Access Denied: You are not authorized to view/access this resource.";
 
+    public static final String PASSWORD_EXPIRY_POLICY_NOT_FOUND = "No policy with that name exist.";
+
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
     public static final String EMAIL_HAS_ALREADY_BEEN_TAKEN = "Email has already been taken.";
@@ -29,6 +31,9 @@ public class ErrorMessage {
     public static final String NO_PASSWORD_FOR_DOMAIN = "No password exists for ";
     public static final String DOMAIN_ALREADY_EXIST = "Domain Already Exist";
     public static final String EMPTY_DOMAIN = "Domain cannot be empty.";
+    public static final String NO_RESOURCE_FOUND = "Resource does not exits.";
+
+    public static final String EMPTY_USERNAME = "Username cannot be empty.";
 
     public static final String EMPTY_GOAL_TITLE = "Please enter a valid title.";
     public static final String EMPTY_GOAL_TARGET_DATE = "Goal must have a target date.";

@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -33,14 +35,27 @@ public class EnvelopeEncryption {
     }
 
     // Method to encrypt input using AES encryption with a given key and IV
-    public byte[] encrypt(String input, SecretKey key, IvParameterSpec iv) throws Exception {
+    public byte[] encrypt(String input, SecretKey key, IvParameterSpec iv) throws
+            NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            InvalidAlgorithmParameterException,
+            InvalidKeyException,
+            IllegalBlockSizeException,
+            BadPaddingException
+    {
         Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key, iv); // Initializing Cipher for encryption
         return cipher.doFinal(input.getBytes(StandardCharsets.UTF_8)); // Encrypting input text
     }
 
     // Method to decrypt cipher text using AES decryption with a given key and IV
-    public String decrypt(byte[] cipherText, SecretKey key, IvParameterSpec iv) throws Exception {
+    public String decrypt(byte[] cipherText, SecretKey key, IvParameterSpec iv) throws
+            NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            InvalidAlgorithmParameterException,
+            InvalidKeyException,
+            IllegalBlockSizeException,
+            BadPaddingException {
         Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, key, iv); // Initializing Cipher for decryption
         byte[] plainText = cipher.doFinal(cipherText); // Decrypting cipher text

@@ -1,5 +1,6 @@
 package dev.twiceb.passwordservice.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -21,6 +22,9 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
         boolean CheckIfDomainExist(@Param("accountId") Long accountId, @Param("domain") String domain);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId")
+        List<Keychain> findAllKeychain(@Param("accountId") Long accountId);
+
+        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId")
         <T> Page<T> findAllByAccountId(@Param("accountId") Long accountId, Pageable pageable, Class<T> clazz);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId AND (kc.status = 'SOON' OR kc.status = 'EXPIRED') ORDER BY kc.date ASC")
@@ -28,10 +32,6 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId ORDER BY kc.date DESC")
         <T> Page<T> getRecentPasswords(@Param("accountId") Long accountId, Pageable pageable, Class<T> clazz);
-
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id= :accountId AND kc.domain = :domain")
-        <T> Optional<T> getPasswordByDomain(@Param("accountId") Long accountId, @Param("domain") String domain,
-                        Class<T> clazz);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId AND kc.id = :id")
         DecryptedPasswordProjection getPasswordById(@Param("accountId") Long accountId, @Param("id") Long id);

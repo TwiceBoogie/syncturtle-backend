@@ -7,7 +7,6 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,11 +14,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.util.Base64;
+// import java.security.SecureRandom;
+// import java.util.Base64;
 import java.util.Date;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
@@ -37,12 +33,12 @@ public class JwtProvider {
     @Value("${jwt.expiration:36000000}") // 10 hours in milliseconds
     private long validityInMilliseconds;
 
-    private String generatedSafeToken() {
-        SecureRandom random = new SecureRandom();
-        byte[] keyBytes = new byte[32];
-        random.nextBytes(keyBytes);
-        return Base64.getEncoder().encodeToString(keyBytes);
-    }
+    // private String generatedSafeToken() {
+    // SecureRandom random = new SecureRandom();
+    // byte[] keyBytes = new byte[32];
+    // random.nextBytes(keyBytes);
+    // return Base64.getEncoder().encodeToString(keyBytes);
+    // }
 
     @PostConstruct
     protected void init() {

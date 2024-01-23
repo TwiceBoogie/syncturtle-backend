@@ -1,69 +1,7 @@
-# spring:
-#   application:
-#     name: password-service
-#   config:
-#     import: configserver:http://${CONFIG_SERVER_HOST:localhost}:8888/
-
-# logging:
-#   level:
-#     "[org.springframework.cloud.vault]": debug
-server:
-  port: 8002
 spring:
   application:
     name: password-service
-  cloud:
-    vault:
-      scheme: http
-      host: localhost
-      port: 8200
-      uri: http://localhost:8200
-      authentication: TOKEN
-      token: ${VAULT_TOKEN:0c1bfed61a94164029a3ad7765e26b08e9ed19449fe12214f459a595ab353144}
-      fail-fast: true
-      config.lifecycle.enabled: true
-      database:
-        enabled: true
-        role: personavault-readonly
-        backend: database
-        username-property: spring.datasource.username
-        password-property: spring.datasource.password
   config:
-    import: vault://
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/password
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: true
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
-    generate-ddl: false
-    properties:
-      hibernate:
-        temp:
-          "[use_jdbc_metadata_defaults]": false
-  liquibase:
-    enabled: false
-    user: sebastian
-    password: Twice_Mina1
-    change-log: classpath:db/changelog/db.changelog-master.xml
-  rabbitmq:
-    addresses: amqp://password-service:${PASSWORD_SERVICE_PW:V9cPuZqvq5sGQjpysXqVEgZzGY}@${RABBITMQ_HOST:localhost}
-logging:
-  level:
-    root: INFO
-    "[org.springframework.web]": DEBUG
-    "[org.springframework.cloud.vault]": DEBUG
-
-rabbitmq:
-  exchanges:
-    internal-direct: email.exchange
-    internal-fanout: user.events
-  routing-keys:
-    internal-mail: high_priority.mail
-  queues:
-    internal-fanout-queue: q.tasksvc
-    internal-mail: q.mail
+    import:
+      - configserver:http://${CONFIG_SERVER_HOST:localhost}:8888/
+      - vault://

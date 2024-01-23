@@ -2,6 +2,7 @@ package dev.twiceb.passwordservice.service;
 
 import java.util.Map;
 
+import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.BindingResult;
@@ -9,14 +10,11 @@ import org.springframework.validation.BindingResult;
 import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
 import dev.twiceb.passwordservice.dto.request.UpdatePasswordRequest;
 import dev.twiceb.passwordservice.repository.projection.KeychainProjection;
-import dev.twiceb.passwordservice.repository.projection.UserPasswordProjection;
 
 public interface PasswordService {
 
-        Map<String, String> testingStuff();
-
-        Map<String, String> createPasswordForDomain(Long userId, CreatePasswordRequest request,
-                        BindingResult bindingResult);
+        Map<String, String> createNewPassword(Long userId, CreatePasswordRequest request,
+                                              BindingResult bindingResult);
 
         Page<KeychainProjection> getPasswords(Long userId, Pageable pageable);
 
@@ -29,4 +27,9 @@ public interface PasswordService {
 
         Map<String, String> getDecryptedPassword(Long userId, Long passwordId);
 
+        Map<String, String> generateSecurePassword(GenerateRandomPasswordRequest request);
+
+        Map<String, String> deletePassword(Long userId, Long passwordId);
+
+        Map<String, String> deleteAllPasswords(Long userId);
 }

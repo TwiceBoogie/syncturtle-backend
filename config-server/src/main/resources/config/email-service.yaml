@@ -3,8 +3,22 @@ server:
 spring:
   application:
     name: email-service
-  rabbitmq:
-    addresses: amqp://email-service:${EMAIL_SERVICE_PW:6cct9rVawlKtBkDwoE2ITl3niIU}@${RABBITMQ_HOST:localhost}
+  cloud:
+    vault:
+      scheme: http
+      host: localhost
+      port: 8200
+      uri: http://localhost:8200
+      authentication: TOKEN
+      token: ${VAULT_TOKEN:b005f040d6002aa8a7e6339c99338ea8f4b6f8907f8f6084193ca3e9c49b1163}
+      fail-fast: true
+      config.lifecycle.enabled: true
+      rabbitmq:
+        enabled: true
+        role: my-role
+        backend: rabbitmq
+        username-property: spring.rabbitmq.username
+        password-property: spring.rabbitmq.password
   mail:
     host: smtp.gmail.com
     username: salsebastian13@gmail.com

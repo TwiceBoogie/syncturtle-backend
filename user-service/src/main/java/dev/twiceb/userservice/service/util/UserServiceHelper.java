@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,21 @@ public class UserServiceHelper extends ServiceHelper {
     public void isPasswordSame(String password1, String password2) {
         if (!password1.equals(password2)) {
             throw new ApiRequestException(PASSWORDS_NOT_MATCH, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public UserServiceHelper processBindingResults(BindingResult bindingResult) {
+        this.processInputErrors(bindingResult);
+        return this;
+    }
+
+    public void processPassword(String password1, String password2) {
+        if (!password1.equals(password2)) {
+            throw new ApiRequestException(PASSWORDS_NOT_MATCH, HttpStatus.BAD_REQUEST);
+        }
+
+        if (password1.length() < 9) {
+            throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
         }
     }
 

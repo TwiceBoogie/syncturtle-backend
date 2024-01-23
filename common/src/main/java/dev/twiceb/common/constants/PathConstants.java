@@ -26,9 +26,10 @@ public class PathConstants {
     public static final String API_V1_PASSWORD = API_V1 + PASSWORD;
     public static final String UI_V1_PASSWORD = UI_V1 + PASSWORD;
     public static final String GET_PASSWORD_WITH_CRITERIA = "/{criteria}";
-    public static final String TABLE_DOMAIN_PASSWORDS = "/domain/{domain}";
-    public static final String UPDATE_DOMAIN_PASSWORD = "/password/update";
-    public static final String GET_DECRYPTED_PASSWORD = "/password/{passwordId}";
+    public static final String GET_DECRYPTED_PASSWORD = "/decrypt/{passwordId}";
+    public static final String DELETE_ALL = "/delete";
+    public static final String DELETE_PASSWORD = "/delete/{passwordId}";
+    public static final String GENERATE_RANDOM_PASSWORD = "/generate";
 
     public static final String CREATE_GOAL = "/goals/new";
     public static final String UPDATE_GOAL = "/goals/update/{goalId}";

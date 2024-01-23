@@ -61,5 +61,5 @@ setup_rabbitmq() {
   generatePasswords
   declare_queues
   declare_and_bind_exchanges
-  create_users
+  # create_users
 }

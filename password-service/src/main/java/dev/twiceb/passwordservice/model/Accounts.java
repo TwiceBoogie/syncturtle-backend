@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter

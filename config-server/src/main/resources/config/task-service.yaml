@@ -3,10 +3,30 @@ server:
 spring:
   application:
     name: task-service
+  cloud:
+    vault:
+      scheme: http
+      host: localhost
+      port: 8200
+      uri: http://localhost:8200
+      authentication: TOKEN
+      token: ${VAULT_TOKEN:b005f040d6002aa8a7e6339c99338ea8f4b6f8907f8f6084193ca3e9c49b1163}
+      fail-fast: true
+      config.lifecycle.enabled: true
+      database:
+        enabled: true
+        role: task-service
+        backend: database
+        username-property: spring.datasource.username
+        password-property: spring.datasource.password
+      rabbitmq:
+        enabled: true
+        role: my-role
+        backend: rabbitmq
+        username-property: spring.rabbitmq.username
+        password-property: spring.rabbitmq.password
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/task
-    username: sebastian
-    password: Twice_Mina1
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -25,8 +45,6 @@ spring:
     user: sebastian
     password: Twice_Mina1
     change-log: classpath:db/changelog/db.changelog-master.xml
-  rabbitmq:
-    addresses: amqp://task-service:${TASK_SERVICE_PW:fMK239wfugQeivEwwgNjzfR6ek}@${RABBITMQ_HOST:localhost}
 management:
   endpoints:
     web:

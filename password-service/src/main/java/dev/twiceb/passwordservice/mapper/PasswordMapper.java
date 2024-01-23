@@ -1,6 +1,7 @@
 package dev.twiceb.passwordservice.mapper;
 
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ public class PasswordMapper {
     private final BasicMapper basicMapper;
 
     public GenericResponse createNewPassword(Long userId, CreatePasswordRequest request, BindingResult bindingResult) {
-        return basicMapper.convertToResponse(passwordService.createPasswordForDomain(userId, request, bindingResult),
+        return basicMapper.convertToResponse(passwordService.createNewPassword(userId, request, bindingResult),
                 GenericResponse.class);
     }
 
@@ -56,8 +57,15 @@ public class PasswordMapper {
                 GenericResponse.class);
     }
 
-    public GenericResponse testing() {
-        return basicMapper.convertToResponse(passwordService.testingStuff(),
-                GenericResponse.class);
+    public GenericResponse generateRandomPassword(GenerateRandomPasswordRequest request) {
+        return basicMapper.convertToResponse(passwordService.generateSecurePassword(request), GenericResponse.class);
+    }
+
+    public GenericResponse deletePassword(Long userId, Long passwordId) {
+        return basicMapper.convertToResponse(passwordService.deletePassword(userId, passwordId), GenericResponse.class);
+    }
+
+    public GenericResponse deleteAllPasswords(Long userId) {
+        return basicMapper.convertToResponse(passwordService.deleteAllPasswords(userId), GenericResponse.class);
     }
 }

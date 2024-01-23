@@ -17,7 +17,6 @@ import dev.twiceb.userservice.service.RegistrationService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
@@ -40,8 +39,9 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public Map<String, String> registration(RegistrationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
-        userServiceHelper.isPasswordSame(request.getPassword(), request.getPasswordConfirm());
+        userServiceHelper.processBindingResults(bindingResult).processPassword(
+                request.getPassword(), request.getPasswordConfirm()
+        );
 
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
             User user = userServiceHelper.createUserEntity(request);
@@ -54,7 +54,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public Map<String, String> sendRegistrationCode(ProcessEmailRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userServiceHelper.processBindingResults(bindingResult);
         User user = userRepository.getUserByEmail(request.getEmail(), User.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
         if (user.isVerified()) {
@@ -99,7 +99,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional
     @Deprecated
     public Map<String, Object> endRegistration(AuthenticationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userServiceHelper.processBindingResults(bindingResult);
         AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
                 .orElseThrow(
                         () -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));

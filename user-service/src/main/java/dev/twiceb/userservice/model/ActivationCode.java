@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Getter
@@ -28,7 +27,8 @@ public class ActivationCode extends AuditableEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public ActivationCode() {}
+    public ActivationCode() {
+    }
 
     public ActivationCode(String hashedCode, LocalDateTime expirationTime, User user) {
         this.hashedCode = hashedCode;

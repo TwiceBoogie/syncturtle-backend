@@ -18,7 +18,7 @@ start_vault_server() {
         path "transit/encrypt/password" {
           capabilities = ["update"]
         }
-        path "database/creds/password" {
+        path "database/creds/password-service" {
           capabilities = ["read"]
         }
         path "sys/renew/*" {
@@ -27,17 +27,54 @@ start_vault_server() {
 
   vault secrets enable database
 
+  vault secrets enable rabbitmq
+
   vault secrets enable transit
+
+  vault write rabbitmq/config/connection \
+    connection_uri="http://localhost:15672" \
+    username="$RABBITMQ_USERNAME" \
+    password="$RABBITMQ_PASSWORD"
+
+  vault write rabbitmq/roles/my-role \
+    vhosts='{"/":{"write": ".*", "read": ".*"}}'
+
 
   vault write database/config/personavault-password-service \
     plugin_name=postgresql-database-plugin \
-    allowed_roles=personavault-readonly \
+    allowed_roles=password-service \
     connection_url="postgresql://{{username}}:{{password}}@localhost:5432/password?sslmode=disable" \
     username="$POSTGRES_USERNAME" \
     password="$POSTGRES_PASSWORD"
 
-  vault write database/roles/personavault-readonly \
+  vault write database/roles/password-service \
     db_name=personavault-password-service \
+    creation_statements=@rotate.sql \
+    default_ttl=1h \
+    max_ttl=24h
+
+  vault write database/config/personavault-user-service \
+    plugin_name=postgresql-database-plugin \
+    allowed_roles=user-service \
+    connection_url="postgresql://{{username}}:{{password}}@localhost:5432/user?sslmode=disable" \
+    username="$POSTGRES_USERNAME" \
+    password="$POSTGRES_PASSWORD"
+
+  vault write database/roles/user-service \
+    db_name=personavault-user-service \
+    creation_statements=@rotate.sql \
+    default_ttl=1h \
+    max_ttl=24h
+
+  vault write database/config/personavault-task-service \
+    plugin_name=postgresql-database-plugin \
+    allowed_roles=task-service \
+    connection_url="postgresql://{{username}}:{{password}}@localhost:5432/task?sslmode=disable" \
+    username="$POSTGRES_USERNAME" \
+    password="$POSTGRES_PASSWORD"
+
+  vault write database/roles/task-service \
+    db_name=personavault-task-service \
     creation_statements=@rotate.sql \
     default_ttl=1h \
     max_ttl=24h

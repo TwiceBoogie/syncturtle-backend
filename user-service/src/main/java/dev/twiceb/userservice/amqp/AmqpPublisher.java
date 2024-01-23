@@ -3,7 +3,6 @@ package dev.twiceb.userservice.amqp;
 import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
 import dev.twiceb.common.mapper.BasicMapper;
-import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

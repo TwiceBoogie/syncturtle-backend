@@ -24,7 +24,8 @@ public class EncryptionKey {
     @Column(name = "vector", columnDefinition = "bytea")
     private byte[] vector;
 
-    @OneToOne(mappedBy = "encryptionKey", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "keychain_id")
     private Keychain keychain;
 
     public EncryptionKey() {}

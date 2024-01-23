@@ -5,22 +5,16 @@ import dev.twiceb.common.model.Tags;
 import dev.twiceb.common.util.ServiceHelper;
 import dev.twiceb.common.util.UpdateQueryResult;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
-import dev.twiceb.taskservice.dto.request.TagsRequest;
-import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
-import dev.twiceb.taskservice.enums.TaskStatus;
 import dev.twiceb.taskservice.model.SubTasks;
 import dev.twiceb.taskservice.model.Tasks;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 
-import java.sql.Types;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static dev.twiceb.common.constants.ErrorMessage.INTERNAL_SERVER_ERROR;
@@ -31,6 +25,10 @@ public class TaskServiceHelper extends ServiceHelper {
 
     @PersistenceContext
     private final EntityManager entityManager;
+
+    public void processBindingResults(BindingResult bindingResult) {
+        this.processInputErrors(bindingResult);
+    }
 
     public List<SubTasks> handleSubtasks(List<NewSubTaskRequest> subTasks, Tasks task) {
         List<SubTasks> newSubtaskList = new ArrayList<>();

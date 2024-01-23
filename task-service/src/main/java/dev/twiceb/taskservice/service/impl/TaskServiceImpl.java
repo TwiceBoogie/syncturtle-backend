@@ -42,18 +42,19 @@ public class TaskServiceImpl implements TaskService {
 
     private final TasksRepository tasksRepository;
     private final SubtasksRepository subtasksRepository;
-    private final TagsRepository tagsRepository;
     private final AccountsRepository accountsRepository;
     private final RecurringTasksRepository recurringTasksRepository;
     private final TaskServiceHelper taskServiceHelper;
+    private final TagsRepository tagsRepository;
 
     @Override
     @Transactional
     public Map<String, String> createNewTask(Long userId, NewTaskRequest request, BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        taskServiceHelper.processInputErrors(bindingResult);
+        taskServiceHelper.processBindingResults(bindingResult);
 
-        Tasks task = new Tasks(userAccount, request.getTaskTitle(), request.getTaskDescriptions(), request.getDueDate());
+        Tasks task = new Tasks(userAccount, request.getTaskTitle(), request.getTaskDescriptions(),
+                request.getDueDate());
         if (request.getPriority() != null) {
             task.setPriority(request.getPriority());
         }
@@ -72,16 +73,18 @@ public class TaskServiceImpl implements TaskService {
             task.setTags(tagsRepository.saveAll(tags));
         }
         tasksRepository.save(task);
-        // TODO: instead of sending a message, return the saved task for immediate feedback and no reload to fetch
+        // TODO: instead of sending a message, return the saved task for immediate
+        // feedback and no reload to fetch
         // TODO: send data to userStatsService to aggregate data
         return Map.of("message", "New task created successfully");
     }
 
     @Override
     @Transactional
-    public Map<String, String> createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult) {
+    public Map<String, String> createNewRecurringTask(Long userId, NewRecurringEventRequest request,
+            BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        taskServiceHelper.processInputErrors(bindingResult);
+        taskServiceHelper.processBindingResults(bindingResult);
 
         if (recurringTasksRepository.isRecurringTaskExist(userAccount.getUserId(), request.getTitle())) {
             throw new ApiRequestException(DUPLICATE_RECURRENCE_TASK, HttpStatus.BAD_REQUEST);
@@ -91,8 +94,7 @@ public class TaskServiceImpl implements TaskService {
                 userAccount,
                 request.getTitle(),
                 request.getDescription(),
-                request.getRecurrencePattern()
-        );
+                request.getRecurrencePattern());
         if (request.getRecurrenceFreq() != null) {
             recurringTask.setRecurrenceFreq(request.getRecurrenceFreq());
         }
@@ -107,11 +109,12 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult) {
+    public Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request,
+            BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        Tasks taskFromDB = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), taskId, Tasks.class).orElseThrow(
-                () -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND)
-        );
+        Tasks taskFromDB = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), taskId, Tasks.class)
+                .orElseThrow(
+                        () -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
 
         if (taskFromDB.getSubtasks().size() >= 10) {
             throw new ApiRequestException(EXCEED_SUBGOAL_SIZE, HttpStatus.BAD_REQUEST);
@@ -134,7 +137,8 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Map<String, String> updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        Tasks taskFromDb = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), request.getId(), Tasks.class)
+        Tasks taskFromDb = tasksRepository
+                .findTaskByUserAndTaskId(userAccount.getUserId(), request.getId(), Tasks.class)
                 .orElseThrow(() -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
 
         UpdateQueryResult result = taskServiceHelper.buildQuery(request, "tasks", "id");
@@ -152,8 +156,7 @@ public class TaskServiceImpl implements TaskService {
     public Page<TaskProjection> getTasks(Long userId, Pageable pageable) {
         Accounts userAccount = getUserAccount(userId);
         return tasksRepository.getTasksByUserId(
-                userAccount.getUserId(), pageable, TaskProjection.class
-        );
+                userAccount.getUserId(), pageable, TaskProjection.class);
     }
 
     @Override
@@ -168,8 +171,7 @@ public class TaskServiceImpl implements TaskService {
         Page<RecurringTaskProjection> recurringTasks = recurringTasksRepository.findRecurringTasksByUserId(
                 userAccount.getUserId(),
                 pageable,
-                RecurringTaskProjection.class
-        );
+                RecurringTaskProjection.class);
         if (!recurringTasks.hasContent()) {
             throw new ApiRequestException("No content found.", HttpStatus.NO_CONTENT);
         }
@@ -179,7 +181,6 @@ public class TaskServiceImpl implements TaskService {
 
     private Accounts getUserAccount(Long userId) {
         return accountsRepository.findAccountByUserId(userId, Accounts.class).orElseThrow(
-                () -> new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED)
-        );
+                () -> new ApiRequestException(AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED));
     }
 }

@@ -1,6 +1,5 @@
 package dev.twiceb.common.dto.request;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 // builder pattern

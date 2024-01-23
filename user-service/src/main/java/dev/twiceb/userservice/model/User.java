@@ -2,13 +2,10 @@ package dev.twiceb.userservice.model;
 
 import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.model.AuditableEntity;
-import dev.twiceb.userservice.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
-import org.hibernate.annotations.Type;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.util.Objects;
 
@@ -21,32 +18,30 @@ public class User extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="email", nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name="first_name")
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column(name="last_name")
+    @Column(name = "last_name")
     private String lastName;
 
-    @Column(name="password")
+    @Column(name = "password")
     private String password;
 
-    @Column(name="verified", columnDefinition="boolean default false")
+    @Column(name = "verified", columnDefinition = "boolean default false")
     private boolean verified = false;
 
     @Enumerated(EnumType.STRING)
-    @ColumnTransformer(
-            read = "role::text",
-            write = "?::user_role"
-    )
+    @ColumnTransformer(read = "role::text", write = "?::user_role")
     private UserRole role = UserRole.USER;
 
-    @Column(name="user_status")
+    @Column(name = "user_status")
     private String userStatus;
 
-    public User() {}
+    public User() {
+    }
 
     public User(String email, String firstName, String lastName, String password) {
         this.email = email;
@@ -70,8 +65,10 @@ public class User extends AuditableEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         User user = (User) o;
         return verified == user.verified &&
                 Objects.equals(id, user.id) &&

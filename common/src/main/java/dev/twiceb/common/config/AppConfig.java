@@ -2,7 +2,6 @@ package dev.twiceb.common.config;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.modelmapper.spi.MatchingStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 public class AppConfig {
 
     @Bean
-    public ModelMapper modelMapper() {
+    ModelMapper modelMapper() {
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration()
                 .setMatchingStrategy(MatchingStrategies.STRICT)
@@ -24,12 +23,12 @@ public class AppConfig {
     }
 
     @Bean
-    public RestTemplate restTemplate() {
+    RestTemplate restTemplate() {
         return new RestTemplate();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }
