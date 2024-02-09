@@ -20,7 +20,7 @@ public class EmailListener {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailListener.class);
     private final JavaMailSender mailSender;
-    private final SpringTemplateEngine thymeleafTemplateEngine;
+    private final SpringTemplateEngine thymeleafTemplateEngine; //
 
     @Value("${spring.mail.username}")
     private String username;

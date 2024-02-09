@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.model;
 
 import dev.twiceb.common.model.AuditableEntity;
+import dev.twiceb.userservice.enums.ActivationCodeType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,10 @@ public class ActivationCode extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "code_type", nullable = false)
+    private ActivationCodeType codeType;
+
     @Column(name = "hashed_code", nullable = false)
     private String hashedCode;
 
@@ -30,9 +35,20 @@ public class ActivationCode extends AuditableEntity {
     public ActivationCode() {
     }
 
-    public ActivationCode(String hashedCode, LocalDateTime expirationTime, User user) {
+    public ActivationCode(String hashedCode, ActivationCodeType codeType, User user) {
         this.hashedCode = hashedCode;
-        this.expirationTime = expirationTime;
+        this.codeType = codeType;
         this.user = user;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.codeType.equals(ActivationCodeType.ACTIVATION)) {
+            this.expirationTime = LocalDateTime.now().plusHours(24);
+        } else if (this.codeType.equals(ActivationCodeType.DEVICE_VERIFICATION)) {
+            this.expirationTime = LocalDateTime.now().plusMinutes(15);
+        } else if (this.codeType.equals(ActivationCodeType.PASSWORD_RESET)) {
+            this.expirationTime = LocalDateTime.now().plusMinutes(10);
+        }
     }
 }

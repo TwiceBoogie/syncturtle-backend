@@ -1,18 +1,21 @@
 package dev.twiceb.userservice.model;
 
 import dev.twiceb.common.enums.UserRole;
+import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.model.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "users")
 @Getter
 @Setter
+@Table(name = "users")
 public class User extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,17 +40,32 @@ public class User extends AuditableEntity {
     @ColumnTransformer(read = "role::text", write = "?::user_role")
     private UserRole role = UserRole.USER;
 
-    @Column(name = "user_status")
-    private String userStatus;
+    @Enumerated(EnumType.STRING)
+    @ColumnTransformer(read = "user_status::text", write = "?::user_status")
+    private UserStatus userStatus = UserStatus.ACTIVE;
+
+    @Column(name = "notification_count")
+    private int notificationCount = 0;
+
+    @OneToOne
+    @JoinColumn(name = "login_attempt_policy")
+    private LoginAttemptPolicy loginAttemptPolicy;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<UserDevice> userDevices = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<LockedUser> lockedUser = new ArrayList<>();
 
     public User() {
     }
 
-    public User(String email, String firstName, String lastName, String password) {
+    public User(String email, String firstName, String lastName, String password, LoginAttemptPolicy policy) {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
+        this.loginAttemptPolicy = policy;
     }
 
     @Override
@@ -85,3 +103,4 @@ public class User extends AuditableEntity {
         return Objects.hash(id, email, firstName, lastName, password, verified, userStatus, role);
     }
 }
+

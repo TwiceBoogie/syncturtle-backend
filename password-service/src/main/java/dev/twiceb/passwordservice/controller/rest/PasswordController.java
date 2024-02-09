@@ -4,6 +4,7 @@ import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.dto.response.HeaderResponse;
 import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
 import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
+import dev.twiceb.passwordservice.dto.request.SearchQueryRequest;
 import dev.twiceb.passwordservice.dto.request.UpdatePasswordRequest;
 import dev.twiceb.passwordservice.dto.response.PasswordsResponse;
 import dev.twiceb.passwordservice.mapper.PasswordMapper;
@@ -67,7 +68,7 @@ public class PasswordController {
             @Valid @RequestBody UpdatePasswordRequest request,
             BindingResult bindingResult
             ) {
-        return ResponseEntity.ok(passwordMapper.updatePasswordForDomain(
+        return ResponseEntity.ok(passwordMapper.updatePassword(
                 userId, request, bindingResult
         ));
     }
@@ -96,16 +97,19 @@ public class PasswordController {
     }
 
     @GetMapping(GENERATE_RANDOM_PASSWORD)
-    public ResponseEntity<GenericResponse> generateRandomPassword(GenerateRandomPasswordRequest request) {
-        return ResponseEntity.ok(passwordMapper.generateRandomPassword(request));
+    public ResponseEntity<GenericResponse> generateRandomPassword(@PathVariable("length") int length) {
+        return ResponseEntity.ok(passwordMapper.generateRandomPassword(length));
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> testing(HttpServletRequest request) {
-        Map<String, String> headers = Collections.list(request.getHeaderNames())
-                .stream()
-                .collect(Collectors.toMap(name -> name, request::getHeader));
-        System.out.println("All headers: " + headers);
-        return ResponseEntity.ok("good");
+    @GetMapping(SEARCH_BY_QUERY)
+    public ResponseEntity<List<PasswordsResponse>> searchPasswordsByQuery(
+            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
+            @Valid @RequestBody SearchQueryRequest request,
+            BindingResult bindingResult,
+            @PageableDefault(size = 10) Pageable Pageable
+    ) {
+        HeaderResponse<PasswordsResponse> res = passwordMapper.searchPasswordsByQuery(
+                userId, request, bindingResult, Pageable);
+        return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 }

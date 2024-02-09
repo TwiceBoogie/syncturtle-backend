@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Setter
@@ -25,10 +26,10 @@ public class PasswordChangeLog {
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(
             read = "changedByUser::text",
-            write = "?::changed_by_user"
+            write = "?::user_role"
     )
     private UserRole changedByUser = UserRole.USER;
 
     @Column(name = "change_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Timestamp changeDate;
+    private LocalDateTime changeDate;
 }

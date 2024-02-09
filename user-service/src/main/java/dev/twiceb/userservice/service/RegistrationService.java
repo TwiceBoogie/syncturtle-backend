@@ -12,7 +12,7 @@ public interface RegistrationService {
 
     Map<String, String> sendRegistrationCode(ProcessEmailRequest request, BindingResult bindingResult);
 
-    Map<String, String> checkRegistrationCode(String code);
+    Map<String, Object> checkRegistrationCode(String code);
 
     Map<String, Object> endRegistration(AuthenticationRequest request, BindingResult bindingResult);
 }

@@ -1,6 +1,6 @@
 package dev.twiceb.passwordservice.dto.response;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import lombok.Data;
@@ -11,6 +11,6 @@ public class PasswordsResponse {
     private String username;
     private String domain;
     private String fakePassword;
-    private Date date;
+    private LocalDate expiryDate;
     private DomainStatus status;
 }

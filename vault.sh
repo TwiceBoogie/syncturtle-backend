@@ -46,12 +46,12 @@ start_vault_server() {
     connection_url="postgresql://{{username}}:{{password}}@localhost:5432/password?sslmode=disable" \
     username="$POSTGRES_USERNAME" \
     password="$POSTGRES_PASSWORD"
-
+# 16 days (384 hours)
   vault write database/roles/password-service \
     db_name=personavault-password-service \
     creation_statements=@rotate.sql \
     default_ttl=1h \
-    max_ttl=24h
+    max_ttl=384h
 
   vault write database/config/personavault-user-service \
     plugin_name=postgresql-database-plugin \
@@ -64,7 +64,7 @@ start_vault_server() {
     db_name=personavault-user-service \
     creation_statements=@rotate.sql \
     default_ttl=1h \
-    max_ttl=24h
+    max_ttl=384h
 
   vault write database/config/personavault-task-service \
     plugin_name=postgresql-database-plugin \
@@ -77,5 +77,5 @@ start_vault_server() {
     db_name=personavault-task-service \
     creation_statements=@rotate.sql \
     default_ttl=1h \
-    max_ttl=24h
+    max_ttl=384h
 }

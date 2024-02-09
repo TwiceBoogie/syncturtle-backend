@@ -2,71 +2,109 @@ package dev.twiceb.common.constants;
 
 public class PathConstants {
     public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
+    public static final String AUTH_USER_AGENT_HEADER = "X-User-Agent";
+    public static final String AUTH_USER_IP_HEADER = "X-User-Ip";
+    public static final String AUTH_USER_DEVICE_KEY = "X-User-DeviceKey";
     public static final String USER_SERVICE = "localhost";
-    public static final String DOMAIN = "localhost:8080";
 
     public static final String API_V1 = "/api/v1";
     public static final String UI_V1 = "/ui/v1";
 
+    // USER_SERVICE
     public static final String AUTH = "/auth";
-    public static final String DASHBOARD = "/dashboard";
     public static final String UI_V1_AUTH = UI_V1 + AUTH;
-    public static final String API_V1_AUTH = API_V1 + AUTH;
-    public static final String UI_V1_DASHBOARD = UI_V1 + DASHBOARD;
-    public static final String API_V1_DASHBOARD = API_V1 + DASHBOARD;
-
-    public static final String USER_EMAIL = "/user/{email}";
     public static final String LOGIN = "/login";
     public static final String REGISTRATION_CHECK = "/registration/check";
     public static final String REGISTRATION_CODE = "/registration/code";
     public static final String REGISTRATION_ACTIVATE_CODE = "/registration/activate/{code}";
     public static final String REGISTRATION_CONFIRM = "/registration/confirm";
+    public static final String FORGOT = "/forgot";
+    public static final String FORGOT_EMAIL = FORGOT + "/email";
+    public static final String RESET = "/reset";
+    public static final String RESET_CODE = RESET + "/{code}";
+    public static final String RESET_CURRENT = RESET + "/current";
 
+
+    public static final String USER = "/user";
+    public static final String API_V1_AUTH = API_V1 + AUTH;
+    public static final String GET_USER_EMAIL = "/user/{userId}";
+    public static final String API_V1_USER = API_V1 + USER;
+    public static final String USER_EMAIL = "/{email}";
+    public static final String NOTIFICATION_USER_ID = "/notification/{userId}";
+    public static final String ADD_NOTIFICATION = NOTIFICATION_USER_ID + "/add";
+    public static final String SUB_NOTIFICATION = NOTIFICATION_USER_ID + "/subtract";
+
+    public static final String UI_V1_USER = UI_V1 + USER;
+    public static final String UI_V1_USER_SETTINGS_UPDATE = UI_V1_USER + "/settings/update";
+    public static final String USERNAME = "/username";
+    public static final String EMAIL = "/email";
+    public static final String PHONE = "/phone";
+    public static final String COUNTRY = "/country";
+    public static final String GENDER = "/gender";
+    public static final String LANGUAGE = "/language";
+    public static final String DIRECT = "/direct";
+    public static final String PRIVATE = "/private";
+    public static final String COLOR_SCHEME = "/color_scheme";
+    public static final String BACKGROUND_COLOR = "/background_color";
+
+    // PASSWORD_SERVICE
     public static final String PASSWORD = "/password";
-    public static final String API_V1_PASSWORD = API_V1 + PASSWORD;
     public static final String UI_V1_PASSWORD = UI_V1 + PASSWORD;
     public static final String GET_PASSWORD_WITH_CRITERIA = "/{criteria}";
     public static final String GET_DECRYPTED_PASSWORD = "/decrypt/{passwordId}";
     public static final String DELETE_ALL = "/delete";
     public static final String DELETE_PASSWORD = "/delete/{passwordId}";
-    public static final String GENERATE_RANDOM_PASSWORD = "/generate";
+    public static final String GENERATE_RANDOM_PASSWORD = "/generate/{length}";
+    public static final String SEARCH_BY_QUERY = "/search";
+    public static final String API_V1_PASSWORD = API_V1 + PASSWORD;
 
-    public static final String CREATE_GOAL = "/goals/new";
-    public static final String UPDATE_GOAL = "/goals/update/{goalId}";
-    public static final String DELETE_GOAL = "/goals/delete/{goalId}";
-    public static final String DELETE_ALL_GOALS = "/goals/delete/all";
-    public static final String GET_ALL_GOALS = "/goals/all";
+    // GOALS_SERVICE
+    public static final String GOAL = "/goals";
+    public static final String UI_V1_GOAL = UI_V1 + GOAL;
+    public static final String UPDATE_GOAL = "/update/{goalId}";
+    public static final String DELETE_GOAL = "/delete/{goalId}";
+    public static final String DELETE_ALL_GOALS = "/delete/all";
+    public static final String SUB_GOAL = "/subgoal";
+    public static final String CREATE_SUB_GOAL = SUB_GOAL + "/{goalId}";
+    public static final String UPDATE_SUB_GOAL = SUB_GOAL + "/update/{subgoalId}";
+    public static final String DELETE_SUB_GOAL = SUB_GOAL + "/delete/{subgoalId}";
+    public static final String DELETE_ALL_SUB_GOAL = SUB_GOAL + "/delete/all/{goalId}";
 
-    public static final String CREATE_SUBGOAL = "/subgoal/new/{goalId}";
-    public static final String UDPATE_SUBGOAL = "/subgoal/update/{subgoalId}";
-    public static final String DELETE_SUBGOAL = "/subgoal/delete/{subgoalId}";
-    public static final String DELETE_ALL_SUBGOAL = "/subgoal/delete/all/{goalId}";
-
-
+    // TASK_SERVICE
     public static final String TASK = "/task";
     public static final String UI_V1_TASK = UI_V1 + TASK;
+    public static final String UPDATE_TASK = "/update/{taskId}";
+    public static final String DELETE_TASK = "/delete/{taskId}";
+    public static final String DELETE_ALL_TASKS = "/delete/all";
+    public static final String SUB_TASK = "/subtask";
+    public static final String CREATE_SUBTASK = SUB_TASK + "/{taskId}";
+    public static final String UPDATE_SUBTASK = SUB_TASK + "/{subtaskId}";
+    public static final String DELETE_SUBTASK = SUB_TASK + "/delete/{subtaskId}";
+    public static final String DELETE_ALL_SUBTASK = SUB_TASK + "/delete/{taskId}";
+    public static final String GET_SUBTASKS_FOR_TASK = SUB_TASK + "/{taskId}";
     public static final String API_V1_TASK = API_V1 + TASK;
-    public static final String UPDATE_TASK = "/task/update";
-    public static final String DELETE_TASK = "/task/delete/{taskId}";
-    public static final String DELETE_ALL_TASKS = "/task/delete/all";
-    public static final String GET_TASKS = "/task";
-
-    public static final String CREATE_SUBTASK = "/subtask/{taskId}";
-    public static final String UDPATE_SUBTASK = "/subtask/{subtaskId}";
-    public static final String DELETE_SUBTASK = "/subtask/delete/{subtaskId}";
-    public static final String DELETE_ALL_SUBTASK = "/subtask/delete/all/{taskId}";
-    public static final String GET_SUBTASKS_FOR_TASK = "/subtask/{taskId}";
 
     public static final String RECURRING_TASK = "/recurring";
     public static final String CREATE_RECURRING_TASK = "/recurring";
     public static final String GET_RECURRING_TASKS = "/reccuringtask";
 
+    // TAG_SERVICE ???
     public static final String GET_ALL_TAGS = "/tags/all";
     public static final String GET_TAGS_TASK = "/tags/{task}";
 
+    // CONTACT_SERVICE
     public static final String CREATE_CONTACT = "/contact/new";
     public static final String UPDATE_CONTACT = "/contact/{contactId}";
     public static final String DELETE_CONTACT = "/contact/delete/{contactId}";
     public static final String DELETE_ALL_CONTACTS = "/contact/delete/all";
     public static final String GET_CONTACTS = "/contact/all";
+
+    // NOTIFICATION_SERVICE
+    public static final String NOTIFICATION = "/notification";
+    public static final String UI_V1_NOTIFICATION = UI_V1 + NOTIFICATION;
+    public static final String LIST = "/list";
+    public static final String UPDATE_READ_STATE = "/{notificationId}";
+    public static final String API_V1_NOTIFICATION = API_V1 + NOTIFICATION;
+    public static final String BATCH_NOTIFICATION = "/batch";
+
 }

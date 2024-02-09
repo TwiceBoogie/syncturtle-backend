@@ -17,5 +17,7 @@ public interface AuthenticationService {
 
     Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult);
 
-    Map<String, String> getExistingEmail(String email);
+    Map<String, String> forgotPassword(String email, BindingResult bindingResult);
+
+    Map<String, Object> newDeviceVerification(String deviceVerificationCode, boolean trust);
 }

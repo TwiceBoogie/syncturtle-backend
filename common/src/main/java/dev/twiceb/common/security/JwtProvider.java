@@ -16,9 +16,12 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 // import java.security.SecureRandom;
 // import java.util.Base64;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
+import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
 
 @Component
 public class JwtProvider {
@@ -28,7 +31,12 @@ public class JwtProvider {
     @Value("${jwt.secretKey:tIlqaaFuXA7v6lxReXzO6+DxJ65azbXHdovliEcDYgk=}")
     private String secretKeyString;
 
+    @Value("${jwt.deviceSecretKey:SDVlUnRVdlh5L0E/RChHK0tiUGVTaFZtWXEzdDZ3OXo=}")
+    private String secretDeviceKeyString;
+
     private SecretKey secretKey;
+
+    private SecretKey deviceSecretKey;
 
     @Value("${jwt.expiration:36000000}") // 10 hours in milliseconds
     private long validityInMilliseconds;
@@ -44,6 +52,7 @@ public class JwtProvider {
     protected void init() {
         System.out.println(secretKeyString);
         secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
+        deviceSecretKey =  Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretDeviceKeyString));
     }
 
     // https://stackoverflow.com/questions/55102937/how-to-create-a-spring-security-key-for-signing-a-jwt-token
@@ -60,6 +69,17 @@ public class JwtProvider {
                 .compact();
     }
 
+    public String createDeviceToken(String deviceKey) {
+        LocalDateTime expirationDateTime = LocalDateTime.now().plusMonths(3);
+        Date expirationDate = Date.from(expirationDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        return Jwts.builder()
+                .claim("deviceKey", deviceKey)
+                .issuer("${hostname:localhost}")
+                .expiration(expirationDate)
+                .signWith(deviceSecretKey)
+                .compact();
+    }
+
     public String resolveToken(ServerHttpRequest request) {
         String bearerToken = request.getHeaders().getFirst(authorizationHeader);
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
@@ -68,11 +88,17 @@ public class JwtProvider {
         return null;
     }
 
-    public boolean validateToken(String token) {
+    public String resolveDeviceToken(ServerHttpRequest request) {
+        return request.getHeaders().getFirst(AUTH_USER_DEVICE_KEY);
+    }
+
+    public boolean validateToken(String token, String type) {
         try {
-            System.out.println("token: " + token);
+            if (type.equals("deviceKey")) {
+                Jws<Claims> claimsJws = Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
+                return !claimsJws.getPayload().getExpiration().before(new Date());
+            }
             Jws<Claims> claimsJws = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
-            System.out.println(claimsJws);
             return !claimsJws.getPayload().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException exception) {
             throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
@@ -81,7 +107,6 @@ public class JwtProvider {
 
     public String parseToken(String token) {
         Jws<Claims> body = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
-        System.out.println(body);
 
         return body.getPayload().getSubject();
     }

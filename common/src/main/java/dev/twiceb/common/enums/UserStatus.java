@@ -1,0 +1,5 @@
+package dev.twiceb.common.enums;
+
+public enum UserStatus {
+    SUSPENDED, INACTIVE, ACTIVE, ARCHIVED, BLOCKED, PENDING_DELETION, LOCKED, PENDING_USER_CONFIRMATION
+}

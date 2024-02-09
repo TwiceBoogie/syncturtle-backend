@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.twiceb.common.exception.ApiRequestException;
-import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
+import dev.twiceb.passwordservice.dto.request.*;
 import dev.twiceb.passwordservice.model.Accounts;
 import dev.twiceb.passwordservice.model.Keychain;
 import dev.twiceb.passwordservice.repository.AccountsRepository;
@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
-import dev.twiceb.passwordservice.dto.request.UpdatePasswordRequest;
 import dev.twiceb.passwordservice.repository.KeychainRepository;
 import dev.twiceb.passwordservice.repository.projection.DecryptedPasswordProjection;
 import dev.twiceb.passwordservice.repository.projection.KeychainProjection;
@@ -50,10 +48,6 @@ public class PasswordServiceImpl implements PasswordService {
         }
 
         Keychain keychain = passwordHelperService.generateSecureKeychain(request, account);
-        keychain.setUserPasswordExpirySetting(
-                passwordHelperService.createUserPasswordExpirySetting(request.getPasswordExpiryPolicy())
-        );
-        keychain.getUserPasswordExpirySetting().setKeychain(keychain);
 
         passwordHelperService.buildAnalyticEntities(keychain, request.getPassword());
 
@@ -79,7 +73,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public Map<String, String> updatePasswordForDomain(Long userId, UpdatePasswordRequest request,
+    public Map<String, String> updatePassword(Long userId, UpdatePasswordRequest request,
                                                        BindingResult bindingResult) {
         passwordHelperService.processBindingResults(bindingResult)
                 .processPassword(request.getPassword(), request.getConfirmPassword());
@@ -96,8 +90,19 @@ public class PasswordServiceImpl implements PasswordService {
             throw new ApiRequestException(AUTHORIZATION_ERROR, HttpStatus.FORBIDDEN);
         }
 
-        passwordHelperService.updateSecureDataKey(
-                account, keychainFromDb, keychainFromDb.getEncryptionKey(), request.getPassword());
+        if (!request.getUsername().isEmpty()) {
+            keychainFromDb.setUsername(request.getUsername());
+        }
+
+        if (!request.getPassword().isEmpty()) {
+            passwordHelperService.updateSecureDataKey(
+                    account, keychainFromDb, keychainFromDb.getEncryptionKey(), request.getPassword());
+        }
+
+        if (request.getUsername().isEmpty() && request.getPassword().isEmpty()) {
+            throw new ApiRequestException(EMPTY_UPDATE_INPUT, HttpStatus.BAD_REQUEST);
+        }
+
 
         keychainRepository.save(keychainFromDb);
 
@@ -113,10 +118,9 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     @Override
-    public Map<String, String> generateSecurePassword(GenerateRandomPasswordRequest request) {
+    public Map<String, String> generateSecurePassword(int length) {
         String alphanumericChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        String specialChars = "!@#$%^&*()-_=+[]{}|;:'\",.<>/?";
-        int length = request.getRandomPasswordLength();
+        String specialChars = "!@#$%^*()-_=+[]{}|;:,./?";
         String allChars = alphanumericChars + specialChars;
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);
@@ -159,6 +163,14 @@ public class PasswordServiceImpl implements PasswordService {
         keychainRepository.deleteAll(keychainsToDelete);
 
         return Map.of("message", "All passwords deleted successfully.");
+    }
+
+    @Override
+    public Page<KeychainProjection> searchPasswordsByQuery(Long userId, SearchQueryRequest request,
+                                                           BindingResult bindingResult, Pageable pageable) {
+        passwordHelperService.processBindingResults(bindingResult);
+        Accounts user = fetchAccount(userId);
+        return keychainRepository.searchByQuery(request.getSearchQuery(), user.getId(), pageable);
     }
 
     private Page<KeychainProjection> fetchKeychain(Long userId, Pageable pageable, String grabInstance) {

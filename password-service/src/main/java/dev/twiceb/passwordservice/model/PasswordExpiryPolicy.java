@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -25,11 +26,6 @@ public class PasswordExpiryPolicy {
     @Column(name = "notification_days", nullable = false)
     private int notificationDays;
 
-    @Column(name = "created_date")
-    private Timestamp createdDate;
-
-    @PrePersist
-    private void prePersist() {
-        this.createdDate = new Timestamp(System.currentTimeMillis());
-    }
+    @Column(name = "created_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime createdDate = LocalDateTime.now();
 }

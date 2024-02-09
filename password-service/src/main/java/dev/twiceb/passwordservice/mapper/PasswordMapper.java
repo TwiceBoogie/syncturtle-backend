@@ -2,6 +2,7 @@ package dev.twiceb.passwordservice.mapper;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
+import dev.twiceb.passwordservice.dto.request.SearchQueryRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -46,9 +47,9 @@ public class PasswordMapper {
         };
     }
 
-    public GenericResponse updatePasswordForDomain(Long userId, UpdatePasswordRequest request,
+    public GenericResponse updatePassword(Long userId, UpdatePasswordRequest request,
             BindingResult bindingResult) {
-        return basicMapper.convertToResponse(passwordService.updatePasswordForDomain(userId, request, bindingResult),
+        return basicMapper.convertToResponse(passwordService.updatePassword(userId, request, bindingResult),
                 GenericResponse.class);
     }
 
@@ -57,8 +58,8 @@ public class PasswordMapper {
                 GenericResponse.class);
     }
 
-    public GenericResponse generateRandomPassword(GenerateRandomPasswordRequest request) {
-        return basicMapper.convertToResponse(passwordService.generateSecurePassword(request), GenericResponse.class);
+    public GenericResponse generateRandomPassword(int length) {
+        return basicMapper.convertToResponse(passwordService.generateSecurePassword(length), GenericResponse.class);
     }
 
     public GenericResponse deletePassword(Long userId, Long passwordId) {
@@ -67,5 +68,12 @@ public class PasswordMapper {
 
     public GenericResponse deleteAllPasswords(Long userId) {
         return basicMapper.convertToResponse(passwordService.deleteAllPasswords(userId), GenericResponse.class);
+    }
+
+    public HeaderResponse<PasswordsResponse> searchPasswordsByQuery(Long userId, SearchQueryRequest request,
+                                                                    BindingResult bindingResult, Pageable pageable) {
+        return basicMapper.getHeaderResponse(passwordService.searchPasswordsByQuery(
+                userId, request, bindingResult, pageable), PasswordsResponse.class
+        );
     }
 }

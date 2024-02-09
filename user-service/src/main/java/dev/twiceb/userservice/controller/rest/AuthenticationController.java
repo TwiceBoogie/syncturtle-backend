@@ -7,13 +7,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import static dev.twiceb.common.constants.PathConstants.LOGIN;
-import static dev.twiceb.common.constants.PathConstants.UI_V1_AUTH;
+import static dev.twiceb.common.constants.PathConstants.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,7 +20,8 @@ public class AuthenticationController {
 
     @PostMapping(LOGIN)
     public ResponseEntity<AuthenticationResponse> login(
-            @Valid @RequestBody AuthenticationRequest request, BindingResult bindingResult
+            @Valid @RequestBody AuthenticationRequest request,
+            BindingResult bindingResult
     ) {
         return ResponseEntity.ok(authenticationMapper.login(request, bindingResult));
     }

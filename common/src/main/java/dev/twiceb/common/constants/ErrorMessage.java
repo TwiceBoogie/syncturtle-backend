@@ -10,13 +10,25 @@ public class ErrorMessage {
 
     public static final String PASSWORD_EXPIRY_POLICY_NOT_FOUND = "No policy with that name exist.";
 
+    // GENERIC ERRORS
+    public static final String NO_HTML_IN_INPUT = "HTML tags are not allowed in notes";
+
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
     public static final String EMAIL_HAS_ALREADY_BEEN_TAKEN = "Email has already been taken.";
     public static final String BLANK_NAME = "What’s your name?";
     public static final String NAME_NOT_VALID = "Please enter a valid name.";
     public static final String FUll_NAME_NOT_VALID = "Please enter a valid name.";
+    public static final String VERIFY_ACCOUNT_WITH_EMAIL = "Account has not been verified. Please check your email for activation code.";
+    public static final String LOCKED_ACCOUNT_AFTER_N_ATTEMPTS = "Account locked due to multiple unsuccessful login attempts. Please wait ";
+    public static final String DEVICE_KEY_NOT_FOUND_OR_MATCH = "New device detected, please check you email to continue.";
+    public static final String ACTIVATION_CODE_EXPIRED = "Verification token has expired. Please try again.";
+    public static final String DEVICE_VERIFICATION_EXPIRED = "Your device verification code has expired. " +
+            "For security reasons, we require a fresh verification. " +
+            "Please log in again and request a new device verification code. " +
+            "If you didn't initiate this request, contact our support immediately.";
 
+    // PASSWORD ERRORS
     public static final String PASSWORDS_NOT_MATCH = "Passwords do not match.";
     public static final String PASSWORD_NOT_VALID = "Please enter a valid password";
     public static final String INCORRECT_PASSWORD = "The password you entered was incorrect.";
@@ -32,8 +44,9 @@ public class ErrorMessage {
     public static final String DOMAIN_ALREADY_EXIST = "Domain Already Exist";
     public static final String EMPTY_DOMAIN = "Domain cannot be empty.";
     public static final String NO_RESOURCE_FOUND = "Resource does not exits.";
-
     public static final String EMPTY_USERNAME = "Username cannot be empty.";
+    public static final String USERNAME_EXIST_FOR_DOMAIN = "Please use a different username than prior.";
+    public static final String EMPTY_UPDATE_INPUT = "You must have at least 1 value you want to update.";
 
     public static final String EMPTY_GOAL_TITLE = "Please enter a valid title.";
     public static final String EMPTY_GOAL_TARGET_DATE = "Goal must have a target date.";
@@ -69,7 +82,6 @@ public class ErrorMessage {
 
     public static final String ACTIVATION_CODE_NOT_FOUND = "Activation code not found.";
     public static final String ACCOUNT_ALREADY_VERIFIED = "Account already verified.";
-    public static final String ACTIVATION_CODE_EXPIRED = "Activation code expired.";
     public static final String ACTIVATION_CODE_GENERATION_FAIL = "Error generating activation code, please try again later.";
 
     public static final String INTERNAL_SERVER_ERROR = "Internal server error occurred, please try again later.";

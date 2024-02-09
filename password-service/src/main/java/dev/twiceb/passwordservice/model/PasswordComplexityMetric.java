@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Setter
@@ -30,7 +30,7 @@ public class PasswordComplexityMetric {
     private double entropy;
 
     @Column(name = "check_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Timestamp checkDate;
+    private LocalDateTime checkDate;
 
     public PasswordComplexityMetric() {}
 

@@ -1,5 +1,10 @@
 server:
   port: 8000
+  ssl:
+    enabled: true
+    key-store: file:/Users/sebastian/localhost.p12
+    key-store-password: changeit
+    keyStoreType: PKCS12
 spring:
   application:
     name: api-gateway

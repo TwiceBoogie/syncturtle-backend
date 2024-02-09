@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.mapper;
 
+import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
@@ -13,11 +14,15 @@ import org.springframework.validation.BindingResult;
 public class AuthenticationMapper {
 
     private final AuthenticationService authenticationService;
-    private final BasicMapper basicMapper;
+    private final BasicMapper mapper;
 
     public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult) {
-        return basicMapper.convertToResponse(
+        return mapper.convertToResponse(
                 authenticationService.login(request, bindingResult), AuthenticationResponse.class
         );
+    }
+
+    public GenericResponse forgotPassword(String email, BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.forgotPassword(email, bindingResult), GenericResponse.class);
     }
 }

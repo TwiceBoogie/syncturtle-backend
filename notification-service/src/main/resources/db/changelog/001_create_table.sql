@@ -1,0 +1,10 @@
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    user_id BIGINT NOT NULL,
+    notification_type VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);

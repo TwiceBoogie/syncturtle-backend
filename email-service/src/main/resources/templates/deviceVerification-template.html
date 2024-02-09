@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Title</title>
+<!--    <link th:href="@{/main.css}" rel="stylesheet"/>-->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="dark:bg-gray-900">
+    <section class="max-w-2xl px-6 py-8 mx-auto bg-white dark:bg-gray-900">
+        <header>
+            <a href="#">
+                <img class="w-auto h-7 sm:h-8" src="https://merakiui.com/images/full-logo.svg" alt="">
+            </a>
+        </header>
+
+        <main class="mt-8">
+            <h2 class="text-gray-700 dark:text-gray-200">Hi <span th:text="${fullName}"/>,</h2>
+
+            <p class="mt-2 leading-loose text-gray-600 dark:text-gray-300">
+                Your <span class="font-semibold ">PersonaVault</span> account was just signed in to from a device we
+                don't recognize, please take immediate actions.
+            </p>
+
+            <div class="bg-gray-800 rounded-md p-5">
+                <code class="text-white">
+                    IP Address: <span th:text="${ipAddress}"/><br>
+                    User-Agent: <span th:text="${userAgent}"/><br>
+                    Date: <span th:text="${accessDate}"/>
+                </code>
+            </div>
+
+            <div class="flex justify-center gap-10">
+                <a th:href="@{http://localhost:3000/trust/{code}(code=${deviceVerificationCode})}" class="px-6 py-2 mt-4 text-sm font-medium tracking-wider text-white capitalize transition-colors duration-300 transform bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80">
+                    Trust Device
+                </a>
+                <a th:href="@{http://localhost:3000/reset/{code}(code=${passwordResetCode})}" class="px-6 py-2 mt-4 text-sm font-medium tracking-wider text-white capitalize transition-colors duration-300 transform bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80">
+                    Don't Trust Device
+                </a>
+            </div>
+
+            <p class="mt-8 text-gray-600 dark:text-gray-300">
+                Thanks, <br>
+                PersonaVault team
+            </p>
+        </main>
+
+
+        <footer class="mt-8">
+            <p class="text-gray-500 dark:text-gray-400">
+                This email was sent to <a href="#" class="text-blue-600 hover:underline dark:text-blue-400" target="_blank">contact@merakiui.com</a>.
+                If you'd rather not receive this kind of email, you can <a href="#" class="text-blue-600 hover:underline dark:text-blue-400">unsubscribe</a> or <a href="#" class="text-blue-600 hover:underline dark:text-blue-400">manage your email preferences</a>.
+            </p>
+
+            <p class="mt-3 text-gray-500 dark:text-gray-400">© {{ new Date().getFullYear() }} PersonaVault. All Rights Reserved.</p>
+        </footer>
+    </section>
+
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+-- CREATE TABLE IF NOT EXISTS user_device_info (
+--     id BIGINT GENERATED ALWAYS AS IDENTITY,
+--     account_id BIGINT NOT NULL,
+--     device_info VARCHAR(255) NOT NULL,
+--     ip_address VARCHAR(15), -- IPv4 or IPv6 address
+--     action_type VARCHAR(50) NOT NULL, -- e.g., 'CREATE_PASSWORD', 'PASSWORD_CHANGE', etc.
+--     action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (account_id) REFERENCES accounts(id),
+--     PRIMARY KEY (id)
+-- );
+-- Password expiry notifications
+-- CREATE TABLE IF NOT EXISTS password_expiry_notifications (
+--     id BIGINT GENERATED ALWAYS AS IDENTITY,
+--     account_id BIGINT NOT NULL,
+--     notification_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (account_id) REFERENCES accounts(id),
+--     PRIMARY KEY (id)
+-- );
+
+-- CREATE TABLE IF NOT EXISTS password_import_export_history (
+--     id BIGINT GENERATED ALWAYS AS IDENTITY,
+--     account_id BIGINT NOT NULL,
+--     operation_type VARCHAR(20) NOT NULL, -- 'IMPORT' or 'EXPORT'
+--     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (account_id) REFERENCES accounts(id),
+--     PRIMARY KEY (id)
+-- );
+
+-- 10. User Password Expiry Settings
+-- CREATE TABLE IF NOT EXISTS password_expiry_config (
+--     id BIGINT GENERATED ALWAYS AS IDENTITY,
+--     keychain_id BIGINT NOT NULL,
+--     policy_id BIGINT NOT NULL,
+--     notification_sent BOOLEAN DEFAULT FALSE,
+--     expiry_date Date NOT NULL,
+--     FOREIGN KEY (keychain_id) REFERENCES keychain(id),
+--     FOREIGN KEY (policy_id) REFERENCES password_expiry_policies(id),
+--     PRIMARY KEY (id)
+-- );
+
+-- 11. Password Security Questions
+-- CREATE TABLE IF NOT EXISTS password_security_questions (
+--     id BIGINT GENERATED ALWAYS AS IDENTITY,
+--     account_id BIGINT NOT NULL,
+--     question_text VARCHAR(255) NOT NULL,
+--     answer_hash VARCHAR(255) NOT NULL,
+--     FOREIGN KEY (account_id) REFERENCES accounts(id),
+--     PRIMARY KEY (id)
+-- );
+
+-- CREATE OR REPLACE FUNCTION insert_update_stats(
+-- 	p_time_period time_period,
+-- 	p_policy_id BIGINT
+-- ) RETURNS VOID AS $$
+-- DECLARE
+-- 	start_date TIMESTAMP;
+-- 	avg_updates_count NUMERIC;
+-- 	avg_update_interval INTERVAL;
+-- BEGIN
+-- 	CASE
+-- 		WHEN p_time_period = 'DAILY' THEN start_date := NOW() - INTERVAL '1 day';
+-- 		WHEN p_time_period = 'WEEKLY' THEN start_date := NOW() - INTERVAL '1 week';
+-- 		WHEN p_time_period = 'MONTHLY' THEN start_date := NOW() - INTERVAL '1 month';
+-- 		WHEN p_time_period = 'YEARLY' THEN start_date := NOW() - INTERVAL '1 year';
+-- 	END CASE;
+--
+-- 	WITH temp_avg_update AS (
+-- 		SELECT p.id,
+-- 		AVG(COUNT(k.id)) AS avg_update,
+-- 		FROM p
+--
+-- 	)
+-- 	SELECT AVG(updates_count) INTO avg_updates_count
+--     FROM (
+--         SELECT COUNT(*) AS updates_count
+--         FROM password_change_logs
+--         WHERE policy_id = p_policy_id
+--           AND change_date >= start_date
+--         GROUP BY policy_id
+--     ) subquery;
+--
+-- 	SELECT
+--
+-- 	INSERT INTO password_update_stats(policy_id, average_updates_count, average_update_interval)
+
+-- WITH temp_avg_update AS (
+-- 	SELECT p.id AS policy_id,
+-- 			p.policy_name,
+-- 			AVG(COUNT(cl.id)) AS avg_count
+-- 	FROM password_expiry_policies p
+-- 	LEFT JOIN keychain k ON p.id = k.policy_id
+-- 	LEFT JOIN password_change_logs cl ON k.id = cl.keychain_id
+-- 	GROUP BY p.id, p.policy_name;
+-- )
+--

@@ -7,8 +7,10 @@ import dev.twiceb.userservice.amqp.AmqpPublisher;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
+import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.ActivationCode;
 import dev.twiceb.userservice.model.User;
+import dev.twiceb.userservice.model.UserDevice;
 import dev.twiceb.userservice.repository.ActivationCodeRepository;
 import dev.twiceb.userservice.repository.UserRepository;
 import dev.twiceb.userservice.repository.projection.AuthUserProjection;
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -63,7 +67,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         // either on service or api-gateway implement feature to deal with multiple
         // request to this function, in order to not generate multiple codes for a
         // single user.
-        ActivationCode code = userServiceHelper.createActivationCodeEntity(user);
+        ActivationCode code = userServiceHelper.createActivationCodeEntity(user, ActivationCodeType.ACTIVATION);
         activationCodeRepository.save(code);
 
         EmailRequest emailRequest = new EmailRequest.Builder(
@@ -72,7 +76,6 @@ public class RegistrationServiceImpl implements RegistrationService {
                                 "fullName", user.getFirstName() + " " + user.getLastName(),
                                 "registrationCode", code.getHashedCode()))
                 .build();
-
         amqpPublisher.sendEmail(emailRequest);
 
         return Map.of("message", "Activation Code was sent to your email.");
@@ -80,19 +83,30 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public Map<String, String> checkRegistrationCode(String code) {
+    public Map<String, Object> checkRegistrationCode(String code) {
         ActivationCode ac = activationCodeRepository.getActivationCodeByHashedCode(code, ActivationCode.class)
                 .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.BAD_REQUEST));
+        User user = userServiceHelper.processUser(ac.getUser(), ac.getExpirationTime());
+        UserDevice userDevice = new UserDevice();
+        userDevice.setDeviceKey(userServiceHelper.regenerateActivationCode());
+        userDevice.setUser(user);
+        user.getUserDevices().add(userDevice);
 
-        userRepository.save(userServiceHelper.processUser(ac.getUser(), ac.getExpirationTime()));
+        userRepository.save(user);
 
         UserPrincipalProjection updatedUser = userRepository
                 .getUserByEmail(ac.getUser().getEmail(), UserPrincipalProjection.class)
                 .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
         // if error = rollback changes to database
         amqpPublisher.userCreated(updatedUser);
+        String deviceToken = jwtProvider.createDeviceToken(userServiceHelper.encryptDeviceKey(userDevice.getDeviceKey()));
 
-        return Map.of("message", "Activation Successful! Please log in again to access your account.");
+        return Map.of(
+                "deviceToken",
+                deviceToken,
+                "message",
+                "You've activated your account and you're now ready to use it! Try and login to access your account."
+        );
     }
 
     @Override

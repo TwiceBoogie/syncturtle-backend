@@ -1,5 +1,8 @@
 CREATE TYPE domain_status AS ENUM ('EXPIRED', 'SOON', 'ACTIVE', 'DELETED');
+CREATE TYPE time_period AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY');
 CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- CREATE UNIQUE INDEX idx_unique_account_domain ON keychain (account_id, domain);
 CREATE TABLE IF NOT EXISTS accounts (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -8,6 +11,19 @@ CREATE TABLE IF NOT EXISTS accounts (
     role user_role DEFAULT 'USER' NOT NULL,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS password_expiry_policies (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    policy_name VARCHAR(50) NOT NULL,
+    max_expiry_days INT,
+    notification_days INT,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+INSERT INTO password_expiry_policies (policy_name, max_expiry_days, notification_days)
+VALUES ('Default', 90, 30);
+
 CREATE TABLE IF NOT EXISTS keychain (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     account_id BIGINT NOT NULL,
@@ -16,14 +32,19 @@ CREATE TABLE IF NOT EXISTS keychain (
     domain VARCHAR(255) NOT NULL,
     notes TEXT,
     status VARCHAR(255) DEFAULT 'ACTIVE',
-    update_date DATE NOT NULL,
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    policy_id BIGINT NOT NULL,
+    notification_sent BOOLEAN DEFAULT FALSE,
+    expiry_date Date NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES accounts(id),
+    FOREIGN KEY (policy_id) REFERENCES password_expiry_policies(id),
+    PRIMARY KEY (id)
 );
 ALTER TABLE keychain
 ADD CONSTRAINT unique_account_domain UNIQUE (account_id, domain);
-CREATE INDEX idx_expiry_combined ON keychain (expiry_timestamp, expiry_notification_sent);
+CREATE INDEX idx_status ON keychain (status);
+CREATE INDEX idx_expiry_combined ON keychain (expiry_date, notification_sent);
+CREATE INDEX trgm_index ON keychain USING gin (domain gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS encryption_key (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -57,17 +78,6 @@ CREATE TABLE IF NOT EXISTS password_reuse_statistics (
     PRIMARY KEY (id)
 );
 
--- CREATE TABLE IF NOT EXISTS user_device_info (
---     id BIGINT GENERATED ALWAYS AS IDENTITY,
---     account_id BIGINT NOT NULL,
---     device_info VARCHAR(255) NOT NULL,
---     ip_address VARCHAR(15), -- IPv4 or IPv6 address
---     action_type VARCHAR(50) NOT NULL, -- e.g., 'CREATE_PASSWORD', 'PASSWORD_CHANGE', etc.
---     action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     FOREIGN KEY (account_id) REFERENCES accounts(id),
---     PRIMARY KEY (id)
--- );
-
 -- Password change logs
 CREATE TABLE IF NOT EXISTS password_change_logs (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -77,55 +87,69 @@ CREATE TABLE IF NOT EXISTS password_change_logs (
     FOREIGN KEY (keychain_id) REFERENCES keychain(id),
     PRIMARY KEY (id)
 );
--- Password expiry notifications
--- CREATE TABLE IF NOT EXISTS password_expiry_notifications (
---     id BIGINT GENERATED ALWAYS AS IDENTITY,
---     account_id BIGINT NOT NULL,
---     notification_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     FOREIGN KEY (account_id) REFERENCES accounts(id),
---     PRIMARY KEY (id)
--- );
 
--- CREATE TABLE IF NOT EXISTS password_import_export_history (
---     id BIGINT GENERATED ALWAYS AS IDENTITY,
---     account_id BIGINT NOT NULL,
---     operation_type VARCHAR(20) NOT NULL, -- 'IMPORT' or 'EXPORT'
---     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     FOREIGN KEY (account_id) REFERENCES accounts(id),
---     PRIMARY KEY (id)
--- );
-
--- 9. Password Expiry Policies
-CREATE TABLE IF NOT EXISTS password_expiry_policies (
+-- Password statistics
+-- This aggregates data and shows admin which policy_id is more secure.
+CREATE TABLE IF NOT EXISTS password_update_stats (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
-    policy_name VARCHAR(50) NOT NULL,
-    max_expiry_days INT,
-    notification_days INT,
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-);
-
-INSERT INTO password_expiry_policies (policy_name, max_expiry_days, notification_days)
-VALUES ("Default", 90, 30);
-
--- 10. User Password Expiry Settings
-CREATE TABLE IF NOT EXISTS user_password_expiry_settings (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
-    keychain_id BIGINT NOT NULL,
     policy_id BIGINT NOT NULL,
-    expiry_notification_sent BOOLEAN DEFAULT FALSE,
-    expiry_timestamp Date NOT NULL,
-    FOREIGN KEY (keychain_id) REFERENCES keychain(id),
-    FOREIGN KEY (policy_id) REFERENCES password_expiry_policies(id),
-    PRIMARY KEY (id)
+    avg_update_count INT NOT NULL DEFAULT 0,
+    avg_update_interval INTERVAL NOT NULL,
+    interval_type time_period,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. Password Security Questions
--- CREATE TABLE IF NOT EXISTS password_security_questions (
---     id BIGINT GENERATED ALWAYS AS IDENTITY,
---     account_id BIGINT NOT NULL,
---     question_text VARCHAR(255) NOT NULL,
---     answer_hash VARCHAR(255) NOT NULL,
---     FOREIGN KEY (account_id) REFERENCES accounts(id),
---     PRIMARY KEY (id)
--- );
+-- WORKS
+-- CREATE OR REPLACE FUNCTION insert_update_stats(
+--        p_time_period time_period
+-- ) RETURNS VOID AS $$
+-- BEGIN
+-- INSERT INTO password_update_stats (policy_id, avg_update_count, avg_update_interval, interval_type)
+-- WITH ChangeIntervals AS (
+--     SELECT
+--         k.policy_id,
+--         k.id AS keychain_id,
+--         LAG(pcls.change_date) OVER (PARTITION BY k.id ORDER BY pcls.change_date) AS previous_change_date,
+--             pcls.change_date AS current_change_date
+--     FROM
+--         keychain k
+--     JOIN
+--         password_change_logs pcls ON k.id = pcls.keychain_id
+--     WHERE pcls.change_date >= CASE
+--                                   WHEN p_time_period = 'DAILY' THEN CURRENT_TIMESTAMP - INTERVAL '1 day'
+--                                   WHEN p_time_period = 'WEEKLY' THEN CURRENT_TIMESTAMP - INTERVAL '7 days'
+--                                   WHEN p_time_period = 'MONTHLY' THEN CURRENT_TIMESTAMP - INTERVAL '1 month'
+--                                   WHEN p_time_period = 'YEARLY' THEN CURRENT_TIMESTAMP - INTERVAL '1 year'
+--                                   ELSE CURRENT_TIMESTAMP - INTERVAL '1 day'
+--                               END CASE;
+-- )
+--
+-- SELECT
+--     subquery.policy_id,
+--     AVG(subquery.change_log_count)::DOUBLE PRECISION AS avg_update_count,
+--         COALESCE(
+--             INTERVAL '1 day' * EXTRACT(DAY FROM AVG(current_change_date - previous_change_date))::INT,
+--             INTERVAL '0 days'
+--         ) AS avg_update_interval,
+--         p_time_period AS interval_type
+-- FROM (
+--     SELECT
+--         p.id AS policy_id,
+--         COUNT(cl.id) AS change_log_count
+--     FROM
+--         password_expiry_policies p
+--     LEFT JOIN
+--         keychain k ON p.id = k.policy_id
+--     LEFT JOIN
+--         password_change_logs cl ON k.id = cl.keychain_id
+--     GROUP BY
+--         p.id
+--     ) subquery
+-- LEFT JOIN
+--     ChangeIntervals ci ON subquery.policy_id = ci.policy_id
+-- GROUP BY
+--     subquery.policy_id
+-- ORDER BY
+--     policy_id;
+-- END;
+-- $$ LANGUAGE plpgsql;

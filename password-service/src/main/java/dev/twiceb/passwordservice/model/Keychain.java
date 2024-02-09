@@ -1,6 +1,10 @@
 package dev.twiceb.passwordservice.model;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import jakarta.persistence.*;
@@ -30,13 +34,14 @@ public class Keychain {
     private EncryptionKey encryptionKey;
 
     @OneToMany(mappedBy = "keychain", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PasswordChangeLog> passwordChangeLogs = new ArrayList<>();
+    private List<PasswordChangeLog> changeLogs = new ArrayList<>();
 
     @OneToOne(mappedBy = "keychain", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private PasswordComplexityMetric passwordComplexityMetric;
+    private PasswordComplexityMetric complexityMetric;
 
-    @OneToOne(mappedBy = "keychain", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private UserPasswordExpirySetting userPasswordExpirySetting;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "policy_id")
+    private PasswordExpiryPolicy policy;
 
     @Column(name = "username", nullable = false)
     private String username;
@@ -55,7 +60,27 @@ public class Keychain {
 
     @Column(name = "status")
     @Convert(converter = DomainStatusConverter.class)
-    private DomainStatus status;
+    private DomainStatus status = DomainStatus.ACTIVE;
+
+    @Column(name = "notification_sent", columnDefinition = "boolean default false")
+    private boolean notificationSent = false;
+
+    @Column(name = "expiry_date", nullable = false)
+    private LocalDate expiryDate;
+
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    private void prePersist() {
+        LocalDate currentTime = LocalDate.now();
+
+        if ("Default".equals(policy.getPolicyName())) {
+            this.expiryDate = currentTime.plusDays(90);
+        } else {
+            this.expiryDate = currentTime.plusDays(this.policy.getMaxExpiryDays());
+        }
+    }
 
     public Keychain() {
     }

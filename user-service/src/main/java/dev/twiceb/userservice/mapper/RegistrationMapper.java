@@ -7,6 +7,7 @@ import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 // import dev.twiceb.userservice.service.AuthenticationService;
+import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,6 @@ import org.springframework.validation.BindingResult;
 public class RegistrationMapper {
 
     private final RegistrationService registrationService;
-    // private final AuthenticationService authenticationService;
     private final BasicMapper mapper;
 
     public GenericResponse registration(RegistrationRequest request, BindingResult bindingResult) {
@@ -30,8 +30,8 @@ public class RegistrationMapper {
                 GenericResponse.class);
     }
 
-    public GenericResponse checkRegistrationCode(String code) {
-        return mapper.convertToResponse(registrationService.checkRegistrationCode(code), GenericResponse.class);
+    public RegistrationEndResponse checkRegistrationCode(String code) {
+        return mapper.convertToResponse(registrationService.checkRegistrationCode(code), RegistrationEndResponse.class);
     }
 
     public AuthenticationResponse endRegistration(AuthenticationRequest request, BindingResult bindingResult) {

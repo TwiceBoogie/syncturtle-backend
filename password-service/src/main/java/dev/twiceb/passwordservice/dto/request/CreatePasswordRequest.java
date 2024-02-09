@@ -3,6 +3,7 @@ package dev.twiceb.passwordservice.dto.request;
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -25,6 +26,6 @@ public class CreatePasswordRequest {
     @NotBlank(message = EMPTY_PASSWORD_CONFIRMATION)
     private String confirmPassword;
 
-    @NotBlank
-    private String passwordExpiryPolicy;
+    @NotNull
+    private Long passwordExpiryPolicy;
 }
