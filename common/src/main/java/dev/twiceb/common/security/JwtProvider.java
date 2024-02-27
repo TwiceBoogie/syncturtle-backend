@@ -38,31 +38,22 @@ public class JwtProvider {
 
     private SecretKey deviceSecretKey;
 
-    @Value("${jwt.expiration:36000000}") // 10 hours in milliseconds
+    @Value("${jwt.expiration:14400000}") // 4hours in milliseconds
     private long validityInMilliseconds;
-
-    // private String generatedSafeToken() {
-    // SecureRandom random = new SecureRandom();
-    // byte[] keyBytes = new byte[32];
-    // random.nextBytes(keyBytes);
-    // return Base64.getEncoder().encodeToString(keyBytes);
-    // }
 
     @PostConstruct
     protected void init() {
-        System.out.println(secretKeyString);
         secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
         deviceSecretKey =  Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretDeviceKeyString));
     }
 
     // https://stackoverflow.com/questions/55102937/how-to-create-a-spring-security-key-for-signing-a-jwt-token
     public String createToken(String email, String role) {
-        System.out.println(secretKey);
         Date now = new Date();
-        Date expiresAt = new Date(now.getTime() + validityInMilliseconds * 1000);
+        Date expiresAt = new Date(now.getTime() + validityInMilliseconds);
         return Jwts.builder()
                 .claim("ROLE", role)
-                .issuer("${hostname:localhost}")
+                .issuer("localhost")
                 .subject(email)
                 .expiration(expiresAt)
                 .signWith(secretKey)
@@ -74,7 +65,7 @@ public class JwtProvider {
         Date expirationDate = Date.from(expirationDateTime.atZone(ZoneId.systemDefault()).toInstant());
         return Jwts.builder()
                 .claim("deviceKey", deviceKey)
-                .issuer("${hostname:localhost}")
+                .issuer("localhost")
                 .expiration(expirationDate)
                 .signWith(deviceSecretKey)
                 .compact();
@@ -109,5 +100,10 @@ public class JwtProvider {
         Jws<Claims> body = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
 
         return body.getPayload().getSubject();
+    }
+
+    public String parseDeviceToken(String token) {
+        Jws<Claims> body = Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
+        return (String) body.getPayload().get("deviceKey");
     }
 }

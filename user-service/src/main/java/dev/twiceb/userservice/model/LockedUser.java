@@ -29,6 +29,9 @@ public class LockedUser {
     @Column(name = "lockout_reason", nullable = false)
     private String lockoutReason;
 
+    @Column(name = "is_requested_by_user")
+    private boolean isRequestedByUser = false;
+
     @PrePersist
     public void prePersist() {
         LocalDateTime currentTime = LocalDateTime.now();

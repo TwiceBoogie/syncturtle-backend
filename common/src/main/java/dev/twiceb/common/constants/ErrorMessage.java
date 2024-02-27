@@ -12,13 +12,20 @@ public class ErrorMessage {
 
     // GENERIC ERRORS
     public static final String NO_HTML_IN_INPUT = "HTML tags are not allowed in notes";
+    public static final String OTP_HAS_EXPIRED = "OTP has expired";
 
-    public static final String EMAIL_NOT_FOUND = "Email not found";
+    public static final String USER_NOT_FOUND_WITH_EMAIL = "Sorry, we couldn't find an account associated " +
+            "with the provided email address. Please double-check the email you entered and try again." +
+            " If you don't have an account, you can sign up for a new one.";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
-    public static final String EMAIL_HAS_ALREADY_BEEN_TAKEN = "Email has already been taken.";
+    public static final String EMAIL_ALREADY_TAKEN = "Email has already been taken.";
     public static final String BLANK_NAME = "What’s your name?";
     public static final String NAME_NOT_VALID = "Please enter a valid name.";
     public static final String FUll_NAME_NOT_VALID = "Please enter a valid name.";
+    public static final String INCORRECT_USERNAME_LENGTH = "Incorrect username length";
+    public static final String INVALID_PHONE_NUMBER = "Not valid phone number";
+    public static final String INVALID_GENDER_LENGTH = "Incorrect gender length";
+    public static final String USERNAME_ALREADY_TAKEN = "Username already taken";
     public static final String VERIFY_ACCOUNT_WITH_EMAIL = "Account has not been verified. Please check your email for activation code.";
     public static final String LOCKED_ACCOUNT_AFTER_N_ATTEMPTS = "Account locked due to multiple unsuccessful login attempts. Please wait ";
     public static final String DEVICE_KEY_NOT_FOUND_OR_MATCH = "New device detected, please check you email to continue.";
@@ -43,6 +50,7 @@ public class ErrorMessage {
     public static final String NO_PASSWORD_FOR_DOMAIN = "No password exists for ";
     public static final String DOMAIN_ALREADY_EXIST = "Domain Already Exist";
     public static final String EMPTY_DOMAIN = "Domain cannot be empty.";
+    public static final String EMPTY_WEBSITE_URL = "Website url cannot be empty.";
     public static final String NO_RESOURCE_FOUND = "Resource does not exits.";
     public static final String EMPTY_USERNAME = "Username cannot be empty.";
     public static final String USERNAME_EXIST_FOR_DOMAIN = "Please use a different username than prior.";
@@ -80,7 +88,7 @@ public class ErrorMessage {
     public static final String EXCEED_SUBTASK_DESC_SIZE = "Description must not exceed 255 characters.";
     public static final String INVALID_ID_PROVIDED_TASK = "Please enter a valid task id.";
 
-    public static final String ACTIVATION_CODE_NOT_FOUND = "Activation code not found.";
+    public static final String ACTIVATION_CODE_NOT_FOUND = "The activation code you provided is invalid or expired";
     public static final String ACCOUNT_ALREADY_VERIFIED = "Account already verified.";
     public static final String ACTIVATION_CODE_GENERATION_FAIL = "Error generating activation code, please try again later.";
 

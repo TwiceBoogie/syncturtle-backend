@@ -1,10 +1,12 @@
 package dev.twiceb.common.exception;
 
 import dev.twiceb.common.dto.response.ApiErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -27,6 +29,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiRequestException.class)
     public ResponseEntity<ApiErrorResponse> handleApiRequestException(ApiRequestException exception) {
+        ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
+        apiErrorResponse.setMessage(exception.getMessage());
+        apiErrorResponse.setErrors(null);
+
+        return ResponseEntity.status(exception.getStatus()).body(apiErrorResponse);
+    }
+
+    @ExceptionHandler(NoRollbackApiRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoRollbackApiRequestException(NoRollbackApiRequestException exception) {
+        log.error("Handling NoRollBackApiRequestException: {}", exception.getMessage());
         ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
         apiErrorResponse.setMessage(exception.getMessage());
         apiErrorResponse.setErrors(null);

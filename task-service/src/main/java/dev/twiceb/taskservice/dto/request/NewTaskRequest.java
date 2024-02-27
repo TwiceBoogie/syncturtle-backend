@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -30,8 +31,7 @@ public class NewTaskRequest {
 
     @NotNull
     @NotBlank(message = EMPTY_DUE_DATE)
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date dueDate;
+    private LocalDate dueDate;
 
     @NotNull
     @ValidStatus
@@ -40,6 +40,9 @@ public class NewTaskRequest {
     @NotNull
     @ValidPriorityStatus
     private PriorityStatus priority;
+
+    @Size(max = 255, message = "Notes must not exceed 255 in character length")
+    private String notes;
 
     private TagsRequest tags;
 

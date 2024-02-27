@@ -14,9 +14,9 @@ public class PasswordReuseStatistic {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    private Accounts account;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -26,8 +26,8 @@ public class PasswordReuseStatistic {
 
     public PasswordReuseStatistic() {}
 
-    public PasswordReuseStatistic(Accounts account, String passwordHash) {
-        this.account = account;
+    public PasswordReuseStatistic(User user, String passwordHash) {
+        this.user = user;
         this.passwordHash = passwordHash;
     }
 }

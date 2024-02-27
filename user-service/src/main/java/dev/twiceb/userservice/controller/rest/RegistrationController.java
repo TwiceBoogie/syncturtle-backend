@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.controller.rest;
 
 import dev.twiceb.common.dto.response.GenericResponse;
+import dev.twiceb.userservice.dto.request.AuthenticationCodeRequest;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
@@ -32,17 +33,11 @@ public class RegistrationController {
     @PostMapping(REGISTRATION_CODE)
     public ResponseEntity<GenericResponse> sendRegistrationCode(@Valid @RequestBody ProcessEmailRequest request,
                                                                 BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.sendRegistrationCode(request, bindingResult));
+        return ResponseEntity.ok(registrationMapper.sendRegistrationCode(request.getEmail(), bindingResult));
     }
 
     @GetMapping(REGISTRATION_ACTIVATE_CODE)
-    public ResponseEntity<RegistrationEndResponse> checkRegistrationCode(@PathVariable("code") String code) {
+    public ResponseEntity<RegistrationEndResponse> checkRegistrationCode(@PathVariable String code) {
         return ResponseEntity.ok(registrationMapper.checkRegistrationCode(code));
-    }
-
-    @PostMapping(REGISTRATION_CONFIRM)
-    public ResponseEntity<AuthenticationResponse> endRegistration(@Valid @RequestBody AuthenticationRequest request,
-                                                                  BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.endRegistration(request, bindingResult));
     }
 }

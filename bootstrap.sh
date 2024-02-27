@@ -98,9 +98,9 @@ wait_for_containers() {
 create_databases() {
   echo "Creating databases for services."
 
-  docker exec ms-postgres psql -U "$POSTGRES_USERNAME" -d postgres -c "CREATE DATABASE \"password\";"
-  docker exec ms-postgres psql -U "$POSTGRES_USERNAME" -d postgres -c "CREATE DATABASE \"user\";"
-  docker exec ms-postgres psql -U "$POSTGRES_USERNAME" -d postgres -c "CREATE DATABASE \"task\";"
+#  docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d postgres -f "$(pwd)/setup_database.sql"
+  docker cp ./setup_database.sql ms-postgres:/
+  docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d postgres < ./setup_database.sql
 }
 
 run_liquibase() {
@@ -109,6 +109,9 @@ run_liquibase() {
   cd ./user-service || exit && mvn liquibase:update && cd .. || exit
   cd ./password-service || exit && mvn liquibase:update && cd .. || exit
   cd ./task-service || exit && mvn liquibase:update && cd .. || exit
+  docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d user -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_user_svc\";"
+  docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d password -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_password_svc\";"
+  docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d task -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_task_svc\";"
 }
 
 run_services() {
@@ -129,6 +132,7 @@ run_services() {
 }
 
 main() {
+
   generate_vault_var
   echo "$VAULT_ADDR"
   logo
@@ -146,6 +150,7 @@ main() {
     echo "task_service: $TASK_SERVICE_PW"
     echo "email_service: $EMAIL_SERVICE_PW"
     echo "vault_token: $VAULT_TOKEN"
+
   fi
 }
 

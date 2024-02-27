@@ -8,14 +8,16 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
 @Getter
 @Setter
-public class Tasks {
+@Table(name = "tasks")
+public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +34,7 @@ public class Tasks {
     private String taskDescription;
 
     @Column(name = "due_date", nullable = false)
-    private Date dueDate;
+    private LocalDate dueDate;
 
     @Column(name = "priority", nullable = false)
     @ColumnTransformer(
@@ -48,10 +50,18 @@ public class Tasks {
     )
     private EventStatus taskStatus = EventStatus.IN_PROGRESS;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SubTasks> subtasks;
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
-    @Transient
+    @Column(name = "completed_date")
+    private LocalDateTime completedDate;
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TaskAttachment> attachments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SubTasks> subtasks = new ArrayList<>();
+
     @ManyToMany
     @JoinTable(
             name = "task_tags",
@@ -60,9 +70,9 @@ public class Tasks {
     )
     private List<Tags> tags = new ArrayList<>();
 
-    public Tasks() {}
+    public Task() {}
 
-    public Tasks(Accounts account, String taskTitle, String taskDescription, Date dueDate) {
+    public Task(Accounts account, String taskTitle, String taskDescription, LocalDate dueDate) {
         this.account = account;
         this.taskTitle = taskTitle;
         this.taskDescription = taskDescription;

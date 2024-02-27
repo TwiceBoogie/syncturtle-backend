@@ -6,7 +6,7 @@ import dev.twiceb.common.util.ServiceHelper;
 import dev.twiceb.common.util.UpdateQueryResult;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.model.SubTasks;
-import dev.twiceb.taskservice.model.Tasks;
+import dev.twiceb.taskservice.model.Task;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class TaskServiceHelper extends ServiceHelper {
         this.processInputErrors(bindingResult);
     }
 
-    public List<SubTasks> handleSubtasks(List<NewSubTaskRequest> subTasks, Tasks task) {
+    public List<SubTasks> handleSubtasks(List<NewSubTaskRequest> subTasks, Task task) {
         List<SubTasks> newSubtaskList = new ArrayList<>();
         for (NewSubTaskRequest subTask : subTasks) {
             SubTasks newSubTask = new SubTasks(task, subTask.getSubtaskTitle(), subTask.getSubtaskDescription());

@@ -9,29 +9,31 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "password_reset_codes")
-public class PasswordResetCode {
+@Table(name = "password_reset_otp")
+public class PasswordResetOtp {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "hashed_code")
-    private String hashedCode;
+    @Column(name = "hashed_otp")
+    private String hashedOtp;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "expiration_time", columnDefinition = "TIMESTAMP", nullable = false)
-    private LocalDateTime expirationTime;
-
-    @Column(name = "reset_count")
-    private int resetCount = 0;
+    private LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(5);
 
     @Column(name = "created_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdDate = LocalDateTime.now();
 
     @Column(name = "modified_date", columnDefinition = "TIMESTAMP")
-    private LocalDateTime modifiedDate;
+    private LocalDateTime modifiedDate = LocalDateTime.now();
+
+    @PreUpdate
+    public void preUpdate() {
+        this.modifiedDate = LocalDateTime.now();
+    }
 }

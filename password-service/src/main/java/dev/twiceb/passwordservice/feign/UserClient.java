@@ -12,4 +12,7 @@ public interface UserClient {
 
     @GetMapping(GET_USER_EMAIL)
     String getUserEmail(@PathVariable("userId") Long userId);
+
+    @GetMapping("/userDevice/{userId}")
+    String getUserDevice(@PathVariable("userId") Long userId);
 }

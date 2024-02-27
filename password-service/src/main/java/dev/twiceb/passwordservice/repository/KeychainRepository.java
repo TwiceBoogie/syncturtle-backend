@@ -21,30 +21,40 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
 
         @Query("SELECT CASE WHEN COUNT(kc) > 0 THEN TRUE ELSE FALSE END " +
                         "FROM Keychain kc " +
-                        "WHERE kc.account.id = :accountId " +
+                        "WHERE kc.encryptionKey.user.id = :userId " +
                         "AND kc.domain = :domain")
-        boolean CheckIfDomainExist(@Param("accountId") Long accountId, @Param("domain") String domain);
+        boolean CheckIfDomainExist(@Param("userId") Long userId, @Param("domain") String domain);
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId")
-        List<Keychain> findAllKeychain(@Param("accountId") Long accountId);
+        @Modifying
+        @Query("UPDATE Keychain kc SET kc.favorite = :favorite WHERE kc.id = :passwordId")
+        void updateFavoriteStatus(@Param("favorite") boolean favorite, @Param("passwordId") Long passwordId);
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId")
-        <T> Page<T> findAllByAccountId(@Param("accountId") Long accountId, Pageable pageable, Class<T> clazz);
+        @Query("SELECT kc FROM Keychain kc WHERE kc.encryptionKey.user.id = :userId")
+        List<Keychain> findAllKeychain(@Param("userId") Long userId);
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId AND (kc.status = 'SOON' OR kc.status = 'EXPIRED') ORDER BY kc.createdAt ASC")
-        <T> Page<T> getPasswordsExpiringSoon(@Param("accountId") Long accountId, Pageable pageable, Class<T> clazz);
+        @Query("SELECT kc FROM Keychain kc WHERE kc.encryptionKey.user.id = :userId")
+        <T> Page<T> findAllByAccountId(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId ORDER BY kc.createdAt DESC")
-        <T> Page<T> getRecentPasswords(@Param("accountId") Long accountId, Pageable pageable, Class<T> clazz);
+        @Query("SELECT kc FROM Keychain kc " +
+                "WHERE kc.encryptionKey.user.id = :userId " +
+                "AND (kc.status = 'SOON' OR kc.status = 'EXPIRED') " +
+                "ORDER BY kc.createdAt ASC")
+        <T> Page<T> getPasswordsExpiringSoon(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.account.id = :accountId AND kc.id = :id")
-        DecryptedPasswordProjection getPasswordById(@Param("accountId") Long accountId, @Param("id") Long id);
+        @Query("SELECT kc FROM Keychain kc WHERE kc.encryptionKey.user.id = :userId ORDER BY kc.createdAt DESC")
+        <T> Page<T> getRecentPasswords(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
+
+        @Query("SELECT kc FROM Keychain kc WHERE kc.encryptionKey.user.id = :userId AND kc.id = :id")
+        DecryptedPasswordProjection getPasswordById(@Param("userId") Long userId, @Param("id") Long id);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.domain ILIKE %:searchQuery% " +
-                "AND kc.account.id = :accountId")
+                "AND kc.encryptionKey.user.id = :userId")
         Page<KeychainProjection> searchByQuery(
-                @Param("searchQuery") String searchQuery, @Param("accountId") Long accountId, Pageable pageable
+                @Param("searchQuery") String searchQuery, @Param("userId") Long userId, Pageable pageable
         );
+
+        @Query("SELECT kc FROM Keychain kc WHERE kc.id = :keychainId")
+        KeychainProjection findKeychainById(@Param("keychainId") Long keychainId);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.status = :status")
         List<KeychainExpiringProjection> findAllKeychainsByStatus(@Param("status") DomainStatus status);
@@ -59,5 +69,7 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
         @Modifying
         @Query("UPDATE Keychain kc SET kc.status = :status WHERE kc.id IN :keychainIds")
         void updateKeychainStatus(@Param("status") DomainStatus status, @Param("keychainIds") List<Long> keychainIds);
+
+        int countKeychainByEncryptionKey_User_Id(Long userId);
 
 }

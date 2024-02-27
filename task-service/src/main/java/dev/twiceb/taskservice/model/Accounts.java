@@ -1,6 +1,7 @@
 package dev.twiceb.taskservice.model;
 
 import dev.twiceb.common.enums.UserRole;
+import dev.twiceb.common.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +20,9 @@ public class Accounts {
     private Long userId;
 
     @Column(name = "user_status", nullable = false)
-    private String userStatus;
+    @Enumerated(EnumType.STRING)
+    @ColumnTransformer(read = "user_status::text", write = "?::user_status")
+    private UserStatus userStatus;
 
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(
@@ -30,7 +33,7 @@ public class Accounts {
 
     public Accounts() {}
 
-    public Accounts(Long userId, String userStatus, UserRole role) {
+    public Accounts(Long userId, UserStatus userStatus, UserRole role) {
         this.userId = userId;
         this.userStatus = userStatus;
         this.role = role;

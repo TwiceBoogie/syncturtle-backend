@@ -1,8 +1,7 @@
 package dev.twiceb.passwordservice.mapper;
 
 import dev.twiceb.common.exception.ApiRequestException;
-import dev.twiceb.passwordservice.dto.request.GenerateRandomPasswordRequest;
-import dev.twiceb.passwordservice.dto.request.SearchQueryRequest;
+import dev.twiceb.passwordservice.dto.request.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -11,8 +10,6 @@ import org.springframework.validation.BindingResult;
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.dto.response.HeaderResponse;
 import dev.twiceb.common.mapper.BasicMapper;
-import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
-import dev.twiceb.passwordservice.dto.request.UpdatePasswordRequest;
 import dev.twiceb.passwordservice.dto.response.PasswordsResponse;
 import dev.twiceb.passwordservice.service.PasswordService;
 import lombok.RequiredArgsConstructor;
@@ -24,37 +21,62 @@ public class PasswordMapper {
     private final PasswordService passwordService;
     private final BasicMapper basicMapper;
 
-    public GenericResponse createNewPassword(Long userId, CreatePasswordRequest request, BindingResult bindingResult) {
-        return basicMapper.convertToResponse(passwordService.createNewPassword(userId, request, bindingResult),
+    public GenericResponse createNewPassword(CreatePasswordRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(passwordService.createNewPassword(request, bindingResult),
                 GenericResponse.class);
     }
 
-    public HeaderResponse<PasswordsResponse> getPasswords(Long userId, Pageable pageable) {
-        return basicMapper.getHeaderResponse(passwordService.getPasswords(userId, pageable),
+    public GenericResponse updatePasswordOnly(Long passwordId, UpdatePasswordRequest request,
+                                          BindingResult bindingResult) {
+        return basicMapper.convertToResponse(
+                passwordService.updatePasswordOnly(passwordId, request.getPassword(), bindingResult),
+                GenericResponse.class);
+    }
+
+    public GenericResponse updateUsername(Long passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(passwordService.updateUsername(
+                passwordId, request.getUsername(), bindingResult), GenericResponse.class);
+    }
+
+    public GenericResponse updatePasswordNotes(Long passwordId, UpdatePasswordRequest request,
+                                               BindingResult bindingResult) {
+        return basicMapper.convertToResponse(passwordService.updatePasswordNotes(
+                passwordId, request.getNotes(), bindingResult), GenericResponse.class);
+    }
+
+    public void updateTagsOnPassword(Long passwordId, UpdatePasswordRequest request,
+                                     BindingResult bindingResult) {
+        passwordService.updateTagsOnPassword(passwordId, request.getTags(), bindingResult);
+    }
+
+    public void favoritePassword(Long passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
+        passwordService.favoritePassword(passwordId, request.isFavorite(), bindingResult);
+    }
+
+    public HeaderResponse<PasswordsResponse> getPasswords(Pageable pageable) {
+        return basicMapper.getHeaderResponse(passwordService.getPasswords(pageable),
                 PasswordsResponse.class);
     }
 
-    public HeaderResponse<PasswordsResponse> getPasswordsByCriteria(Long userId, String criteria, Pageable pageable) {
+    public PasswordsResponse getPassword(Long keychainId) {
+        return basicMapper.convertToResponse(passwordService.getPassword(keychainId), PasswordsResponse.class);
+    }
+
+    public HeaderResponse<PasswordsResponse> getPasswordsByCriteria(String criteria, Pageable pageable) {
         return switch (criteria) {
             case "expiring" ->
                     basicMapper.getHeaderResponse(
-                            passwordService.getExpiringPasswords(userId, pageable), PasswordsResponse.class
+                            passwordService.getExpiringPasswords(pageable), PasswordsResponse.class
                     );
             case "recent" -> basicMapper.getHeaderResponse(
-                    passwordService.getRecentPasswords(userId, pageable), PasswordsResponse.class
+                    passwordService.getRecentPasswords(pageable), PasswordsResponse.class
             );
             default -> throw new ApiRequestException("Criteria doesn't exist.", HttpStatus.BAD_REQUEST);
         };
     }
 
-    public GenericResponse updatePassword(Long userId, UpdatePasswordRequest request,
-            BindingResult bindingResult) {
-        return basicMapper.convertToResponse(passwordService.updatePassword(userId, request, bindingResult),
-                GenericResponse.class);
-    }
-
-    public GenericResponse getDecryptedPassword(Long userId, Long passwordId) {
-        return basicMapper.convertToResponse(passwordService.getDecryptedPassword(userId, passwordId),
+    public GenericResponse getDecryptedPassword(Long passwordId) {
+        return basicMapper.convertToResponse(passwordService.getDecryptedPassword(passwordId),
                 GenericResponse.class);
     }
 
@@ -62,18 +84,18 @@ public class PasswordMapper {
         return basicMapper.convertToResponse(passwordService.generateSecurePassword(length), GenericResponse.class);
     }
 
-    public GenericResponse deletePassword(Long userId, Long passwordId) {
-        return basicMapper.convertToResponse(passwordService.deletePassword(userId, passwordId), GenericResponse.class);
+    public GenericResponse deletePassword(Long passwordId) {
+        return basicMapper.convertToResponse(passwordService.deletePassword(passwordId), GenericResponse.class);
     }
 
-    public GenericResponse deleteAllPasswords(Long userId) {
-        return basicMapper.convertToResponse(passwordService.deleteAllPasswords(userId), GenericResponse.class);
+    public GenericResponse deleteAllPasswords() {
+        return basicMapper.convertToResponse(passwordService.deleteAllPasswords(), GenericResponse.class);
     }
 
-    public HeaderResponse<PasswordsResponse> searchPasswordsByQuery(Long userId, SearchQueryRequest request,
+    public HeaderResponse<PasswordsResponse> searchPasswordsByQuery(SearchQueryRequest request,
                                                                     BindingResult bindingResult, Pageable pageable) {
         return basicMapper.getHeaderResponse(passwordService.searchPasswordsByQuery(
-                userId, request, bindingResult, pageable), PasswordsResponse.class
+                request, bindingResult, pageable), PasswordsResponse.class
         );
     }
 }

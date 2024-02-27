@@ -2,7 +2,6 @@ package dev.twiceb.taskservice.model;
 
 import dev.twiceb.common.enums.EventStatus;
 import dev.twiceb.common.enums.PriorityStatus;
-import dev.twiceb.taskservice.enums.TaskStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +17,7 @@ public class SubTasks {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
-    private Tasks task;
+    private Task task;
 
     @Column(name = "subtask_title", nullable = false)
     private String subtaskTitle;
@@ -32,7 +31,7 @@ public class SubTasks {
     @Column(name = "priority", nullable = false)
     private PriorityStatus priority;
 
-    public SubTasks(Tasks task, String title, String description) {
+    public SubTasks(Task task, String title, String description) {
         this.task = task;
         this.subtaskTitle = title;
         this.subtaskDescription = description;

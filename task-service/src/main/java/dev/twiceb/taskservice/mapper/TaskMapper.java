@@ -7,6 +7,7 @@ import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.NewTaskRequest;
 import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
+import dev.twiceb.taskservice.dto.response.FileImageResponse;
 import dev.twiceb.taskservice.dto.response.RecurringTasksResponse;
 import dev.twiceb.taskservice.dto.response.SubtasksResponse;
 import dev.twiceb.taskservice.dto.response.TasksResponse;
@@ -17,8 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +32,14 @@ public class TaskMapper {
 
     public GenericResponse createNewTask(Long userId, NewTaskRequest request, BindingResult bindingResult) {
         return basicMapper.convertToResponse(taskService.createNewTask(userId, request, bindingResult), GenericResponse.class);
+    }
+
+    public GenericResponse uploadAttachments(Long userId, Long taskId, MultipartFile[] files) {
+        return basicMapper.convertToResponse(taskService.uploadAttachments(userId, taskId, files), GenericResponse.class);
+    }
+
+    public FileImageResponse getFileImage(Long userId, Long taskAttachmentId) {
+        return basicMapper.convertToResponse(taskService.getFileImage(userId, taskAttachmentId), FileImageResponse.class);
     }
 
     public GenericResponse createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult) {

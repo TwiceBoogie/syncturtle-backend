@@ -19,20 +19,24 @@ public class PathConstants {
     public static final String REGISTRATION_ACTIVATE_CODE = "/registration/activate/{code}";
     public static final String REGISTRATION_CONFIRM = "/registration/confirm";
     public static final String FORGOT = "/forgot";
-    public static final String FORGOT_EMAIL = FORGOT + "/email";
-    public static final String RESET = "/reset";
+    public static final String FORGOT_USERNAME = FORGOT + "/username";
+    public static final String FORGOT_PASSWORD = FORGOT + "/password";
+    public static final String VERIFY_OTP = "/verify-otp";
+    public static final String VERIFY_DEVICE_VERIFICATION = "verify/device/{token}";
+    public static final String RESET = "/reset/{token}";
     public static final String RESET_CODE = RESET + "/{code}";
     public static final String RESET_CURRENT = RESET + "/current";
 
 
     public static final String USER = "/user";
     public static final String API_V1_AUTH = API_V1 + AUTH;
-    public static final String GET_USER_EMAIL = "/user/{userId}";
+    public static final String GET_USER_EMAIL = "/{userId}";
     public static final String API_V1_USER = API_V1 + USER;
-    public static final String USER_EMAIL = "/{email}";
+    public static final String USER_EMAIL = "/user/{email}";
     public static final String NOTIFICATION_USER_ID = "/notification/{userId}";
     public static final String ADD_NOTIFICATION = NOTIFICATION_USER_ID + "/add";
     public static final String SUB_NOTIFICATION = NOTIFICATION_USER_ID + "/subtract";
+    public static final String TOKEN = "/token";
 
     public static final String UI_V1_USER = UI_V1 + USER;
     public static final String UI_V1_USER_SETTINGS_UPDATE = UI_V1_USER + "/settings/update";
@@ -41,18 +45,20 @@ public class PathConstants {
     public static final String PHONE = "/phone";
     public static final String COUNTRY = "/country";
     public static final String GENDER = "/gender";
-    public static final String LANGUAGE = "/language";
-    public static final String DIRECT = "/direct";
-    public static final String PRIVATE = "/private";
-    public static final String COLOR_SCHEME = "/color_scheme";
-    public static final String BACKGROUND_COLOR = "/background_color";
+    public static final String AVATAR = "/avatar";
+    public static final String SET_AVATAR = AVATAR + "/{userProfileId}";
 
     // PASSWORD_SERVICE
     public static final String PASSWORD = "/password";
     public static final String UI_V1_PASSWORD = UI_V1 + PASSWORD;
+    public static final String GET_PASSWORD_INFO = "/{keychainId}/info";
+    public static final String FAVORITE_PASSWORD = "/favorite/{passwordId}";
     public static final String GET_PASSWORD_WITH_CRITERIA = "/{criteria}";
     public static final String GET_DECRYPTED_PASSWORD = "/decrypt/{passwordId}";
     public static final String DELETE_ALL = "/delete";
+    public static final String UPDATE_PASSWORD = "/update/{passwordId}";
+    public static final String UPDATE_PASSWORD_USERNAME = "/username/update/{passwordId}";
+    public static final String UPDATE_PASSWORD_NOTES = "/notes/update/{passwordId}";
     public static final String DELETE_PASSWORD = "/delete/{passwordId}";
     public static final String GENERATE_RANDOM_PASSWORD = "/generate/{length}";
     public static final String SEARCH_BY_QUERY = "/search";
@@ -73,6 +79,8 @@ public class PathConstants {
     // TASK_SERVICE
     public static final String TASK = "/task";
     public static final String UI_V1_TASK = UI_V1 + TASK;
+    public static final String UPLOAD_ATTACHMENTS = "/upload/attachments/{taskId}";
+    public static final String GET_ATTACHMENT_FILE = "/file/{taskAttachmentId}";
     public static final String UPDATE_TASK = "/update/{taskId}";
     public static final String DELETE_TASK = "/delete/{taskId}";
     public static final String DELETE_ALL_TASKS = "/delete/all";
@@ -106,5 +114,12 @@ public class PathConstants {
     public static final String UPDATE_READ_STATE = "/{notificationId}";
     public static final String API_V1_NOTIFICATION = API_V1 + NOTIFICATION;
     public static final String BATCH_NOTIFICATION = "/batch";
+
+    // FILE_SERVICE
+    public static final String API_V1_FILE = API_V1 + "/file";
+    public static final String UPLOAD = "/upload/{bucket}";
+    public static final String UPLOAD_MULTIPLE = "/upload/multiple/{bucket}";
+    public static final String GET_FILE_IMAGE = "/{bucket}";
+    public static final String DELETE_FILE_IMAGE = "/delete/{bucket}";
 
 }

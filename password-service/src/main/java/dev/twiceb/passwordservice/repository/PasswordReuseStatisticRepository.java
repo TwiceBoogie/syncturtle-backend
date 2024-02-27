@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface PasswordReuseStatisticRepository extends JpaRepository<PasswordReuseStatistic, Long> {
 
-    @Query("SELECT prs FROM PasswordReuseStatistic prs WHERE prs.account.id = :accountId")
-    List<PasswordReuseStatistic> findAllByAccountId(@Param("accountId") Long accountId);
+    @Query("SELECT SUM(prs.reuseCount) FROM PasswordReuseStatistic prs WHERE prs.user.id = :userId")
+    int getTotalReuseCount(@Param("userId") Long userId);
+
 }

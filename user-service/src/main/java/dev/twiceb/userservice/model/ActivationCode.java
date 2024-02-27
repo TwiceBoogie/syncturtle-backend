@@ -46,7 +46,7 @@ public class ActivationCode extends AuditableEntity {
         if (this.codeType.equals(ActivationCodeType.ACTIVATION)) {
             this.expirationTime = LocalDateTime.now().plusHours(24);
         } else if (this.codeType.equals(ActivationCodeType.DEVICE_VERIFICATION)) {
-            this.expirationTime = LocalDateTime.now().plusMinutes(15);
+            this.expirationTime = LocalDateTime.now().plusMinutes(5);
         } else if (this.codeType.equals(ActivationCodeType.PASSWORD_RESET)) {
             this.expirationTime = LocalDateTime.now().plusMinutes(10);
         }

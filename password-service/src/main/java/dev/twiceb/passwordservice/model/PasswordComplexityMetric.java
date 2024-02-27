@@ -26,21 +26,30 @@ public class PasswordComplexityMetric {
     @Column(name = "character_types_used", nullable = false)
     private int characterTypesUsed;
 
-    @Column(name = "entropy", nullable = false)
-    private double entropy;
+    @Column(name = "dictionary_word_count", nullable = false)
+    private int dictionaryWordCount;
+
+    @Column(name = "numeric_characters_count", nullable = false)
+    private int numericCharactersCount;
+
+    @Column(name = "special_characters_count", nullable = false)
+    private int specialCharactersCount;
+
+    @Column(name = "uppercase_letters_count", nullable = false)
+    private int uppercaseLettersCount;
+
+    @Column(name = "lowercase_letters_count", nullable = false)
+    private int lowercaseLettersCount;
+
+    @Column(name = "sequential_characters_count", nullable = false)
+    private int sequentialCharactersCount;
+
+    @Column(name = "repeating_characters_count", nullable = false)
+    private int repeatingCharactersCount;
+
+    @Column(name = "password_complexity_score")
+    private Double passwordComplexityScore;
 
     @Column(name = "check_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime checkDate;
-
-    public PasswordComplexityMetric() {}
-
-    public PasswordComplexityMetric(
-            int passwordLength,
-            int characterTypesUsed,
-            double entropy
-    ) {
-        this.passwordLength = passwordLength;
-        this.characterTypesUsed = characterTypesUsed;
-        this.entropy = entropy;
-    }
+    private LocalDateTime checkDate = LocalDateTime.now();
 }

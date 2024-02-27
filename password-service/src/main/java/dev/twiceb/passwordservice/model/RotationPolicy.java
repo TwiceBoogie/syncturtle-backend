@@ -4,14 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "password_expiry_policies")
-public class PasswordExpiryPolicy {
+@Table(name = "rotation_policies")
+public class RotationPolicy {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,11 +19,14 @@ public class PasswordExpiryPolicy {
     @Column(name = "policy_name", nullable = false)
     private String policyName;
 
-    @Column(name = "max_expiry_days", nullable = false)
+    @Column(name = "max_rotation_days", nullable = false)
     private int maxExpiryDays;
 
     @Column(name = "notification_days", nullable = false)
     private int notificationDays;
+
+    @Column(name = "entity_type", nullable = false)
+    private String entityType;
 
     @Column(name = "created_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdDate = LocalDateTime.now();

@@ -2,20 +2,23 @@ package dev.twiceb.userservice.amqp;
 
 import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
+import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AmqpPublisher {
-
-    private static final Logger logger = LoggerFactory.getLogger(AmqpPublisher.class);
 
     private final AmqpTemplate amqpTemplate;
     private final BasicMapper basicMapper;
@@ -31,13 +34,19 @@ public class AmqpPublisher {
     private String routingKey;
 
     public void userCreated(UserPrincipalProjection user) {
-        logger.info("converting and sending to amqp exchange");
+        log.info("converting and sending to amqp exchange");
         UserPrincipleResponse userData = basicMapper.convertToResponse(user,
                 UserPrincipleResponse.class);
         amqpTemplate.convertAndSend(this.fanoutExchange, "", userData);
     }
 
     public void sendEmail(EmailRequest emailRequest) {
-        amqpTemplate.convertAndSend(this.directExchange, this.routingKey, emailRequest);
+        try {
+            amqpTemplate.convertAndSend(this.directExchange, this.routingKey, emailRequest);
+        } catch (AmqpException ex) {
+            log.error("Error sending email: {}", ex.getMessage());
+            // TODO: perhaps create a custom exception for this
+            throw new ApiRequestException("Failed to send email. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

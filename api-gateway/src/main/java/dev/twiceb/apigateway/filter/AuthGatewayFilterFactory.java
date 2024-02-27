@@ -3,6 +3,9 @@ package dev.twiceb.apigateway.filter;
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
 import dev.twiceb.common.exception.JwtAuthenticationException;
 import dev.twiceb.common.security.JwtProvider;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -12,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
 import static dev.twiceb.common.constants.PathConstants.*;
 
+@Slf4j
 @Component
 public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthGatewayFilterFactory.Config> {
 
@@ -32,11 +36,19 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
 
             if (token != null && isTokenValid) {
                 String email = jwtProvider.parseToken(token);
-                UserPrincipleResponse user = restTemplate.getForObject(
-                        String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + GET_USER_EMAIL),
-                        UserPrincipleResponse.class,
-                        email
-                );
+                UserPrincipleResponse user = null;
+                try {
+                    user = restTemplate.getForObject(
+                            String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
+                            UserPrincipleResponse.class,
+                            email
+                    );
+                    log.info("User retrieved successfully: {}", user);
+                } catch (Exception e) {
+                    log.error("Error occurred while retrieving user: {}", e.getMessage(), e);
+                    // Handle the error appropriately (e.g., log, return an error response, etc.)
+                }
+
 
                 assert user != null;
                 if (!user.isVerified()) {

@@ -1,20 +1,20 @@
 package dev.twiceb.userservice.service.util;
 
 import dev.twiceb.common.exception.ApiRequestException;
-import dev.twiceb.common.util.EnvelopeEncryption;
 import dev.twiceb.common.util.ServiceHelper;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.ActivationCode;
 import dev.twiceb.userservice.model.LoginAttemptPolicy;
+import dev.twiceb.userservice.model.PasswordResetOtp;
 import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.model.UserDevice;
 import dev.twiceb.userservice.repository.LoginAttemptPolicyRepository;
+import dev.twiceb.userservice.repository.PasswordResetOtpRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,23 +22,14 @@ import org.springframework.validation.BindingResult;
 import org.springframework.vault.core.VaultTemplate;
 import org.springframework.vault.support.Ciphertext;
 import org.springframework.vault.support.Plaintext;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
@@ -46,11 +37,14 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 @RequiredArgsConstructor
 public class UserServiceHelper extends ServiceHelper {
 
+    private static final int RANDOM_STRING_LENGTH = 6;
+    private static final int RANDOM_STRING_LENGTH_CODE = 16;
+    private static final int OTP_LENGTH = 6;
+
     @PersistenceContext
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
-    private final VaultTemplate vaultTemplate;
-    private final LoginAttemptPolicyRepository loginAttemptPolicyRepository;
+    private final PasswordResetOtpRepository passwordResetOtpRepository;
 
     public UserServiceHelper processBindingResults(BindingResult bindingResult) {
         this.processInputErrors(bindingResult);
@@ -67,75 +61,84 @@ public class UserServiceHelper extends ServiceHelper {
         }
     }
 
+    public void buildAndSendEmail(User user, String verification, String otp, String resetToken) {
 
-    public User createUserEntity(RegistrationRequest request) {
-        LoginAttemptPolicy policy = loginAttemptPolicyRepository.findById(1L).orElseThrow(
-                () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
-        );
-        return new User(
-                request.getEmail(),
-                request.getFirstName(),
-                request.getLastName(),
-                encodePassword(request.getPassword()),
-                policy
-        );
     }
 
-    public ActivationCode createActivationCodeEntity(User user, ActivationCodeType codeType) {
-        return new ActivationCode(
-                generateActivationCode(),
-                codeType,
-                user
-        );
+//    public PasswordResetOtp generatePasswordResetOtp(User user, String otp) {
+//        String hashedOtp = hash(otp);
+//        PasswordResetOtp otpEntity = new PasswordResetOtp();
+//        otpEntity.setHashedOtp(hashedOtp);
+//        otpEntity.setUser(user);
+//        return otpEntity;
+//    }
+
+    private String generateRandomString(byte[] randomBytes) {
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
-    public String regenerateActivationCode() {
-        return generateActivationCode();
+    public String generateRandomCode() {
+        byte[] randomBytes = new byte[RANDOM_STRING_LENGTH_CODE];
+        return generateRandomString(randomBytes);
     }
 
-    private void isActivationCodeExpired(LocalDateTime expirationTime) {
-        LocalDateTime currentTime = LocalDateTime.now();
-        if (currentTime.isAfter(expirationTime))
-            throw new ApiRequestException(ACTIVATION_CODE_EXPIRED, HttpStatus.GONE);
+    public String generateRandomSuffix() {
+        byte[] randomBytes = new byte[RANDOM_STRING_LENGTH];
+        return generateRandomString(randomBytes);
     }
 
-    public User processUser(User user, LocalDateTime expirationTime) {
-        isActivationCodeExpired(expirationTime);
+    public String generateOTP() {
+        String numbers = "0123456789";
+        StringBuilder otp = new StringBuilder();
+        Random random = new Random();
 
-        if (user.isVerified()) {
-            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
+        for (int i=0; i < OTP_LENGTH; i++) {
+            int index = random.nextInt(numbers.length());
+            otp.append(numbers.charAt(index));
         }
 
-        user.setVerified(true);
-        return user;
+        return otp.toString();
     }
 
-    private String generateActivationCode() {
+    public String hash(String value) {
         try {
-            SecureRandom secureRandom = new SecureRandom();
-            byte[] randomBytes = new byte[16];
-
-            secureRandom.nextBytes(randomBytes);
-            String base64Encoded = Base64.getEncoder().encodeToString(randomBytes);
-
-            return URLEncoder.encode(base64Encoded, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new ApiRequestException(ACTIVATION_CODE_GENERATION_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
+            return hashCodeString(value.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public String encryptDeviceKey(String deviceToken) {
-        Plaintext plaintext = Plaintext.of(deviceToken);
-        return vaultTemplate.opsForTransit().encrypt("deviceKey", plaintext).toString();
+    public String hash(byte[] value) {
+        try {
+        return hashCodeString(value);
+        } catch (NoSuchAlgorithmException e) {
+            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    public String decryptDeviceKey(String deviceToken) {
-        Ciphertext ciphertext = Ciphertext.of(deviceToken);
-        return vaultTemplate.opsForTransit().decrypt("deviceKey", ciphertext).toString();
+    private String hashCodeString(byte[] data) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedHash = digest.digest(data);
+
+        StringBuilder hexString = new StringBuilder(2 * encodedHash.length);
+        for (byte hash : encodedHash) {
+            String hex = Integer.toHexString(0xff & hash);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     public String encodePassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    public boolean isPasswordsEqual(String password, String passwordFromDb) {
+        return passwordEncoder.matches(password, passwordFromDb);
     }
 
     @Override

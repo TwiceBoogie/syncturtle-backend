@@ -11,26 +11,31 @@ import dev.twiceb.taskservice.repository.projection.TaskProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 
 public interface TaskService {
 
-    public Map<String, String> createNewTask(Long userId, NewTaskRequest request, BindingResult bindingResult);
+    Map<String, String> createNewTask(Long userId, NewTaskRequest request, BindingResult bindingResult);
 
-    public Map<String, String> createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult);
+    Map<String, String> uploadAttachments(Long userId, Long taskId, MultipartFile[] files);
 
-    public Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult);
+    Map<String, Object> getFileImage(Long userId, Long taskAttachmentId);
 
-    public Map<String, String> updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult);
+    Map<String, String> createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult);
 
-    public Map<String, String> updateSubTask(Long userId, UpdateSubtaskRequest request, BindingResult bindingResult);
+    Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult);
 
-    public Page<TaskProjection> getTasks(Long userId, Pageable pageable);
+    Map<String, String> updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult);
 
-    public List<SubtaskProjection> getSubtasks(Long userId, Long taskId);
+    Map<String, String> updateSubTask(Long userId, UpdateSubtaskRequest request, BindingResult bindingResult);
 
-    public Page<RecurringTaskProjection> getRecurringTask(Long userId, Pageable pageable);
+    Page<TaskProjection> getTasks(Long userId, Pageable pageable);
+
+    List<SubtaskProjection> getSubtasks(Long userId, Long taskId);
+
+    Page<RecurringTaskProjection> getRecurringTask(Long userId, Pageable pageable);
 
 }

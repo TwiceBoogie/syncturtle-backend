@@ -1,6 +1,5 @@
 package dev.twiceb.userservice.model;
 
-import dev.twiceb.userservice.service.util.DeviceKeyTransitConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,8 +21,13 @@ public class UserDevice {
     private User user;
 
     @Column(name = "device_key", nullable = false)
-    @Convert(converter = DeviceKeyTransitConverter.class)
     private String deviceKey;
+
+    @Column(name = "device_name", nullable = false)
+    private String deviceName;
+
+    @Column(name = "last_access", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime lastAccess = LocalDateTime.now();
 
     @Column(name = "first_access_timestamp", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime firstAccessTimestamp = LocalDateTime.now();

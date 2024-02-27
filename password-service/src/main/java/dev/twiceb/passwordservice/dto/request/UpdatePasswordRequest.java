@@ -1,23 +1,21 @@
 package dev.twiceb.passwordservice.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import static dev.twiceb.common.constants.ErrorMessage.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class UpdatePasswordRequest {
-
-    @NotNull
-    private Long id;
-
-    @NotNull
     private String username;
-
-    @NotNull
-    @Size(min = 8, message = SHORT_PASSWORD)
+    @Pattern(regexp = "^[^<>&]*$", message = "HTML tags are not allowed in notes")
+    private String notes;
     private String password;
-
-    @NotNull
     private String confirmPassword;
+    private boolean isFavorite;
+    private Long rotationPolicyId;
+    @Size(max = 10, message = "Maximum 10 tags allowed")
+    private Set<Long> tags = new HashSet<>();
 }

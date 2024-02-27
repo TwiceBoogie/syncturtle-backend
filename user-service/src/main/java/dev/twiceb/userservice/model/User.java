@@ -10,12 +10,13 @@ import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"email", "username"})
+})
 public class User extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,14 +25,35 @@ public class User extends AuditableEntity {
     @Column(name = "email", nullable = false)
     private String email;
 
+    @Column(name = "about")
+    private String about;
+
     @Column(name = "first_name")
     private String firstName;
 
     @Column(name = "last_name")
     private String lastName;
 
+    @Column(name = "username")
+    private String username;
+
     @Column(name = "password")
     private String password;
+
+    @Column(name = "birthday")
+    private String birthday;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "country_code")
+    private String countryCode;
+
+    @Column(name = "phone")
+    private Long phone;
 
     @Column(name = "verified", columnDefinition = "boolean default false")
     private boolean verified = false;
@@ -47,6 +69,12 @@ public class User extends AuditableEntity {
     @Column(name = "notification_count")
     private int notificationCount = 0;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<PasswordResetOtp> passwordResetOtps = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
+
     @OneToOne
     @JoinColumn(name = "login_attempt_policy")
     private LoginAttemptPolicy loginAttemptPolicy;
@@ -55,52 +83,27 @@ public class User extends AuditableEntity {
     private List<UserDevice> userDevices = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<LockedUser> lockedUser = new ArrayList<>();
+    private List<LockedUser> lockoutHistory = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<UserProfile> userProfiles = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private UserProfileLimt userProfileLimt;
 
     public User() {
     }
 
-    public User(String email, String firstName, String lastName, String password, LoginAttemptPolicy policy) {
+    public User(
+            String email, String firstName, String lastName, String username, String password, LoginAttemptPolicy policy
+    ) {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.username = username;
         this.password = password;
         this.loginAttemptPolicy = policy;
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", email='" + email + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", password='" + password + '\'' +
-                ", active=" + verified +
-                ", role=" + role +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        User user = (User) o;
-        return verified == user.verified &&
-                Objects.equals(id, user.id) &&
-                Objects.equals(email, user.email) &&
-                Objects.equals(firstName, user.firstName) &&
-                Objects.equals(lastName, user.lastName) &&
-                Objects.equals(password, user.password) &&
-                Objects.equals(userStatus, user.userStatus) &&
-                role == user.role;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, email, firstName, lastName, password, verified, userStatus, role);
-    }
 }
 

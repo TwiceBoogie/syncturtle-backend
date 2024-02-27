@@ -11,6 +11,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Getter
@@ -22,7 +23,7 @@ public class AuditableEntity {
 
     @Column(nullable = false, updatable = false, name = "created_date")
     @CreatedDate
-    private Timestamp createdDate;
+    private LocalDateTime createdDate;
 
     @Column(name = "modified_by")
     @LastModifiedBy
@@ -30,5 +31,5 @@ public class AuditableEntity {
 
     @Column(name = "modified_date")
     @LastModifiedDate
-    private Timestamp modifiedDate;
+    private LocalDateTime modifiedDate;
 }

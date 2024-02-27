@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     due_date date not null,
     priority priority_status default 'NONE' not null,
     status task_status default 'TODO' not null,
+    notes TEXT,
+    completed_date TIMESTAMP,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     PRIMARY KEY (id)
 );
@@ -47,6 +49,18 @@ CREATE TABLE IF NOT EXISTS recurring_tasks (
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS task_attachments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    task_id BIGINT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50),
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id),
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS tags (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     tag_name VARCHAR(255) NOT NULL,

@@ -10,7 +10,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:057287df061af3f4ec3f3f1d6b353b1c6c3becc5350ff713a3d601d25e2f1f88}
+      token: ${VAULT_TOKEN:03d481c72b55618b92e6fa6213496e957889955a27433b1320cfa94f2796e61f}
       fail-fast: true
       config.lifecycle.enabled: true
       database:
@@ -45,6 +45,9 @@ spring:
     user: sebastian
     password: Twice_Mina1
     change-log: classpath:db/changelog/db.changelog-master.xml
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: 6379
 management:
   endpoints:
     web:

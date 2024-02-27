@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
@@ -26,8 +27,7 @@ public class NewSubTaskRequest {
     private String subtaskDescription;
 
     @NotBlank(message = EMPTY_DUE_DATE)
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date dueDate;
+    private LocalDate dueDate;
 
     @ValidStatus
     private EventStatus status;

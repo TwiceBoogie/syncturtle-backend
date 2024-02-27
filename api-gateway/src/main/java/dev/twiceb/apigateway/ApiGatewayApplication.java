@@ -8,8 +8,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableDiscoveryClient
 @EnableFeignClients
-@SpringBootApplication(scanBasePackages = { "dev.twiceb.common", "dev.twiceb.apigateway" }, exclude = {
-        DataSourceAutoConfiguration.class })
+@SpringBootApplication(scanBasePackages = { "dev.twiceb.common", "dev.twiceb.apigateway" },
+        exclude = {DataSourceAutoConfiguration.class })
 public class ApiGatewayApplication {
 
     public static void main(String[] args) {

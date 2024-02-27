@@ -2,6 +2,7 @@ package dev.twiceb.userservice.mapper;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
+import dev.twiceb.userservice.dto.request.AuthenticationCodeRequest;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
@@ -25,17 +26,12 @@ public class RegistrationMapper {
                 GenericResponse.class);
     }
 
-    public GenericResponse sendRegistrationCode(ProcessEmailRequest request, BindingResult bindingResult) {
-        return mapper.convertToResponse(registrationService.sendRegistrationCode(request, bindingResult),
+    public GenericResponse sendRegistrationCode(String email, BindingResult bindingResult) {
+        return mapper.convertToResponse(registrationService.sendRegistrationCode(email, bindingResult),
                 GenericResponse.class);
     }
 
     public RegistrationEndResponse checkRegistrationCode(String code) {
         return mapper.convertToResponse(registrationService.checkRegistrationCode(code), RegistrationEndResponse.class);
-    }
-
-    public AuthenticationResponse endRegistration(AuthenticationRequest request, BindingResult bindingResult) {
-        return mapper.convertToResponse(registrationService.endRegistration(request, bindingResult),
-                AuthenticationResponse.class);
     }
 }

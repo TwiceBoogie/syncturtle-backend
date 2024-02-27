@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.sql.Date;
 
 @Entity
 @Getter
@@ -23,7 +22,7 @@ public class PasswordExpiryConfig {
 
     @OneToOne
     @JoinColumn(name = "policy_id")
-    private PasswordExpiryPolicy passwordExpiryPolicy;
+    private RotationPolicy rotationPolicy;
 
     @Column(name = "notification_sent")
     private boolean notificationSent = false;
@@ -34,12 +33,12 @@ public class PasswordExpiryConfig {
     @PrePersist
     private void prePersist() {
         LocalDate currentTime = LocalDate.now();
-        if (passwordExpiryPolicy.getPolicyName().equals("default")) {
+        if (rotationPolicy.getPolicyName().equals("default")) {
             this.expiryDate = currentTime.plusDays(90);
 
         } else {
             this.expiryDate = currentTime.plusDays(
-                    this.passwordExpiryPolicy.getMaxExpiryDays()
+                    this.rotationPolicy.getMaxExpiryDays()
             );
         }
     }

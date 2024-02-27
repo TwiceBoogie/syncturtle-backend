@@ -4,31 +4,35 @@ import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.amqp.AmqpPublisher;
-import dev.twiceb.userservice.dto.request.AuthenticationRequest;
-import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
+import dev.twiceb.userservice.dto.request.AuthenticationCodeRequest;
+import dev.twiceb.userservice.dto.request.PasswordResetRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.enums.ActivationCodeType;
-import dev.twiceb.userservice.model.ActivationCode;
-import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.model.UserDevice;
-import dev.twiceb.userservice.repository.ActivationCodeRepository;
-import dev.twiceb.userservice.repository.UserRepository;
-import dev.twiceb.userservice.repository.projection.AuthUserProjection;
+import dev.twiceb.userservice.model.*;
+import dev.twiceb.userservice.repository.*;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
+import dev.twiceb.userservice.repository.projection.UserUsernameProjection;
 import dev.twiceb.userservice.service.RegistrationService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import ua_parser.Client;
+import ua_parser.Parser;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Map;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
+import static dev.twiceb.common.constants.PathConstants.*;
+import static dev.twiceb.common.constants.PathConstants.AUTH_USER_AGENT_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +41,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final UserRepository userRepository;
     private final UserServiceHelper userServiceHelper;
     private final ActivationCodeRepository activationCodeRepository;
+    private final LoginAttemptPolicyRepository loginAttemptPolicyRepository;
     private final JwtProvider jwtProvider;
     private final AmqpPublisher amqpPublisher;
 
@@ -46,60 +51,40 @@ public class RegistrationServiceImpl implements RegistrationService {
         userServiceHelper.processBindingResults(bindingResult).processPassword(
                 request.getPassword(), request.getPasswordConfirm()
         );
-
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
-            User user = userServiceHelper.createUserEntity(request);
-            userRepository.save(user);
-            return Map.of("message", "Account created successfully");
+            User user = createUserAndSave(
+                    request.getEmail(),
+                    request.getFirstName(),
+                    request.getLastName(),
+                    request.getPassword()
+            );
+            return Map.of("message", "User created successfully. You're username is " + user.getUsername()
+                    + " Once logged in, you will be able to change your username.");
         }
-        throw new ApiRequestException(EMAIL_HAS_ALREADY_BEEN_TAKEN, HttpStatus.BAD_REQUEST);
+        throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.CONFLICT);
     }
 
     @Override
     @Transactional
-    public Map<String, String> sendRegistrationCode(ProcessEmailRequest request, BindingResult bindingResult) {
+    public Map<String, String> sendRegistrationCode(String email, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        User user = userRepository.getUserByEmail(request.getEmail(), User.class)
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-        if (user.isVerified()) {
-            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
-        }
-        // either on service or api-gateway implement feature to deal with multiple
-        // request to this function, in order to not generate multiple codes for a
-        // single user.
-        ActivationCode code = userServiceHelper.createActivationCodeEntity(user, ActivationCodeType.ACTIVATION);
-        activationCodeRepository.save(code);
-
-        EmailRequest emailRequest = new EmailRequest.Builder(
-                user.getEmail(), "Registration Code", "registration-template").attributes(
-                        Map.of(
-                                "fullName", user.getFirstName() + " " + user.getLastName(),
-                                "registrationCode", code.getHashedCode()))
-                .build();
-        amqpPublisher.sendEmail(emailRequest);
-
+        User user = getUserByEmail(email, User.class);
+        validateUserForRegistration(user);
+        sendRegistrationEmail(user);
         return Map.of("message", "Activation Code was sent to your email.");
     }
 
     @Override
     @Transactional
     public Map<String, Object> checkRegistrationCode(String code) {
-        ActivationCode ac = activationCodeRepository.getActivationCodeByHashedCode(code, ActivationCode.class)
-                .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.BAD_REQUEST));
-        User user = userServiceHelper.processUser(ac.getUser(), ac.getExpirationTime());
-        UserDevice userDevice = new UserDevice();
-        userDevice.setDeviceKey(userServiceHelper.regenerateActivationCode());
-        userDevice.setUser(user);
-        user.getUserDevices().add(userDevice);
+        ActivationCode ac = getActivationCodeByHashedCode(code);
+        isActivationCodeExpired(ac.getExpirationTime());
+        User user = checkIsUserVerified(ac.getUser());
 
-        userRepository.save(user);
-
-        UserPrincipalProjection updatedUser = userRepository
-                .getUserByEmail(ac.getUser().getEmail(), UserPrincipalProjection.class)
-                .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
-        // if error = rollback changes to database
-        amqpPublisher.userCreated(updatedUser);
-        String deviceToken = jwtProvider.createDeviceToken(userServiceHelper.encryptDeviceKey(userDevice.getDeviceKey()));
+        String randomCode = userServiceHelper.generateRandomCode();
+        user = updateUsersDevice(user, randomCode);
+        notifyUserCreation(user);
+        String deviceToken = jwtProvider.createDeviceToken(randomCode);
 
         return Map.of(
                 "deviceToken",
@@ -109,22 +94,231 @@ public class RegistrationServiceImpl implements RegistrationService {
         );
     }
 
-    @Override
-    @Transactional
-    @Deprecated
-    public Map<String, Object> endRegistration(AuthenticationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult);
-        AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
-                .orElseThrow(
-                        () -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+//    /**
+//     * {@inheritDoc}
+//     */
+//    @Override
+//    public Map<String, String> forgotUsername(String email, BindingResult bindingResult) {
+//        userServiceHelper.processBindingResults(bindingResult);
+//        UserUsernameProjection user = getUserByEmail(email, UserUsernameProjection.class);
+//        EmailRequest emailRequest = new EmailRequest.Builder(
+//                email, "Username", "forgotUsername-template").attributes(
+//                Map.of(
+//                        "username", user.getUsername()
+//                )
+//        ).build();
+//        amqpPublisher.sendEmail(emailRequest);
+//
+//        return Map.of("message", "Check your email for your username");
+//    }
 
-        userRepository.updateActiveUserProfile(user.getId());
-        userRepository.updatePassword(userServiceHelper.encodePassword(request.getPassword()), user.getId());
+//    @Override
+//    public Map<String, String> forgotPassword(String email, BindingResult bindingResult) {
+//        userServiceHelper.processBindingResults(bindingResult);
+//        User user = getUserByEmail(email, User.class);
+//        // TODO: perhaps also receive device key
+//        createAndSendPasswordResetOtpEmail(user);
+//
+//        return Map.of("message", "Check your email for the password otp");
+//    }
+//
+//    /**
+//     * {@inheritDoc}
+//     */
+//    @Override
+//    @Transactional
+//    public Map<String, String> verifyOtp(String otp, BindingResult bindingResult) {
+//        userServiceHelper.processBindingResults(bindingResult);
+//        PasswordResetOtp otpEntity = validateAndExpirePasswordResetOtp(userServiceHelper.hash(otp));
+//        createPasswordResetTokenAndSendEmail(otpEntity.getUser());
+//
+//        return Map.of("message", "OTP verified");
+//    }
+//
+//    @Override
+//    public Map<String, String> resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
+//        userServiceHelper.processBindingResults(bindingResult).processPassword(
+//                request.getPassword(), request.getConfirmPassword()
+//        );
+//
+//        PasswordResetToken resetToken = validateAndExpirePasswordResetToken(token);
+//        User user = resetToken.getUser();
+//
+//        userServiceHelper.isPasswordsEqual(request.getPassword(), user.getPassword());
+//        user.setPassword(userServiceHelper.encodePassword(request.getPassword()));
+//
+//        userRepository.save(user);
+//
+//        return Map.of("message", "Password has been reset. Try to login with your new password");
+//    }
 
-        String token = jwtProvider.createToken(request.getEmail(), "USER");
+//    private PasswordResetToken validateAndExpirePasswordResetToken(String token) {
+//        PasswordResetToken resetToken = passwordResetTokenRepository.findPasswordResetTokenByToken(token);
+//        if (resetToken == null) {
+//            throw new ApiRequestException("Password reset token is invalid", HttpStatus.NOT_FOUND);
+//        }
+//
+//        if (LocalDateTime.now().isAfter(resetToken.getExpirationTime())) {
+//            throw new ApiRequestException("Reset token has expired", HttpStatus.BAD_REQUEST);
+//        }
+//        resetToken.setExpirationTime(LocalDateTime.now());
+//        resetToken.setToken("");
+//
+//        return passwordResetTokenRepository.save(resetToken);
+//    }
+//
+//    private PasswordResetOtp validateAndExpirePasswordResetOtp(String hashedOtp) {
+//        PasswordResetOtp otpEntity = passwordResetOtpRepository.findByHashedOtp(hashedOtp);
+//        if (otpEntity == null) {
+//            throw new ApiRequestException("No OTP found or match", HttpStatus.NOT_FOUND);
+//        }
+//
+//        if (LocalDateTime.now().isAfter(otpEntity.getExpirationTime())) {
+//            throw new ApiRequestException(OTP_HAS_EXPIRED, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        otpEntity.setExpirationTime(LocalDateTime.now());
+//        otpEntity.setHashedOtp("");
+//
+//        return passwordResetOtpRepository.save(otpEntity);
+//    }
 
-        return Map.of(
-                "user", user,
-                "token", token);
+//    private void createPasswordResetTokenAndSendEmail(User user) {
+//        String token = userServiceHelper.generateRandomCode();
+//        PasswordResetToken resetToken = new PasswordResetToken(token, user);
+//        user.getPasswordResetTokens().add(resetToken);
+//        sendPasswordResetLink(userRepository.save(user), token);
+//    }
+//
+//    private void sendPasswordResetLink(User user, String token) {
+//        EmailRequest emailRequest = new EmailRequest.Builder(
+//                user.getEmail(), "Password Reset Token", "forgotPassword-template").attributes(
+//                Map.of(
+//                        "fullName", user.getFirstName() + " " + user.getLastName(),
+//                        "passwordResetToken", token
+//                )
+//        ).build();
+//
+//        amqpPublisher.sendEmail(emailRequest);
+//    }
+
+//    private void createAndSendPasswordResetOtpEmail(User user) {
+//        String otp = userServiceHelper.generateOTP(6);
+//        user.getPasswordResetOtps().add(userServiceHelper.generatePasswordResetOtp(user, otp));
+//        user = userRepository.save(user);
+//        sendPasswordResetEmail(user, otp);
+//    }
+//
+//    private void sendPasswordResetEmail(User user, String otp) {
+//        EmailRequest emailRequest = new EmailRequest.Builder(
+//                user.getEmail(), "Password Reset OTP", "forgotPassword-template").attributes(
+//                Map.of(
+//                        "fullName", user.getFirstName() + " " + user.getLastName(),
+//                        "passwordResetOtp", otp.toCharArray()
+//                )
+//        ).build();
+//
+//        amqpPublisher.sendEmail(emailRequest);
+//    }
+
+    private User createUserAndSave(String email, String firstName, String lastName, String rawPassword) {
+        String username = generateUniqueUsername(lastName, firstName);
+        LoginAttemptPolicy policy = loginAttemptPolicyRepository.findById(1L).orElseThrow(
+                () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
+        );
+        User user = new User(
+                email,
+                firstName,
+                lastName,
+                username,
+                userServiceHelper.encodePassword(rawPassword),
+                policy
+        );
+        return userRepository.save(user);
+    }
+
+    private String generateUniqueUsername(String lastName, String firstName) {
+        boolean usernameTaken = true;
+        String username = "";
+        while (usernameTaken) {
+            username = lastName + "_" + firstName + userServiceHelper.generateRandomSuffix();
+            usernameTaken = userRepository.existsUserByUsername(username);
+        }
+        return username;
+    }
+
+    private <T> T getUserByEmail(String email, Class<T> clazz) {
+        return userRepository.getUserByEmail(email, clazz)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
+    private void validateUserForRegistration(User user) {
+        if (user.isVerified()) {
+            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private void generateAndSaveActivationCode(User user, String randomCode) {
+        String hashedRandomCode = userServiceHelper.hash(Base64.getUrlDecoder().decode(randomCode));
+        ActivationCode code = new ActivationCode(hashedRandomCode, ActivationCodeType.ACTIVATION, user);
+        activationCodeRepository.save(code);
+    }
+
+    private void sendRegistrationEmail(User user) {
+        String randomCode = userServiceHelper.generateRandomCode();
+        generateAndSaveActivationCode(user, randomCode);
+        EmailRequest emailRequest = buildRegistrationEmail(user, randomCode);
+        amqpPublisher.sendEmail(emailRequest);
+    }
+
+    private EmailRequest buildRegistrationEmail(User user, String randomCode) {
+        return new EmailRequest.Builder(
+                user.getEmail(), "Registration Code", "registration-template").attributes(
+                Map.of(
+                        "fullName", user.getFirstName() + " " + user.getLastName(),
+                        "registrationCode", randomCode
+                )
+        ).build();
+    }
+
+    private User checkIsUserVerified(User user) {
+        if (user.isVerified()) {
+            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
+        }
+        user.setVerified(true);
+        return user;
+    }
+
+    private User updateUsersDevice(User user, String randomCode) {
+        UserDevice userDevice = new UserDevice();
+        userDevice.setDeviceName("register_device"); // default device name
+        userDevice.setDeviceKey(userServiceHelper.hash(Base64.getUrlDecoder().decode(randomCode)));
+        userDevice.setUser(user);
+        user.getUserDevices().add(userDevice);
+        return userRepository.save(user);
+    }
+
+    private void isActivationCodeExpired(LocalDateTime expirationTime) {
+        LocalDateTime currentTime = LocalDateTime.now();
+        if (currentTime.isAfter(expirationTime))
+            throw new ApiRequestException(ACTIVATION_CODE_EXPIRED, HttpStatus.GONE);
+    }
+
+    private void notifyUserCreation(User user) {
+        UserPrincipalProjection updatedUser = userRepository
+                .getUserByEmail(user.getEmail(), UserPrincipalProjection.class)
+                .orElseThrow(() -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
+        // if error = rollback changes to database
+        amqpPublisher.userCreated(updatedUser);
+    }
+
+    private ActivationCode getActivationCodeByHashedCode(String encodedCode) {
+        String hashedCode = decodeAndHashRegistrationCode(encodedCode);
+        return activationCodeRepository.getActivationCodeByHashedCode(hashedCode, ActivationCode.class)
+                .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
+    private String decodeAndHashRegistrationCode(String encodedCode) {
+        return userServiceHelper.hash(Base64.getUrlDecoder().decode(encodedCode));
     }
 }

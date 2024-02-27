@@ -4,7 +4,7 @@ import dev.twiceb.common.enums.UserRole;
 
 public interface UserPrincipalProjection {
     Long getId();
-    String getEmail();
+    String getUsername();
     boolean isVerified();
     UserRole getRole();
     String getUserStatus();

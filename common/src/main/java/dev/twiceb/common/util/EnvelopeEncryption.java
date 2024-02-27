@@ -16,10 +16,19 @@ import java.security.SecureRandom;
 @Component
 public class EnvelopeEncryption {
 
+    private static final int STANDARD_SECURITY_KEY_SIZE = 128; //bits
+    private static final int MEDIUM_SECURITY_KEY_SIZE = 192; //bits
+    private static final int HIGH_SECURITY_KEY_SIZE = 256; // bits
+    private static final String DEFAULT_ALGORITHM = "AES";
+
+    public int getHighSecurityKeySize() {
+        return HIGH_SECURITY_KEY_SIZE;
+    }
+
     // Method to generate a SecretKey for AES encryption
     public SecretKey generateKey() throws NoSuchAlgorithmException {
-        KeyGenerator keygenerator = KeyGenerator.getInstance("AES");
-        keygenerator.init(256, SecureRandom.getInstanceStrong()); // Using AES with a key size of 256 bits
+        KeyGenerator keygenerator = KeyGenerator.getInstance(DEFAULT_ALGORITHM);
+        keygenerator.init(HIGH_SECURITY_KEY_SIZE, SecureRandom.getInstanceStrong()); // Using AES with a key size of 256 bits
         return keygenerator.generateKey(); // Generating the SecretKey
     }
 
@@ -37,30 +46,27 @@ public class EnvelopeEncryption {
     }
 
     // Method to encrypt input using AES encryption with a given key and IV
-    public byte[] encrypt(String input, SecretKey key, IvParameterSpec iv) throws
-            NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException,
-            InvalidKeyException,
-            IllegalBlockSizeException,
-            BadPaddingException
-    {
-        Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key, iv); // Initializing Cipher for encryption
-        return cipher.doFinal(input.getBytes(StandardCharsets.UTF_8)); // Encrypting input text
+    public byte[] encrypt(String input, SecretKey key, IvParameterSpec iv) {
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv); // Initializing Cipher for encryption
+            return cipher.doFinal(input.getBytes(StandardCharsets.UTF_8)); // Encrypting input text
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Method to decrypt cipher text using AES decryption with a given key and IV
-    public String decrypt(byte[] cipherText, SecretKey key, IvParameterSpec iv) throws
-            NoSuchPaddingException,
-            NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException,
-            InvalidKeyException,
-            IllegalBlockSizeException,
-            BadPaddingException {
-        Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key, iv); // Initializing Cipher for decryption
-        byte[] plainText = cipher.doFinal(cipherText); // Decrypting cipher text
-        return new String(plainText); // Converting decrypted bytes to a string
+    public String decrypt(byte[] cipherText, SecretKey key, IvParameterSpec iv) {
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key, iv); // Initializing Cipher for decryption
+            byte[] plainText = cipher.doFinal(cipherText); // Decrypting cipher text
+            return new String(plainText); // Converting decrypted bytes to a string
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package dev.twiceb.taskservice.service.impl;
 
+import dev.twiceb.common.dto.request.FileImageRequest;
 import dev.twiceb.common.dto.request.NewRecurringEventRequest;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.model.Tags;
@@ -9,14 +10,10 @@ import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
 import dev.twiceb.taskservice.dto.request.NewTaskRequest;
 import dev.twiceb.taskservice.dto.request.UpdateSubtaskRequest;
 import dev.twiceb.taskservice.dto.request.UpdateTaskRequest;
-import dev.twiceb.taskservice.model.Accounts;
-import dev.twiceb.taskservice.model.RecurringTasks;
-import dev.twiceb.taskservice.model.SubTasks;
-import dev.twiceb.taskservice.model.Tasks;
-import dev.twiceb.taskservice.repository.AccountsRepository;
-import dev.twiceb.taskservice.repository.RecurringTasksRepository;
-import dev.twiceb.taskservice.repository.SubtasksRepository;
-import dev.twiceb.taskservice.repository.TasksRepository;
+import dev.twiceb.taskservice.feign.FileClient;
+import dev.twiceb.taskservice.model.*;
+import dev.twiceb.taskservice.repository.*;
+import dev.twiceb.taskservice.repository.projection.AttachmentKeyProjection;
 import dev.twiceb.taskservice.repository.projection.RecurringTaskProjection;
 import dev.twiceb.taskservice.repository.projection.SubtaskProjection;
 import dev.twiceb.taskservice.repository.projection.TaskProjection;
@@ -29,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +38,15 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
+    private static final String TASK_ATTACHMENT_FOLDER = "task_attachment";
+
     private final TasksRepository tasksRepository;
-    private final SubtasksRepository subtasksRepository;
     private final AccountsRepository accountsRepository;
     private final RecurringTasksRepository recurringTasksRepository;
     private final TaskServiceHelper taskServiceHelper;
     private final TagsRepository tagsRepository;
+    private final TaskAttachmentRepository taskAttachmentRepository;
+    private final FileClient fileClient;
 
     @Override
     @Transactional
@@ -53,7 +54,7 @@ public class TaskServiceImpl implements TaskService {
         Accounts userAccount = getUserAccount(userId);
         taskServiceHelper.processBindingResults(bindingResult);
 
-        Tasks task = new Tasks(userAccount, request.getTaskTitle(), request.getTaskDescriptions(),
+        Task task = new Task(userAccount, request.getTaskTitle(), request.getTaskDescriptions(),
                 request.getDueDate());
         if (request.getPriority() != null) {
             task.setPriority(request.getPriority());
@@ -77,6 +78,48 @@ public class TaskServiceImpl implements TaskService {
         // feedback and no reload to fetch
         // TODO: send data to userStatsService to aggregate data
         return Map.of("message", "New task created successfully");
+    }
+
+    @Override
+    @Transactional
+    public Map<String, String> uploadAttachments(Long userId, Long taskId, MultipartFile[] files) {
+        if (files == null || files.length == 0) {
+            throw new ApiRequestException("No files provided for upload.", HttpStatus.BAD_REQUEST);
+        }
+        List<String> imageUrls = fileClient.uploadImages(files, TASK_ATTACHMENT_FOLDER);
+        Task task = tasksRepository.findById(taskId).orElseThrow(
+                () -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
+        if (!task.getAccount().getUserId().equals(userId)) {
+            throw new ApiRequestException(UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+        }
+
+        List<TaskAttachment> attachments = new ArrayList<>();
+        for (int i = 0; i < imageUrls.size(); i++) {
+            MultipartFile file = files[i];
+            String imageUrl = imageUrls.get(i);
+            TaskAttachment attachment = new TaskAttachment(
+                    task, file.getOriginalFilename(), imageUrl, file.getContentType()
+            );
+            attachments.add(attachment);
+        }
+
+        task.getAttachments().addAll(attachments);
+        tasksRepository.save(task);
+
+        return Map.of("message", "Attachments successfully uploaded.");
+    }
+
+    @Override
+    public Map<String, Object> getFileImage(Long userId, Long taskAttachmentId) {
+        AttachmentKeyProjection key = taskAttachmentRepository.getAttachmentKey(taskAttachmentId);
+        Accounts user = key.getTask().getAccount();
+        if (!user.getUserId().equals(userId)) {
+            throw new ApiRequestException(UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+        }
+        FileImageRequest request = new FileImageRequest();
+        request.setImageUrl(key.getFilePath());
+        byte[] content = fileClient.getFileImage(request);
+        return Map.of("photoContent", content, "fileType", key.getFileType());
     }
 
     @Override
@@ -112,7 +155,7 @@ public class TaskServiceImpl implements TaskService {
     public Map<String, String> addSubtaskToTask(Long userId, Long taskId, NewSubTaskRequest request,
             BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        Tasks taskFromDB = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), taskId, Tasks.class)
+        Task taskFromDB = tasksRepository.findTaskByUserAndTaskId(userAccount.getUserId(), taskId, Task.class)
                 .orElseThrow(
                         () -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
 
@@ -137,8 +180,8 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Map<String, String> updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult) {
         Accounts userAccount = getUserAccount(userId);
-        Tasks taskFromDb = tasksRepository
-                .findTaskByUserAndTaskId(userAccount.getUserId(), request.getId(), Tasks.class)
+        Task taskFromDb = tasksRepository
+                .findTaskByUserAndTaskId(userAccount.getUserId(), request.getId(), Task.class)
                 .orElseThrow(() -> new ApiRequestException(NO_TASK_FOUND, HttpStatus.NOT_FOUND));
 
         UpdateQueryResult result = taskServiceHelper.buildQuery(request, "tasks", "id");

@@ -8,10 +8,20 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Data
 public class CreatePasswordRequest {
+    private Long encryptionId;
+
     @NotBlank(message = EMPTY_DOMAIN)
     private String domain;
+
+    @NotBlank(message = EMPTY_WEBSITE_URL)
+    private String websiteUrl;
 
     @NotBlank(message = EMPTY_USERNAME)
     private String username;
@@ -28,4 +38,7 @@ public class CreatePasswordRequest {
 
     @NotNull
     private Long passwordExpiryPolicy;
+
+    @NotNull
+    private Set<Long> category = new HashSet<>();
 }

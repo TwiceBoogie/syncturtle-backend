@@ -25,11 +25,23 @@ public class PasswordChangeLog {
 
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(
-            read = "changedByUser::text",
+            read = "changed_by_user::text",
             write = "?::user_role"
     )
     private UserRole changedByUser = UserRole.USER;
 
     @Column(name = "change_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime changeDate;
+    private LocalDateTime changeDate = LocalDateTime.now();
+
+    @Column(name = "change_reason")
+    private String changeReason;
+
+    @Column(name = "change_type")
+    private String changeType;
+
+    @Column(name = "change_success")
+    private boolean changeSuccess = true;
+
+    @Column(name = "change_result")
+    private String changeResult = "pending";
 }

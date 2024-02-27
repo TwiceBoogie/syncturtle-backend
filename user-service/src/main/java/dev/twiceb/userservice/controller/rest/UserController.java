@@ -1,0 +1,25 @@
+package dev.twiceb.userservice.controller.rest;
+
+import dev.twiceb.userservice.dto.response.AuthenticationResponse;
+import dev.twiceb.userservice.mapper.AuthenticationMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import static dev.twiceb.common.constants.PathConstants.TOKEN;
+import static dev.twiceb.common.constants.PathConstants.UI_V1_USER;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping(UI_V1_USER)
+public class UserController {
+
+    private final AuthenticationMapper authenticationMapper;
+
+    @GetMapping(TOKEN)
+    public ResponseEntity<AuthenticationResponse> getUserByToken() {
+        return ResponseEntity.ok(authenticationMapper.getUserByToken());
+    }
+}

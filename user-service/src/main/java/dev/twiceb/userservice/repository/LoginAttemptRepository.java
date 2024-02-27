@@ -20,4 +20,6 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long
 
     @Query("SELECT la FROM LoginAttempt la WHERE la.user.id = :userId ORDER BY la.attemptTimestamp DESC")
     LoginAttempt findRecentLoginAttempt(@Param("userId") Long userId);
+
+    LoginAttempt findFirstByUserIdOrderByAttemptTimestampDesc(Long userId);
 }

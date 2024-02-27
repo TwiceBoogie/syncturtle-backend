@@ -1,15 +1,20 @@
 package dev.twiceb.userservice.service.impl;
 
+import dev.twiceb.common.dto.response.UserDeviceResponse;
+import dev.twiceb.common.mapper.BasicMapper;
+import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.UserRepository;
 import dev.twiceb.userservice.service.UserClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class UserClientServiceImpl implements UserClientService {
 
     private final UserRepository userRepository;
+    private final BasicMapper mapper;
 
     @Override
     public String getUserEmail(Long userId) {
@@ -29,5 +34,12 @@ public class UserClientServiceImpl implements UserClientService {
     @Override
     public void resetNotificationCount(Long userId) {
         userRepository.resetNotificationCount(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDeviceResponse getUserDevice(Long userId) {
+
+        return null;
     }
 }
