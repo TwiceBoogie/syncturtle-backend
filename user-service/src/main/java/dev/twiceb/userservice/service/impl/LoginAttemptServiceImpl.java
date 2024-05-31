@@ -10,7 +10,6 @@ import dev.twiceb.userservice.repository.LoginAttemptRepository;
 import dev.twiceb.userservice.repository.UserRepository;
 import dev.twiceb.userservice.service.LoginAttemptService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +22,6 @@ import static dev.twiceb.common.constants.ErrorMessage.INCORRECT_PASSWORD;
 import static dev.twiceb.common.constants.ErrorMessage.LOCKED_ACCOUNT_AFTER_N_ATTEMPTS;
 import static dev.twiceb.common.constants.PathConstants.AUTH_USER_IP_HEADER;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginAttemptServiceImpl implements LoginAttemptService {
@@ -41,10 +39,11 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = NoRollbackApiRequestException.class)
     public void handleLoginAttempt(boolean isPasswordMatch, User user, Map<String, String> customHeaders) {
         LoginAttemptPolicy policy = user.getLoginAttemptPolicy();
-        // The start date from which login attempts should be considered for verification.
+        // The start date from which login attempts should be considered for
+        // verification.
         LocalDateTime startDate = calculateResetStartDate(policy.getResetDuration());
         // if there is a success attempt (true), then it won't count failed attempts
         boolean countUserAttempts = checkLoginAttempts(user.getId(), startDate);
@@ -52,7 +51,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
         if (!isPasswordMatch) {
             if (!countUserAttempts) {
                 int failedAttempts = countFailedLoginAttempts(user.getId(), startDate) + 1;
-                if (failedAttempts >=  user.getLoginAttemptPolicy().getMaxAttempts()) {
+                if (failedAttempts >= user.getLoginAttemptPolicy().getMaxAttempts()) {
                     user = lockUserInternal(user, "Too many failed login attempts");
                 }
                 generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
@@ -67,6 +66,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
     @Transactional
     public void updateLoginAttempt(Long userId) {
         LoginAttempt loginAttempt = loginAttemptRepository.findFirstByUserIdOrderByAttemptTimestampDesc(userId);
+        // TODO: if login attempt is null then throw error
         loginAttempt.setSuccess(true);
         loginAttemptRepository.save(loginAttempt);
     }
@@ -81,14 +81,15 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = NoRollbackApiRequestException.class)
     public void handleLockedUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime) {
         LockedUser userLock = user.getLockoutHistory().getLast();
         Duration duration = Duration.between(currentTime, userLock.getLockoutEnd());
 
         if (currentTime.isBefore(userLock.getLockoutEnd())) {
             generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
-            throw new NoRollbackApiRequestException(LOCKED_ACCOUNT_AFTER_N_ATTEMPTS + duration, HttpStatus.TOO_MANY_REQUESTS);
+            throw new NoRollbackApiRequestException(LOCKED_ACCOUNT_AFTER_N_ATTEMPTS + duration,
+                    HttpStatus.TOO_MANY_REQUESTS);
         }
         user.setUserStatus(UserStatus.ACTIVE);
         userRepository.save(user);

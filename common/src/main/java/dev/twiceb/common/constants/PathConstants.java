@@ -22,11 +22,10 @@ public class PathConstants {
     public static final String FORGOT_USERNAME = FORGOT + "/username";
     public static final String FORGOT_PASSWORD = FORGOT + "/password";
     public static final String VERIFY_OTP = "/verify-otp";
-    public static final String VERIFY_DEVICE_VERIFICATION = "verify/device/{token}";
+    public static final String VERIFY_DEVICE_VERIFICATION = "/verify/device/{token}";
     public static final String RESET = "/reset/{token}";
     public static final String RESET_CODE = RESET + "/{code}";
     public static final String RESET_CURRENT = RESET + "/current";
-
 
     public static final String USER = "/user";
     public static final String API_V1_AUTH = API_V1 + AUTH;

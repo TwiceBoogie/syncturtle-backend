@@ -4,35 +4,24 @@ import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.amqp.AmqpPublisher;
-import dev.twiceb.userservice.dto.request.AuthenticationCodeRequest;
-import dev.twiceb.userservice.dto.request.PasswordResetRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.*;
 import dev.twiceb.userservice.repository.*;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
-import dev.twiceb.userservice.repository.projection.UserUsernameProjection;
 import dev.twiceb.userservice.service.RegistrationService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import ua_parser.Client;
-import ua_parser.Parser;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
-import static dev.twiceb.common.constants.PathConstants.*;
-import static dev.twiceb.common.constants.PathConstants.AUTH_USER_AGENT_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -49,15 +38,13 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional
     public Map<String, String> registration(RegistrationRequest request, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult).processPassword(
-                request.getPassword(), request.getPasswordConfirm()
-        );
+                request.getPassword(), request.getPasswordConfirm());
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
             User user = createUserAndSave(
                     request.getEmail(),
                     request.getFirstName(),
                     request.getLastName(),
-                    request.getPassword()
-            );
+                    request.getPassword());
             return Map.of("message", "User created successfully. You're username is " + user.getUsername()
                     + " Once logged in, you will be able to change your username.");
         }
@@ -90,150 +77,20 @@ public class RegistrationServiceImpl implements RegistrationService {
                 "deviceToken",
                 deviceToken,
                 "message",
-                "You've activated your account and you're now ready to use it! Try and login to access your account."
-        );
+                "You've activated your account and you're now ready to use it! Try and login to access your account.");
     }
-
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @Override
-//    public Map<String, String> forgotUsername(String email, BindingResult bindingResult) {
-//        userServiceHelper.processBindingResults(bindingResult);
-//        UserUsernameProjection user = getUserByEmail(email, UserUsernameProjection.class);
-//        EmailRequest emailRequest = new EmailRequest.Builder(
-//                email, "Username", "forgotUsername-template").attributes(
-//                Map.of(
-//                        "username", user.getUsername()
-//                )
-//        ).build();
-//        amqpPublisher.sendEmail(emailRequest);
-//
-//        return Map.of("message", "Check your email for your username");
-//    }
-
-//    @Override
-//    public Map<String, String> forgotPassword(String email, BindingResult bindingResult) {
-//        userServiceHelper.processBindingResults(bindingResult);
-//        User user = getUserByEmail(email, User.class);
-//        // TODO: perhaps also receive device key
-//        createAndSendPasswordResetOtpEmail(user);
-//
-//        return Map.of("message", "Check your email for the password otp");
-//    }
-//
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @Override
-//    @Transactional
-//    public Map<String, String> verifyOtp(String otp, BindingResult bindingResult) {
-//        userServiceHelper.processBindingResults(bindingResult);
-//        PasswordResetOtp otpEntity = validateAndExpirePasswordResetOtp(userServiceHelper.hash(otp));
-//        createPasswordResetTokenAndSendEmail(otpEntity.getUser());
-//
-//        return Map.of("message", "OTP verified");
-//    }
-//
-//    @Override
-//    public Map<String, String> resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
-//        userServiceHelper.processBindingResults(bindingResult).processPassword(
-//                request.getPassword(), request.getConfirmPassword()
-//        );
-//
-//        PasswordResetToken resetToken = validateAndExpirePasswordResetToken(token);
-//        User user = resetToken.getUser();
-//
-//        userServiceHelper.isPasswordsEqual(request.getPassword(), user.getPassword());
-//        user.setPassword(userServiceHelper.encodePassword(request.getPassword()));
-//
-//        userRepository.save(user);
-//
-//        return Map.of("message", "Password has been reset. Try to login with your new password");
-//    }
-
-//    private PasswordResetToken validateAndExpirePasswordResetToken(String token) {
-//        PasswordResetToken resetToken = passwordResetTokenRepository.findPasswordResetTokenByToken(token);
-//        if (resetToken == null) {
-//            throw new ApiRequestException("Password reset token is invalid", HttpStatus.NOT_FOUND);
-//        }
-//
-//        if (LocalDateTime.now().isAfter(resetToken.getExpirationTime())) {
-//            throw new ApiRequestException("Reset token has expired", HttpStatus.BAD_REQUEST);
-//        }
-//        resetToken.setExpirationTime(LocalDateTime.now());
-//        resetToken.setToken("");
-//
-//        return passwordResetTokenRepository.save(resetToken);
-//    }
-//
-//    private PasswordResetOtp validateAndExpirePasswordResetOtp(String hashedOtp) {
-//        PasswordResetOtp otpEntity = passwordResetOtpRepository.findByHashedOtp(hashedOtp);
-//        if (otpEntity == null) {
-//            throw new ApiRequestException("No OTP found or match", HttpStatus.NOT_FOUND);
-//        }
-//
-//        if (LocalDateTime.now().isAfter(otpEntity.getExpirationTime())) {
-//            throw new ApiRequestException(OTP_HAS_EXPIRED, HttpStatus.BAD_REQUEST);
-//        }
-//
-//        otpEntity.setExpirationTime(LocalDateTime.now());
-//        otpEntity.setHashedOtp("");
-//
-//        return passwordResetOtpRepository.save(otpEntity);
-//    }
-
-//    private void createPasswordResetTokenAndSendEmail(User user) {
-//        String token = userServiceHelper.generateRandomCode();
-//        PasswordResetToken resetToken = new PasswordResetToken(token, user);
-//        user.getPasswordResetTokens().add(resetToken);
-//        sendPasswordResetLink(userRepository.save(user), token);
-//    }
-//
-//    private void sendPasswordResetLink(User user, String token) {
-//        EmailRequest emailRequest = new EmailRequest.Builder(
-//                user.getEmail(), "Password Reset Token", "forgotPassword-template").attributes(
-//                Map.of(
-//                        "fullName", user.getFirstName() + " " + user.getLastName(),
-//                        "passwordResetToken", token
-//                )
-//        ).build();
-//
-//        amqpPublisher.sendEmail(emailRequest);
-//    }
-
-//    private void createAndSendPasswordResetOtpEmail(User user) {
-//        String otp = userServiceHelper.generateOTP(6);
-//        user.getPasswordResetOtps().add(userServiceHelper.generatePasswordResetOtp(user, otp));
-//        user = userRepository.save(user);
-//        sendPasswordResetEmail(user, otp);
-//    }
-//
-//    private void sendPasswordResetEmail(User user, String otp) {
-//        EmailRequest emailRequest = new EmailRequest.Builder(
-//                user.getEmail(), "Password Reset OTP", "forgotPassword-template").attributes(
-//                Map.of(
-//                        "fullName", user.getFirstName() + " " + user.getLastName(),
-//                        "passwordResetOtp", otp.toCharArray()
-//                )
-//        ).build();
-//
-//        amqpPublisher.sendEmail(emailRequest);
-//    }
 
     private User createUserAndSave(String email, String firstName, String lastName, String rawPassword) {
         String username = generateUniqueUsername(lastName, firstName);
         LoginAttemptPolicy policy = loginAttemptPolicyRepository.findById(1L).orElseThrow(
-                () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
-        );
+                () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
         User user = new User(
                 email,
                 firstName,
                 lastName,
                 username,
                 userServiceHelper.encodePassword(rawPassword),
-                policy
-        );
+                policy);
         return userRepository.save(user);
     }
 
@@ -252,12 +109,6 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
-    private void validateUserForRegistration(User user) {
-        if (user.isVerified()) {
-            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     private void generateAndSaveActivationCode(User user, String randomCode) {
         String hashedRandomCode = userServiceHelper.hash(Base64.getUrlDecoder().decode(randomCode));
         ActivationCode code = new ActivationCode(hashedRandomCode, ActivationCodeType.ACTIVATION, user);
@@ -274,19 +125,22 @@ public class RegistrationServiceImpl implements RegistrationService {
     private EmailRequest buildRegistrationEmail(User user, String randomCode) {
         return new EmailRequest.Builder(
                 user.getEmail(), "Registration Code", "registration-template").attributes(
-                Map.of(
-                        "fullName", user.getFirstName() + " " + user.getLastName(),
-                        "registrationCode", randomCode
-                )
-        ).build();
+                        Map.of(
+                                "fullName", user.getFirstName() + " " + user.getLastName(),
+                                "registrationCode", randomCode))
+                .build();
     }
 
     private User checkIsUserVerified(User user) {
-        if (user.isVerified()) {
-            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
-        }
+        validateUserForRegistration(user);
         user.setVerified(true);
         return user;
+    }
+
+    private void validateUserForRegistration(User user) {
+        if (user.isVerified()) {
+            throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
+        }
     }
 
     private User updateUsersDevice(User user, String randomCode) {

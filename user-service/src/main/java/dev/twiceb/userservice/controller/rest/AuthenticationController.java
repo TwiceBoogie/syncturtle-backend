@@ -5,7 +5,6 @@ import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.userservice.dto.request.*;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
-import dev.twiceb.userservice.model.PasswordResetOtp;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,32 +24,28 @@ public class AuthenticationController {
     @PostMapping(LOGIN)
     public ResponseEntity<AuthenticationResponse> login(
             @Valid @RequestBody AuthenticationRequest request,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationMapper.login(request, bindingResult));
     }
 
     @PostMapping(FORGOT_USERNAME)
     public ResponseEntity<GenericResponse> forgotUsername(
             @Valid @RequestBody ProcessEmailRequest request,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationMapper.forgotUsername(request.getEmail(), bindingResult));
     }
 
     @PostMapping(FORGOT_PASSWORD)
     public ResponseEntity<GenericResponse> forgotPassword(
             @Valid @RequestBody ProcessEmailRequest request,
-            BindingResult bindingResult
-            ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationMapper.forgotPassword(request.getEmail(), bindingResult));
     }
 
     @PostMapping(VERIFY_OTP)
     public ResponseEntity<GenericResponse> verifyOtp(
             @Valid @RequestBody PasswordOtpRequest request,
-            BindingResult bindingResult
-            ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationMapper.verifyOtp(request.getOtp(), bindingResult));
     }
 
@@ -58,16 +53,14 @@ public class AuthenticationController {
     public ResponseEntity<GenericResponse> resetPassword(
             @Valid @RequestBody PasswordResetRequest request,
             @PathVariable("token") String token,
-            BindingResult bindingResult
-            ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationMapper.resetPassword(request, token, bindingResult));
     }
 
     @GetMapping(VERIFY_DEVICE_VERIFICATION)
     public ResponseEntity<AuthenticationResponse> verifyDeviceToken(
             @PathVariable("token") String token,
-            @RequestParam("trust") boolean trust
-    ) {
+            @RequestParam("trust") boolean trust) {
         return ResponseEntity.ok(authenticationMapper.verifyDeviceVerification(token, trust));
     }
 

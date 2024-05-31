@@ -6,7 +6,19 @@ import dev.twiceb.userservice.model.User;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Service interface for handling login attempts and related user actions.
+ */
 public interface LoginAttemptService {
+
+    /**
+     * Generates a login attempt record for the specified user.
+     *
+     * @param success    Whether the login attempt was successful.
+     * @param newDevice  Whether the login attempt was from a new device.
+     * @param user       The user associated with the login attempt.
+     * @param ipAddress  The IP address from which the login attempt was made.
+     */
     void generateLoginAttempt(boolean success, boolean newDevice, User user, String ipAddress);
 
     /**
@@ -24,8 +36,20 @@ public interface LoginAttemptService {
      */
     void handleLoginAttempt(boolean isPasswordMatch, User user, Map<String, String> customHeaders);
 
+    /**
+     * Updates the most recent login attempt for the specified user to be marked as successful.
+     *
+     * @param userId The ID of the user whose login attempt is being updated.
+     */
     void updateLoginAttempt(Long userId);
 
+    /**
+     * Locks the user's account for a specified reason.
+     *
+     * @param user   The user whose account is being locked.
+     * @param reason The reason for locking the account.
+     * @return The updated user with the locked status.
+     */
     User lockUser(User user, String reason);
 
     /**

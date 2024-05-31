@@ -4,7 +4,6 @@ import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.PasswordResetRequest;
-import dev.twiceb.userservice.dto.request.PasswordResetWithOtpRequest;
 import dev.twiceb.userservice.dto.response.AuthUserResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.service.AuthenticationService;
@@ -23,8 +22,7 @@ public class AuthenticationMapper {
 
     public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult) {
         return mapper.convertToResponse(
-                authenticationService.login(request, bindingResult), AuthenticationResponse.class
-        );
+                authenticationService.login(request, bindingResult), AuthenticationResponse.class);
     }
 
     public AuthenticationResponse getUserByToken() {
@@ -32,11 +30,13 @@ public class AuthenticationMapper {
     }
 
     public GenericResponse forgotUsername(String email, BindingResult bindingResult) {
-        return mapper.convertToResponse(authenticationService.forgotUsername(email, bindingResult), GenericResponse.class);
+        return mapper.convertToResponse(authenticationService.forgotUsername(email, bindingResult),
+                GenericResponse.class);
     }
 
     public GenericResponse forgotPassword(String email, BindingResult bindingResult) {
-        return mapper.convertToResponse(authenticationService.forgotPassword(email, bindingResult), GenericResponse.class);
+        return mapper.convertToResponse(authenticationService.forgotPassword(email, bindingResult),
+                GenericResponse.class);
     }
 
     public GenericResponse verifyOtp(String otp, BindingResult bindingResult) {
@@ -45,14 +45,12 @@ public class AuthenticationMapper {
 
     public GenericResponse resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
         return mapper.convertToResponse(
-                authenticationService.resetPassword(request, token, bindingResult), GenericResponse.class
-        );
+                authenticationService.resetPassword(request, token, bindingResult), GenericResponse.class);
     }
 
     public AuthenticationResponse verifyDeviceVerification(String token, boolean trust) {
         return mapper.convertToResponse(
-                authenticationService.newDeviceVerification(token, trust), AuthenticationResponse.class
-        );
+                authenticationService.newDeviceVerification(token, trust), AuthenticationResponse.class);
     }
 
     AuthenticationResponse getAuthenticationResponse(Map<String, Object> credentials) {
