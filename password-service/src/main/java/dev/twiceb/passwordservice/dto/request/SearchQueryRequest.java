@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 public class SearchQueryRequest {
 
-    @NotBlank
     @Pattern(regexp = "^[a-zA-Z0-9-_.]*$", message = "Invalid characters. Alphanumeric, hyphens, and underscores are allowed.")
     @Pattern(regexp = "^[^<>&]*$", message = "HTML tags are not allowed in notes")
     private String searchQuery;

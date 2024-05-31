@@ -8,9 +8,9 @@ import java.util.Set;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.util.AuthUtil;
+import dev.twiceb.passwordservice.broker.producer.PasswordChangeProducer;
 import dev.twiceb.passwordservice.dto.request.*;
 import dev.twiceb.passwordservice.model.*;
-//import dev.twiceb.passwordservice.producer.PasswordChangeProducer;
 import dev.twiceb.passwordservice.repository.*;
 import dev.twiceb.passwordservice.repository.projection.*;
 import dev.twiceb.passwordservice.service.UserService;
@@ -26,13 +26,19 @@ import org.springframework.validation.BindingResult;
 
 import dev.twiceb.passwordservice.service.PasswordService;
 import dev.twiceb.passwordservice.service.util.PasswordHelperService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.vault.core.VaultTemplate;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
+import static dev.twiceb.common.constants.PathConstants.AUTH_DEVICE_KEY_ID;
 
 @Slf4j
 @Service
@@ -43,16 +49,20 @@ public class PasswordServiceImpl implements PasswordService {
     private final PasswordHelperService passwordHelperService;
     private final EncryptionKeyRepository encryptionKeyRepository;
     private final DictionaryCommonWords dictionaryCommonWords;
-    private final VaultTemplate vaultTemplate;
+    private final PasswordChangeProducer passwordChangeProducer;
+    private final OldPasswordRepository oldPasswordRepository;
     private final UserService userService;
-    private final static String VAULT_PATH = "secret/passwords/";
 
     @Override
     @Transactional
     public void updateTagsOnPassword(Long passwordId, Set<Long> tags, BindingResult bindingResult) {
         passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
-        keychain.setCategories(passwordHelperService.findAllCategories(tags));
+        List<Category> categories = passwordHelperService.findAllCategories(tags);
+        if (categories.isEmpty()) {
+            throw new ApiRequestException("Invalid tags", HttpStatus.BAD_REQUEST);
+        }
+        keychain.setCategories(categories);
         keychainRepository.save(keychain);
     }
 
@@ -71,7 +81,8 @@ public class PasswordServiceImpl implements PasswordService {
         passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         keychain.setUsername(username);
-        addAndSaveNewChangeLog(keychain, "keychain update", "username");
+        Long deviceKeyId = getUserDeviceId();
+        addAndSaveNewChangeLog(keychain, "keychain update", "username", deviceKeyId);
         return Map.of("message", "Username updated successfully.");
     }
 
@@ -80,7 +91,7 @@ public class PasswordServiceImpl implements PasswordService {
     public Map<String, String> createNewPassword(CreatePasswordRequest request, BindingResult bindingResult) {
         passwordHelperService.processBindingResults(bindingResult);
         Long authUserId = AuthUtil.getAuthenticatedUserId();
-        EncryptionKey key = selectEncryptionKey(request.getEncryptionId(), authUserId);
+        EncryptionKey key = selectAndValidateEncryptionKey(request.getEncryptionId(), authUserId);
         checkDomainAvailability(authUserId, request.getDomain());
 
         Keychain keychain = buildSecureKeychain(key, request);
@@ -113,7 +124,8 @@ public class PasswordServiceImpl implements PasswordService {
     @Override
     @Transactional(readOnly = true)
     public KeychainProjection getPassword(Long keychainId) {
-        return keychainRepository.findKeychainById(keychainId);
+        return keychainRepository.findKeychainById(keychainId, AuthUtil.getAuthenticatedUserId())
+                .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
@@ -134,14 +146,13 @@ public class PasswordServiceImpl implements PasswordService {
         passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         User authUser = userService.getAuthUser();
-        OldPasswordDTO oldPasswordDTO = storeOldPassword(keychain);
         String decryptedPassword = decryptOldPassword(keychain);
         validateAndUpdatePasswordReuseStatistic(authUser, decryptedPassword, password);
         encryptNewPassword(keychain, password);
-        addAndSaveNewChangeLog(keychain, "password update", "password");
-//        passwordChangeProducer.sendPasswordChangeEvent(authUser.getId(),
-//                oldPasswordDTO.getTimestamp().minusHours(parseTTL(oldPasswordDTO.getTtl())),
-//                "should be the device key here");
+        Long deviceKeyId = getUserDeviceId();
+        addAndSaveNewChangeLog(keychain, "password update", "password", deviceKeyId);
+        OldPasswordDTO oldPasswordDTO = storeOldPassword(keychain);
+        passwordChangeProducer.sendPasswordChangeEvent(authUser.getId(), LocalDateTime.parse(oldPasswordDTO.getTimestamp()), deviceKeyId);
         return Map.of("message", "Password updated successfully.");
     }
 
@@ -149,12 +160,17 @@ public class PasswordServiceImpl implements PasswordService {
     @Transactional(readOnly = true)
     public Map<String, String> getDecryptedPassword(Long passwordId) {
         Long authUserId = AuthUtil.getAuthenticatedUserId();
-        DecryptedPasswordProjection userPassword = keychainRepository.getPasswordById(authUserId, passwordId);
-        return Map.of("message", passwordHelperService.decryptPassword(userPassword));
+        return keychainRepository.getPasswordById(authUserId, passwordId)
+                .map(passwordHelperService::decryptPassword)
+                .map(password -> Map.of("message", password))
+                .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
     public Map<String, String> generateSecurePassword(int length) {
+        if (length < 8) {
+            throw new ApiRequestException(GENERATED_PASSWORD_LENGTH, HttpStatus.BAD_REQUEST);
+        }
         return Map.of("message", passwordHelperService.generateSecurePassword(length));
     }
 
@@ -190,6 +206,16 @@ public class PasswordServiceImpl implements PasswordService {
         return keychainRepository.searchByQuery(request.getSearchQuery(), authUserId, pageable);
     }
 
+    @Override
+    @Transactional
+    public Page<EncryptionKeyPrincipleProjection> getEncryptionKeys(Pageable pageable) {
+        return encryptionKeyRepository.getEncryptionKeyByUserId(
+                AuthUtil.getAuthenticatedUserId(),
+                pageable,
+                EncryptionKeyPrincipleProjection.class
+        );
+    }
+
     private long parseTTL(String ttl) {
         // Parse TTL string (e.g., "1h") into minutes or appropriate time unit
         // This is a simplified example, more robust parsing might be needed
@@ -200,17 +226,24 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private OldPasswordDTO storeOldPassword(Keychain keychain) {
+//        VaultKeyValueOperations operations = vaultTemplate.opsForKeyValue("secret",
+//                VaultKeyValueOperationsSupport.KeyValueBackend.KV_2);
+//        StringBuilder completeSecretPath = new StringBuilder();
+//        completeSecretPath.append(VAULT_PATH).append(username).append("/").append(keychain.getId());
+//
         OldPasswordDTO oldPasswordDTO = new OldPasswordDTO();
-        oldPasswordDTO.setId(keychain.getId());
-        oldPasswordDTO.setPassword(keychain.getPassword());
-        oldPasswordDTO.setDek(keychain.getEncryptionKey().getDek());
+        oldPasswordDTO.setId(String.valueOf(keychain.getId()));
+        oldPasswordDTO.setPassword(Base64.getEncoder().encodeToString(keychain.getPassword()));
+        oldPasswordDTO.setDekId(String.valueOf(keychain.getEncryptionKey().getId()));
         oldPasswordDTO.setTtl("1h");
-        oldPasswordDTO.setTimestamp(LocalDateTime.now());
-        vaultTemplate.write(VAULT_PATH, oldPasswordDTO);
-        return oldPasswordDTO;
+        oldPasswordDTO.setVector(Base64.getEncoder().encodeToString(keychain.getVector()));
+        return oldPasswordRepository.save(oldPasswordDTO);
+//        operations.put(completeSecretPath.toString(), oldPasswordDTO);
+//        return oldPasswordDTO;
+
     }
 
-    private EncryptionKey selectEncryptionKey(Long id, Long authUserId) {
+    private EncryptionKey selectAndValidateEncryptionKey(Long id, Long authUserId) {
         EncryptionKey key = encryptionKeyRepository.findById(id)
                 .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
         validateOwnershipOfEncryptionKey(key, authUserId);
@@ -219,7 +252,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     private void checkDomainAvailability(Long authUserId, String domain) {
         if (keychainRepository.CheckIfDomainExist(authUserId, domain)) {
-            throw new ApiRequestException(DOMAIN_ALREADY_EXIST, HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException(DOMAIN_ALREADY_EXIST, HttpStatus.CONFLICT);
         }
     }
 
@@ -231,8 +264,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     private Keychain getValidatedKeychain(Long passwordId) {
         Keychain keychain = keychainRepository.findById(passwordId).orElseThrow(
-                () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND)
-        );
+                () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
         validateOwnershipOfKeychain(keychain);
         return keychain;
     }
@@ -243,8 +275,7 @@ public class PasswordServiceImpl implements PasswordService {
         }
         List<PasswordReuseStatistic> passwordReuseStatistics = user.getPasswordReuseStatistics();
         if (!passwordHelperService.searchAndUpdatePasswordReuseStatistic(
-                passwordReuseStatistics, passwordFromDb, password
-        )) {
+                passwordReuseStatistics, passwordFromDb, password)) {
             PasswordReuseStatistic passwordReuseStatistic = new PasswordReuseStatistic(
                     user, passwordHelperService.encodePassword(password));
             passwordReuseStatistics.add(passwordReuseStatistic);
@@ -252,11 +283,12 @@ public class PasswordServiceImpl implements PasswordService {
         user.setPasswordReuseStatistics(passwordReuseStatistics); // do I need this here?
     }
 
-    private void addAndSaveNewChangeLog(Keychain keychain, String reason, String type) {
+    private void addAndSaveNewChangeLog(Keychain keychain, String reason, String type, Long deviceKeyId) {
         PasswordChangeLog passwordChangeLog = new PasswordChangeLog();
         passwordChangeLog.setKeychain(keychain);
         passwordChangeLog.setChangeReason(reason);
         passwordChangeLog.setChangeType(type);
+        passwordChangeLog.setUserDeviceId(deviceKeyId);
         keychain.getChangeLogs().add(passwordChangeLog);
         keychainRepository.save(keychain);
     }
@@ -275,7 +307,9 @@ public class PasswordServiceImpl implements PasswordService {
         SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         IvParameterSpec vector = passwordHelperService.generateNewIv();
         byte[] encryptedPassword = passwordHelperService.encryptPassword(request.getPassword(), secretKey, vector);
-
+        String encryptedPasswordBase64 =
+                Base64.getEncoder().encodeToString(encryptedPassword);
+        String vectorBase64 = Base64.getEncoder().encodeToString(vector.getIV());
         Keychain keychain = buildKeychain(key, request, encryptedPassword, vector);
         return updateKeychainAttributes(keychain, request);
     }
@@ -298,7 +332,8 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private PasswordComplexityMetric generatePasswordComplexityMetric(String rawPassword) {
-        return PasswordComplexityAnalyzer.analyzePassword(rawPassword, dictionaryCommonWords.getHashedDictionaryWords());
+        return PasswordComplexityAnalyzer.analyzePassword(rawPassword,
+                dictionaryCommonWords.getHashedDictionaryWords());
     }
 
     private RotationPolicy selectRotationPolicy(Long id) {
@@ -311,8 +346,7 @@ public class PasswordServiceImpl implements PasswordService {
         return switch (grabInstance) {
             case "Expired" -> keychainRepository.getPasswordsExpiringSoon(userAccount.getId(), pageable,
                     clazz);
-            case "Recent" ->
-                    keychainRepository.getRecentPasswords(userAccount.getId(), pageable, clazz);
+            case "Recent" -> keychainRepository.getRecentPasswords(userAccount.getId(), pageable, clazz);
             default -> keychainRepository.findAllByAccountId(userAccount.getId(), pageable, clazz);
         };
     }
@@ -326,5 +360,11 @@ public class PasswordServiceImpl implements PasswordService {
         if (!key.getUser().getId().equals(authUserId)) {
             throw new ApiRequestException(UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    private Long getUserDeviceId() {
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+        return Long.valueOf(request.getHeader(AUTH_DEVICE_KEY_ID));
     }
 }

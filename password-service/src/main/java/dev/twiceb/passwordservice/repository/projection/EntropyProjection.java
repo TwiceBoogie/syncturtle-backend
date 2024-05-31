@@ -1,5 +1,5 @@
 package dev.twiceb.passwordservice.repository.projection;
 
 public interface EntropyProjection {
-    double getEntropy();
+    double getPasswordComplexityScore();
 }

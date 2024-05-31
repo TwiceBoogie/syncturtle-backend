@@ -14,24 +14,24 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
-//@EnableKafka
-//@Configuration
-//public class KafkaProducerConfig {
-//
-//    @Value("${spring.kafka.bootstrap-servers}")
-//    private String bootstrapServers;
-//
-//    @Bean
-//    Map<String, Object> producerConfigs() {
-//        Map<String, Object> props = new HashMap<>();
-//        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-//        return props;
-//    }
-//
-//    @Bean
-//    KafkaTemplate<String, PasswordChangeEvent> kafkaPasswordChangeEvent() {
-//        return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(producerConfigs()));
-//    }
-//}
+@EnableKafka
+@Configuration
+public class KafkaProducerConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Bean
+    Map<String, Object> producerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return props;
+    }
+
+    @Bean
+    KafkaTemplate<String, PasswordChangeEvent> kafkaPasswordChangeEvent() {
+        return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(producerConfigs()));
+    }
+}

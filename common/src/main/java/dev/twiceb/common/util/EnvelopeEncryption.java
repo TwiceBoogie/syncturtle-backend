@@ -1,12 +1,16 @@
 package dev.twiceb.common.util;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import dev.twiceb.common.exception.ApiRequestException;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+
+import static dev.twiceb.common.constants.ErrorMessage.INTERNAL_SERVER_ERROR;
+
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 // this is a symmetric encryption.
@@ -16,8 +20,8 @@ import java.security.SecureRandom;
 @Component
 public class EnvelopeEncryption {
 
-    private static final int STANDARD_SECURITY_KEY_SIZE = 128; //bits
-    private static final int MEDIUM_SECURITY_KEY_SIZE = 192; //bits
+    private static final int STANDARD_SECURITY_KEY_SIZE = 128; // bits
+    private static final int MEDIUM_SECURITY_KEY_SIZE = 192; // bits
     private static final int HIGH_SECURITY_KEY_SIZE = 256; // bits
     private static final String DEFAULT_ALGORITHM = "AES";
 
@@ -26,10 +30,16 @@ public class EnvelopeEncryption {
     }
 
     // Method to generate a SecretKey for AES encryption
-    public SecretKey generateKey() throws NoSuchAlgorithmException {
-        KeyGenerator keygenerator = KeyGenerator.getInstance(DEFAULT_ALGORITHM);
-        keygenerator.init(HIGH_SECURITY_KEY_SIZE, SecureRandom.getInstanceStrong()); // Using AES with a key size of 256 bits
-        return keygenerator.generateKey(); // Generating the SecretKey
+    public SecretKey generateKey() {
+        try {
+            KeyGenerator keygenerator = KeyGenerator.getInstance(DEFAULT_ALGORITHM);
+            keygenerator.init(HIGH_SECURITY_KEY_SIZE, SecureRandom.getInstanceStrong()); // Using AES with a key size of
+                                                                                         // 256 bits
+            return keygenerator.generateKey(); // Generating the SecretKey
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // Method to generate an Initialization Vector (IV) for AES encryption

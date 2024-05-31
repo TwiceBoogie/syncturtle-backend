@@ -12,6 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PasswordChangeEvent {
-    private LocalDateTime expirationTime;
+    private LocalDateTime expirationTime; // The expiration timer of the old password in vault
     private Long deviceKeyId;
 }

@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT user FROM User user WHERE user.id = :userId")
     <T> Optional<T> getUserById(@Param("userId") Long userId, Class<T> clazz);
 
-    User findUserByUsername(String username);
+    Optional<User> findUserByUsername(String username);
 
     @Query("SELECT user FROM User user WHERE user.id = :userId")
     AuthUserProjection getAuthUserProjection(@Param("userId") Long userId);
@@ -46,10 +46,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("UPDATE User user SET user.email = :email WHERE user.id = :userId")
     void updateEmail(@Param("email") String email, @Param("userId") Long userId);
 
-
     @Modifying
     @Query("UPDATE User user SET user.countryCode = :countryCode, user.phone = :phone WHERE user.id = :userId")
-    void updatePhone(@Param("countryCode") String countryCode, @Param("phone") Long phone, @Param("userId") Long userId);
+    void updatePhone(@Param("countryCode") String countryCode, @Param("phone") Long phone,
+            @Param("userId") Long userId);
 
     @Query("SELECT user.email FROM User user WHERE user.id = :userId")
     String getUserEmail(@Param("userId") Long userId);
@@ -79,12 +79,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("UPDATE User user SET user.gender = :gender WHERE user.id = :userId")
     void updateGender(@Param("gender") String gender, @Param("userId") Long userId);
 
-//    @Query("SELECT u.id AS userId, ud.id AS userDeviceId, ud.deviceKey AS deviceKey, la.ipAddress AS ipAddress " +
-//            "FROM User u " +
-//            "LEFT JOIN u.userDevices ud " +
-//            "LEFT JOIN u.loginAttempts la " +
-//            "ON ud.lastAccess = (SELECT MAX(ud2.lastAccess) FROM UserDevice ud2 WHERE ud2.user = u) " +
-//            "AND la.attemptTimestamp = (SELECT MAX(la2.attemptTimestamp) FROM LoginAttempt la2 WHERE la2.user = u) " +
-//            "WHERE u.id = :userId")
-//    UserDeviceProjection getUserDevice(@Param("userId") Long userId);
+    // @Query("SELECT u.id AS userId, ud.id AS userDeviceId, ud.deviceKey AS
+    // deviceKey, la.ipAddress AS ipAddress " +
+    // "FROM User u " +
+    // "LEFT JOIN u.userDevices ud " +
+    // "LEFT JOIN u.loginAttempts la " +
+    // "ON ud.lastAccess = (SELECT MAX(ud2.lastAccess) FROM UserDevice ud2 WHERE
+    // ud2.user = u) " +
+    // "AND la.attemptTimestamp = (SELECT MAX(la2.attemptTimestamp) FROM
+    // LoginAttempt la2 WHERE la2.user = u) " +
+    // "WHERE u.id = :userId")
+    // UserDeviceProjection getUserDevice(@Param("userId") Long userId);
 }

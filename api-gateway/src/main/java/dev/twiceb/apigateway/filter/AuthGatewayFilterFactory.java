@@ -1,16 +1,14 @@
 package dev.twiceb.apigateway.filter;
 
+import dev.twiceb.apigateway.service.UserService;
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
 import dev.twiceb.common.exception.JwtAuthenticationException;
 import dev.twiceb.common.security.JwtProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
 import static dev.twiceb.common.constants.PathConstants.*;
@@ -20,50 +18,38 @@ import static dev.twiceb.common.constants.PathConstants.*;
 public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthGatewayFilterFactory.Config> {
 
     private final JwtProvider jwtProvider;
-    private final RestTemplate restTemplate;
+    private final UserService userService;
 
-    public AuthGatewayFilterFactory(JwtProvider jwtProvider, RestTemplate restTemplate) {
+    public AuthGatewayFilterFactory(JwtProvider jwtProvider, UserService userService) {
         super(Config.class);
         this.jwtProvider = jwtProvider;
-        this.restTemplate = restTemplate;
+        this.userService = userService;
     }
 
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
+            log.info("Inside Auth filter");
             String token = jwtProvider.resolveToken(exchange.getRequest());
             boolean isTokenValid = jwtProvider.validateToken(token, "main");
-
             if (token != null && isTokenValid) {
                 String email = jwtProvider.parseToken(token);
-                UserPrincipleResponse user = null;
-                try {
-                    user = restTemplate.getForObject(
-                            String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
-                            UserPrincipleResponse.class,
-                            email
-                    );
-                    log.info("User retrieved successfully: {}", user);
-                } catch (Exception e) {
-                    log.error("Error occurred while retrieving user: {}", e.getMessage(), e);
-                    // Handle the error appropriately (e.g., log, return an error response, etc.)
-                }
+                // store email in exchange which is only available to downstream filters.
+                exchange.getAttributes().put("email", email);
 
+                UserPrincipleResponse user = userService.getCachedUserDetails(email);
 
-                assert user != null;
-                if (!user.isVerified()) {
-                    throw new JwtAuthenticationException("Email not activated");
-                }
-//                exchange.getRequest().mutate().header(AUTH_USER_ID_HEADER, String.valueOf(user.getId())).build();
                 ServerHttpRequest.Builder builder = exchange.getRequest().mutate();
                 builder.header(AUTH_USER_ID_HEADER, String.valueOf(user.getId()));
 
                 return chain.filter(exchange.mutate().request(builder.build()).build());
             } else {
+                log.error("failed test");
                 throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED);
             }
         });
     }
 
-    public static class Config {}
+    public static class Config {
+    }
 }

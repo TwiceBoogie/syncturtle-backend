@@ -34,6 +34,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -89,8 +90,7 @@ public class PasswordHelperService extends ServiceHelper {
     public RotationPolicy selectRotationPolicy(Long id) {
         return rotationPolicyRepository.findById(id)
                 .orElseThrow(() -> new ApiRequestException(
-                        "Please choose 1 of the following policies.", HttpStatus.BAD_REQUEST
-                ));
+                        "Please choose 1 of the following policies.", HttpStatus.BAD_REQUEST));
     }
 
     public List<Category> findAllCategories(Set<Long> tags) {
@@ -101,31 +101,39 @@ public class PasswordHelperService extends ServiceHelper {
         return passwordEncoder.encode(password);
     }
 
+    // changed from 'for-each' to 'iterator' because of 'ConcurrentModificationException'
+    // removing an element from list disrupts the iterator used by the loop.
     public boolean searchAndUpdatePasswordReuseStatistic(
             List<PasswordReuseStatistic> passwordReuseStatistics,
             String decryptedPassword,
-            String password
-    ) {
-        for (PasswordReuseStatistic entity : passwordReuseStatistics) {
+            String password) {
+        boolean foundMatchingNewPassword = false;
+        Iterator<PasswordReuseStatistic> iterator = passwordReuseStatistics.iterator();
+
+        while (iterator.hasNext()) {
+            PasswordReuseStatistic entity = iterator.next();
             // search for the reuse statistic entity that is tied to the old one.
             if (decryptedPassword != null && passwordEncoder.matches(decryptedPassword, entity.getPasswordHash())) {
                 if (entity.getReuseCount() >= 1) {
                     entity.setReuseCount(entity.getReuseCount() - 1);
-                } else if (entity.getReuseCount() == 0) { // if it exists and the only one, then remove.
-                    passwordReuseStatistics.remove(entity);
+                } else { // if it exists and the only one, then remove.
+                    iterator.remove();
                 }
             }
             // search reuse statistic entity if 1 already exist for the new password
             if (passwordEncoder.matches(password, entity.getPasswordHash())) {
                 entity.setReuseCount(entity.getReuseCount() + 1);
-                return true;
+                foundMatchingNewPassword = true;
             }
         }
-        return false;
+        return foundMatchingNewPassword;
     }
 
     public SecretKey rebuildSecretKey(String dek, String algorithm) {
         byte[] decodedSecretKeyBytes = Base64.getDecoder().decode(dek);
+        if (!(decodedSecretKeyBytes.length == 16 || decodedSecretKeyBytes.length == 24 || decodedSecretKeyBytes.length == 32)) {
+            throw new IllegalArgumentException("Invalid key length: " + decodedSecretKeyBytes.length);
+        }
         return new SecretKeySpec(decodedSecretKeyBytes, algorithm);
     }
 
@@ -191,42 +199,50 @@ public class PasswordHelperService extends ServiceHelper {
         return 100 - negativeImpact;
     }
 
-//    @Transactional
-//    public void updateSecureDataKey(Keychain keychainFromDb, String newPassword) {
-//        try {
-//            EncryptionKey keyFromDb = keychainFromDb.getEncryptionKey();
-//            byte[] decodedBytesSecretKey = Base64.getDecoder().decode(keyFromDb.getDek());
-//            SecretKey randomKey = new SecretKeySpec(decodedBytesSecretKey, "AES");
-//            IvParameterSpec vector = envelopeEncryption.regenerateIvFromBytes(keychainFromDb.getVector());
-//            String decryptedPassword = envelopeEncryption.decrypt(keychainFromDb.getPassword(), randomKey, vector);
-//
-//            if (newPassword.equals(decryptedPassword)) {
-//                throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.CONFLICT);
-//            }
-//
-//            PasswordReuseStatistic passwordReuseStatistic = updatePasswordReuseStatistic(
-//                    keyFromDb.getId(), decryptedPassword, newPassword
-//            );
-//
-//            if (passwordReuseStatistic == null) {
-//                 passwordReuseStatistic = new PasswordReuseStatistic(keyFromDb, passwordEncoder.encode(newPassword));
-//            }
-//            passwordReuseStatisticRepository.save(passwordReuseStatistic); // save the updated or new one
-//
-//            keychainFromDb.getChangeLogs().add(createPasswordChangeLog(keychainFromDb));
-//            IvParameterSpec newVector = envelopeEncryption.generateIv();
-//            byte[] encryptedPassword = envelopeEncryption.encrypt(newPassword, randomKey, newVector);
-//
-//            keychainFromDb.setPassword(encryptedPassword);
-//            keyFromDb.setDek(Base64.getEncoder().encodeToString(randomKey.getEncoded()));
-//            keychainFromDb.setVector(newVector.getIV());
-//            keychainFromDb.setEncryptionKey(keyFromDb);
-//
-//        } catch (Exception e) {
-//            log.error("updateSecureDataKey() error: ", e);
-//            throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
+    // @Transactional
+    // public void updateSecureDataKey(Keychain keychainFromDb, String newPassword)
+    // {
+    // try {
+    // EncryptionKey keyFromDb = keychainFromDb.getEncryptionKey();
+    // byte[] decodedBytesSecretKey =
+    // Base64.getDecoder().decode(keyFromDb.getDek());
+    // SecretKey randomKey = new SecretKeySpec(decodedBytesSecretKey, "AES");
+    // IvParameterSpec vector =
+    // envelopeEncryption.regenerateIvFromBytes(keychainFromDb.getVector());
+    // String decryptedPassword =
+    // envelopeEncryption.decrypt(keychainFromDb.getPassword(), randomKey, vector);
+    //
+    // if (newPassword.equals(decryptedPassword)) {
+    // throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.CONFLICT);
+    // }
+    //
+    // PasswordReuseStatistic passwordReuseStatistic = updatePasswordReuseStatistic(
+    // keyFromDb.getId(), decryptedPassword, newPassword
+    // );
+    //
+    // if (passwordReuseStatistic == null) {
+    // passwordReuseStatistic = new PasswordReuseStatistic(keyFromDb,
+    // passwordEncoder.encode(newPassword));
+    // }
+    // passwordReuseStatisticRepository.save(passwordReuseStatistic); // save the
+    // updated or new one
+    //
+    // keychainFromDb.getChangeLogs().add(createPasswordChangeLog(keychainFromDb));
+    // IvParameterSpec newVector = envelopeEncryption.generateIv();
+    // byte[] encryptedPassword = envelopeEncryption.encrypt(newPassword, randomKey,
+    // newVector);
+    //
+    // keychainFromDb.setPassword(encryptedPassword);
+    // keyFromDb.setDek(Base64.getEncoder().encodeToString(randomKey.getEncoded()));
+    // keychainFromDb.setVector(newVector.getIV());
+    // keychainFromDb.setEncryptionKey(keyFromDb);
+    //
+    // } catch (Exception e) {
+    // log.error("updateSecureDataKey() error: ", e);
+    // throw new ApiRequestException(INTERNAL_SERVER_ERROR,
+    // HttpStatus.INTERNAL_SERVER_ERROR);
+    // }
+    // }
 
     public String decryptPassword(DecryptedPasswordProjection userPassword) {
         try {

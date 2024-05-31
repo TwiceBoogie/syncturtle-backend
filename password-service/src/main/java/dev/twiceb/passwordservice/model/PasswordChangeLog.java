@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,10 +23,7 @@ public class PasswordChangeLog {
     private Keychain keychain;
 
     @Enumerated(EnumType.STRING)
-    @ColumnTransformer(
-            read = "changed_by_user::text",
-            write = "?::user_role"
-    )
+    @ColumnTransformer(read = "changed_by_user::text", write = "?::user_role")
     private UserRole changedByUser = UserRole.USER;
 
     @Column(name = "change_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -44,4 +40,7 @@ public class PasswordChangeLog {
 
     @Column(name = "change_result")
     private String changeResult = "pending";
+
+    @Column(name = "user_device_id", nullable = false)
+    private Long userDeviceId;
 }

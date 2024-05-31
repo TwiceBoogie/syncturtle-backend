@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"email", "username"})
+        @UniqueConstraint(columnNames = { "email", "username" })
 })
 public class User extends AuditableEntity {
     @Id
@@ -69,6 +69,9 @@ public class User extends AuditableEntity {
     @Column(name = "notification_count")
     private int notificationCount = 0;
 
+    @Column(name = "notify_password_change")
+    private boolean notifyPasswordChange = true;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<PasswordResetOtp> passwordResetOtps = new ArrayList<>();
 
@@ -79,7 +82,7 @@ public class User extends AuditableEntity {
     @JoinColumn(name = "login_attempt_policy")
     private LoginAttemptPolicy loginAttemptPolicy;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<UserDevice> userDevices = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
@@ -95,8 +98,8 @@ public class User extends AuditableEntity {
     }
 
     public User(
-            String email, String firstName, String lastName, String username, String password, LoginAttemptPolicy policy
-    ) {
+            String email, String firstName, String lastName, String username, String password,
+            LoginAttemptPolicy policy) {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -106,4 +109,3 @@ public class User extends AuditableEntity {
     }
 
 }
-

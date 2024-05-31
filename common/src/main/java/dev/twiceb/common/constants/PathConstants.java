@@ -5,6 +5,7 @@ public class PathConstants {
     public static final String AUTH_USER_AGENT_HEADER = "X-User-Agent";
     public static final String AUTH_USER_IP_HEADER = "X-User-Ip";
     public static final String AUTH_USER_DEVICE_KEY = "X-User-DeviceKey";
+    public static final String AUTH_DEVICE_KEY_ID = "X-device-key-id";
     public static final String USER_SERVICE = "localhost";
 
     public static final String API_V1 = "/api/v1";
@@ -22,11 +23,10 @@ public class PathConstants {
     public static final String FORGOT_USERNAME = FORGOT + "/username";
     public static final String FORGOT_PASSWORD = FORGOT + "/password";
     public static final String VERIFY_OTP = "/verify-otp";
-    public static final String VERIFY_DEVICE_VERIFICATION = "verify/device/{token}";
+    public static final String VERIFY_DEVICE_VERIFICATION = "/verify/device/{token}";
     public static final String RESET = "/reset/{token}";
     public static final String RESET_CODE = RESET + "/{code}";
     public static final String RESET_CURRENT = RESET + "/current";
-
 
     public static final String USER = "/user";
     public static final String API_V1_AUTH = API_V1 + AUTH;
@@ -55,6 +55,7 @@ public class PathConstants {
     public static final String FAVORITE_PASSWORD = "/favorite/{passwordId}";
     public static final String GET_PASSWORD_WITH_CRITERIA = "/{criteria}";
     public static final String GET_DECRYPTED_PASSWORD = "/decrypt/{passwordId}";
+    public static final String UPDATE_PASSWORD_TAGS = "/tags/{passwordId}";
     public static final String DELETE_ALL = "/delete";
     public static final String UPDATE_PASSWORD = "/update/{passwordId}";
     public static final String UPDATE_PASSWORD_USERNAME = "/username/update/{passwordId}";
@@ -62,6 +63,7 @@ public class PathConstants {
     public static final String DELETE_PASSWORD = "/delete/{passwordId}";
     public static final String GENERATE_RANDOM_PASSWORD = "/generate/{length}";
     public static final String SEARCH_BY_QUERY = "/search";
+    public static final String GET_ENCRYPTION_KEYS = "/keys";
     public static final String API_V1_PASSWORD = API_V1 + PASSWORD;
 
     // GOALS_SERVICE

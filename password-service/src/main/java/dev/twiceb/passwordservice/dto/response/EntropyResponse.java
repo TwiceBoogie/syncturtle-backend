@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class EntropyResponse {
-    private double entropy;
+    private double passwordComplexityScore;
 }

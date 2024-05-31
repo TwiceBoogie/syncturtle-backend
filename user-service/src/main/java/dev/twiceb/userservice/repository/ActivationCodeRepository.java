@@ -23,4 +23,6 @@ public interface ActivationCodeRepository extends JpaRepository<ActivationCode, 
     @Query("SELECT ac FROM ActivationCode ac WHERE ac.codeType = :codeType AND ac.expirationTime >= :timestamp")
     List<ActivationCode> getActivationCodeByCodeType(@Param("codeType") ActivationCodeType codeType,
                                                      @Param("timestamp")LocalDateTime timestamp);
+
+    Optional<ActivationCode> findFirstByUser_IdAndCodeTypeOrderByExpirationTimeAsc(Long userId, ActivationCodeType activationCodeType);
 }

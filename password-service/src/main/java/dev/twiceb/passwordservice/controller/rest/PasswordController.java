@@ -2,12 +2,15 @@ package dev.twiceb.passwordservice.controller.rest;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.dto.response.HeaderResponse;
+import dev.twiceb.passwordservice.controller.PasswordControllerSwagger;
 import dev.twiceb.passwordservice.dto.request.*;
+import dev.twiceb.passwordservice.dto.response.EncryptionKeysResponse;
 import dev.twiceb.passwordservice.dto.response.PasswordsResponse;
 import dev.twiceb.passwordservice.mapper.PasswordMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -21,14 +24,15 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 
+@Slf4j
 @RestController
 @RequestMapping(UI_V1_PASSWORD)
 @RequiredArgsConstructor
-public class PasswordController {
+public class PasswordController implements PasswordControllerSwagger {
 
     private final PasswordMapper passwordMapper;
 
-    @PostMapping
+    @Override
     public ResponseEntity<GenericResponse> createNewPassword(
             @Valid @RequestBody CreatePasswordRequest request,
             BindingResult bindingResult) {
@@ -36,7 +40,7 @@ public class PasswordController {
                 .body(passwordMapper.createNewPassword(request, bindingResult));
     }
 
-    @PatchMapping(UPDATE_PASSWORD)
+    @Override
     public ResponseEntity<GenericResponse> updatePasswordOnly(
             @PathVariable("passwordId") Long passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
@@ -45,7 +49,7 @@ public class PasswordController {
         return ResponseEntity.ok(passwordMapper.updatePasswordOnly(passwordId, request, bindingResult));
     }
 
-    @PatchMapping(UPDATE_PASSWORD_USERNAME)
+    @Override
     public ResponseEntity<GenericResponse> updateUsername(
             @PathVariable("passwordId") Long passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
@@ -54,7 +58,7 @@ public class PasswordController {
         return ResponseEntity.ok(passwordMapper.updateUsername(passwordId, request, bindingResult));
     }
 
-    @PatchMapping(UPDATE_PASSWORD_NOTES)
+    @Override
     public ResponseEntity<GenericResponse> updatePasswordNotes(
             @PathVariable("passwordId") Long passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
@@ -63,7 +67,7 @@ public class PasswordController {
         return ResponseEntity.ok(passwordMapper.updatePasswordNotes(passwordId, request, bindingResult));
     }
 
-    @PutMapping("/tags/{passwordId}")
+    @Override
     public ResponseEntity<Void> updateTagsOnPassword(
             @Valid @RequestBody UpdatePasswordRequest request,
             @PathVariable("passwordId") Long passwordId,
@@ -73,7 +77,7 @@ public class PasswordController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping(FAVORITE_PASSWORD)
+    @Override
     public ResponseEntity<Void> favoritePassword(
             @Valid @RequestBody UpdatePasswordRequest request,
             @PathVariable("passwordId") Long passwordId,
@@ -83,19 +87,19 @@ public class PasswordController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping
+    @Override
     public ResponseEntity<List<PasswordsResponse>> getPasswords(
             @PageableDefault(size = 10) Pageable Pageable) {
         HeaderResponse<PasswordsResponse> res = passwordMapper.getPasswords(Pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
-    @GetMapping(GET_PASSWORD_INFO)
+    @Override
     public ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") Long keychainId) {
         return ResponseEntity.ok().body(passwordMapper.getPassword(keychainId));
     }
 
-    @GetMapping(GET_PASSWORD_WITH_CRITERIA)
+    @Override
     public ResponseEntity<List<PasswordsResponse>> getPasswordsByCriteria(
             @PathVariable("criteria") String criteria,
             @PageableDefault(size = 10) Pageable Pageable
@@ -104,33 +108,39 @@ public class PasswordController {
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
-    @GetMapping(GET_DECRYPTED_PASSWORD)
+    @Override
     public ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") Long passwordId) {
         return ResponseEntity.ok(passwordMapper.getDecryptedPassword(passwordId));
     }
 
-    @DeleteMapping(DELETE_PASSWORD)
+    @Override
     public ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") Long passwordId) {
         return ResponseEntity.ok(passwordMapper.deletePassword(passwordId));
     }
 
-    @DeleteMapping(DELETE_ALL)
+    @Override
     public ResponseEntity<GenericResponse> deleteAllPasswords() {
         return ResponseEntity.ok(passwordMapper.deleteAllPasswords());
     }
 
-    @GetMapping(GENERATE_RANDOM_PASSWORD)
+    @Override
     public ResponseEntity<GenericResponse> generateRandomPassword(@PathVariable("length") int length) {
         return ResponseEntity.ok(passwordMapper.generateRandomPassword(length));
     }
 
-    @PostMapping(SEARCH_BY_QUERY)
+    @Override
     public ResponseEntity<List<PasswordsResponse>> searchPasswordsByQuery(
-            @Valid @RequestBody SearchQueryRequest request,
+            SearchQueryRequest request,
             BindingResult bindingResult,
             @PageableDefault(size = 10) Pageable Pageable
     ) {
         HeaderResponse<PasswordsResponse> res = passwordMapper.searchPasswordsByQuery(request, bindingResult, Pageable);
+        return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
+    }
+
+    @Override
+    public ResponseEntity<List<EncryptionKeysResponse>> getEncryptionKeys(Pageable pageable) {
+        HeaderResponse<EncryptionKeysResponse> res = passwordMapper.getEncryptionKeys(pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 }

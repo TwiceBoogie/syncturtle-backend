@@ -6,4 +6,7 @@
     <changeSet id="0" author="admin">
         <sqlFile path="db/changelog/001_create_table.sql" />
     </changeSet>
+    <changeSet id="1" author="admin">
+        <sqlFile path="db/changelog/004_update_pw_change_log.sql" />
+    </changeSet>
 </databaseChangeLog>

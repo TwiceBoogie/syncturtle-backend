@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN notify_password_change BOOLEAN DEFAULT FALSE;

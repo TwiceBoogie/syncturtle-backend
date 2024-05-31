@@ -21,7 +21,7 @@ public class UserAction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user")
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -35,8 +35,12 @@ public class UserAction {
     @Column(name = "verification_code", length = 64)
     private String verificationCode;
 
-    @Column(name = "user_device_id")
-    private Long userDeviceId;
+    @ManyToOne
+    @JoinColumn(name = "user_device_id")
+    private UserDevice userDevice;
+
+    @Column(name = "is_user_notified")
+    private boolean isUserNotified = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -48,10 +52,4 @@ public class UserAction {
 
     @Column(name = "expiration_time")
     private LocalDateTime expirationTime;
-
-    @Column(name = "created_by")
-    private Long createdBy;
-
-    @Column(name = "updated_by")
-    private Long updatedBy;
 }

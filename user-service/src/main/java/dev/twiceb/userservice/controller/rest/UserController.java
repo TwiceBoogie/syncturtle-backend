@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.controller.rest;
 
+import dev.twiceb.userservice.controller.UserControllerSwagger;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +15,11 @@ import static dev.twiceb.common.constants.PathConstants.UI_V1_USER;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(UI_V1_USER)
-public class UserController {
+public class UserController implements UserControllerSwagger {
 
     private final AuthenticationMapper authenticationMapper;
 
-    @GetMapping(TOKEN)
+    @Override
     public ResponseEntity<AuthenticationResponse> getUserByToken() {
         return ResponseEntity.ok(authenticationMapper.getUserByToken());
     }

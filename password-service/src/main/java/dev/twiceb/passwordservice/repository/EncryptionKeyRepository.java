@@ -25,7 +25,7 @@ public interface EncryptionKeyRepository extends JpaRepository<EncryptionKey, Lo
     <T> Optional<T> getEncryptionKeyById(@Param("id") Long id, Class<T> clazz);
 
     @Query("SELECT ek FROM EncryptionKey ek WHERE ek.user.id = :userId")
-    <T> Optional<T> getEncryptionKeyByUserId(@Param("userId") Long userId, Class<T> clazz);
+    <T> Page<T> getEncryptionKeyByUserId(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
 
     @NotNull Page<EncryptionKey> findAll(@NotNull Pageable pageable);
 

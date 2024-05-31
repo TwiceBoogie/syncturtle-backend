@@ -1,6 +1,7 @@
 package dev.twiceb.passwordservice.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import dev.twiceb.passwordservice.repository.projection.KeychainExpiringProjection;
@@ -45,7 +46,7 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
         <T> Page<T> getRecentPasswords(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.encryptionKey.user.id = :userId AND kc.id = :id")
-        DecryptedPasswordProjection getPasswordById(@Param("userId") Long userId, @Param("id") Long id);
+        Optional<DecryptedPasswordProjection> getPasswordById(@Param("userId") Long userId, @Param("id") Long id);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.domain ILIKE %:searchQuery% " +
                 "AND kc.encryptionKey.user.id = :userId")
@@ -53,8 +54,8 @@ public interface KeychainRepository extends JpaRepository<Keychain, Long> {
                 @Param("searchQuery") String searchQuery, @Param("userId") Long userId, Pageable pageable
         );
 
-        @Query("SELECT kc FROM Keychain kc WHERE kc.id = :keychainId")
-        KeychainProjection findKeychainById(@Param("keychainId") Long keychainId);
+        @Query("SELECT kc FROM Keychain kc WHERE kc.id = :keychainId AND kc.encryptionKey.user.id = :userId")
+        Optional<KeychainProjection> findKeychainById(@Param("keychainId") Long keychainId, @Param("userId") Long userId);
 
         @Query("SELECT kc FROM Keychain kc WHERE kc.status = :status")
         List<KeychainExpiringProjection> findAllKeychainsByStatus(@Param("status") DomainStatus status);

@@ -19,48 +19,47 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import java.util.HashMap;
 import java.util.Map;
 
-//@EnableKafka
-//@Configuration
-//public class KafkaConsumerConfig {
-//
-//    @Value("${spring.kafka.bootstrap-servers}")
-//    private String bootstrapServers;
-//
-//    @Value("${spring.kafka.consumer.group-id}")
-//    private String groupId;
-//
-//    @Bean
-//    Map<String, Object> consumerConfigs() {
-//        Map<String, Object> props = new HashMap<>();
-//        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-//        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-//        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-//        return props;
-//    }
-//
-//    @Bean
-//    ConsumerFactory<String, PasswordChangeEvent> passwordChangeEventConsumerFactory() {
-//        return new DefaultKafkaConsumerFactory<>(
-//                consumerConfigs(),
-//                new StringDeserializer(),
-//                new JsonDeserializer<>(PasswordChangeEvent.class)
-//        );
-//    }
-//
-//    @Bean
-//    RecordMessageConverter typeConverter() {
-//        StringJsonMessageConverter converter = new StringJsonMessageConverter();
-//        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
-//        DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper();
-//        typeMapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID);
-//        typeMapper.addTrustedPackages("*");
-//        Map<String, Class<?>> mappings = new HashMap<>();
-//        mappings.put("passwordChange", PasswordChangeEvent.class);
-//        typeMapper.setIdClassMapping(mappings);
-//        headerMapper.setEncodeStrings(true);
-//        converter.setTypeMapper(typeMapper);
-//        converter.setHeaderMapper(headerMapper);
-//        return converter;
-//    }
-//}
+@EnableKafka
+@Configuration
+public class KafkaConsumerConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
+
+    @Bean
+    Map<String, Object> consumerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        return props;
+    }
+
+    @Bean
+    ConsumerFactory<String, PasswordChangeEvent> passwordChangeEventConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(
+                consumerConfigs(),
+                new StringDeserializer(),
+                new JsonDeserializer<>(PasswordChangeEvent.class));
+    }
+
+    @Bean
+    RecordMessageConverter typeConverter() {
+        StringJsonMessageConverter converter = new StringJsonMessageConverter();
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper();
+        typeMapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID);
+        typeMapper.addTrustedPackages("*");
+        Map<String, Class<?>> mappings = new HashMap<>();
+        mappings.put("passwordChange", PasswordChangeEvent.class);
+        typeMapper.setIdClassMapping(mappings);
+        headerMapper.setEncodeStrings(true);
+        converter.setTypeMapper(typeMapper);
+        converter.setHeaderMapper(headerMapper);
+        return converter;
+    }
+}

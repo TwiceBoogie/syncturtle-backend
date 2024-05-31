@@ -114,6 +114,32 @@ run_liquibase() {
   docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d task -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_task_svc\";"
 }
 
+# Function to fetch and export Vault credentials
+set_vault_credentials() {
+  local service_role=$1
+
+  # Fetch the Role ID
+  VAULT_APPROLE_ROLE_ID=$(vault read -format=json auth/approle/role/"$service_role"/role-id | jq -r .data.role_id)
+  export VAULT_APPROLE_ROLE_ID
+  echo "VAULT_APPROLE_ROLE_ID for $service_role: $VAULT_APPROLE_ROLE_ID"
+
+  # Generate a Secret ID
+  VAULT_APPROLE_SECRET_ID=$(vault write -f -format=json auth/approle/role/"$service_role"/secret-id | jq -r .data.secret_id)
+  export VAULT_APPROLE_SECRET_ID
+  echo "VAULT_APPROLE_SECRET_ID for $service_role: $VAULT_APPROLE_SECRET_ID"
+}
+
+wait_for_service() {
+  local url=$1
+  local name=$2
+  echo "Waiting for $name to start..."
+  while ! curl -s $url > /dev/null; do
+    echo "Waiting for $name..."
+    sleep 5
+  done
+  echo "$name is up and running."
+}
+
 run_services() {
   local services=(
     "eureka-server"
@@ -121,13 +147,36 @@ run_services() {
     "user-service"
     "email-service"
     "password-service"
-    "task-service"
+    # "task-service"
     "api-gateway"
   )
 
   for service in "${services[@]}"; do
-    cd "./$service" || exit && mvn spring-boot:run &
+    # Check if the service needs Vault credentials
+    if [[ "$service" == "user-service" || "$service" == "email-service" || "$service" == "password-service" ]]; then
+      # Set Vault credentials for the current service
+      set_vault_credentials "$service"
+    fi
+
+    cd "./$service" || exit
+    echo "Running $service with VAULT_APPROLE_ROLE_ID=$VAULT_APPROLE_ROLE_ID and VAULT_APPROLE_SECRET_ID=$VAULT_APPROLE_SECRET_ID"
+    env | grep VAULT
+
+    mvn spring-boot:run &
     cd .. || exit
+
+    # Wait for eureka-server and config-server to be ready before starting other services
+    if [[ "$service" == "eureka-server" ]]; then
+      wait_for_service "http://localhost:8761/eureka/apps" "Eureka Server"
+    elif [[ "$service" == "config-server" ]]; then
+      wait_for_service "http://localhost:8888/actuator/health" "Config Server"
+    fi
+
+    # Unset Vault credentials to prevent leakage to other services
+    if [[ "$service" == "user-service" || "$service" == "email-service" || "$service" == "password-service" ]]; then
+      unset VAULT_APPROLE_ROLE_ID
+      unset VAULT_APPROLE_SECRET_ID
+    fi
   done
 }
 
@@ -145,6 +194,7 @@ main() {
     run_liquibase
     start_vault_server
     setup_rabbitmq
+    # run_services
     echo "user_service: $USER_SERVICE_PW"
     echo "password_service: $PASSWORD_SERVICE_PW"
     echo "task_service: $TASK_SERVICE_PW"

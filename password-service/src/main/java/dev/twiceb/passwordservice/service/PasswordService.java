@@ -27,4 +27,5 @@ public interface PasswordService {
         Map<String, String> deleteAllPasswords();
         Page<KeychainProjection> searchPasswordsByQuery(SearchQueryRequest request,
                                                         BindingResult bindingResult, Pageable pageable);
+        Page<EncryptionKeyPrincipleProjection> getEncryptionKeys(Pageable pageable);
 }

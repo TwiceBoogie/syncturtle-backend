@@ -38,8 +38,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final LoginAttemptService loginAttemptService;
     private final PasswordResetService passwordResetService;
-    private final UserRepository userRepository;
     private final DeviceService deviceService;
+    private final UserRepository userRepository;
     private final UserServiceHelper userServiceHelper;
     private final EmailService emailService;
     private final JwtProvider jwtProvider;
@@ -74,22 +74,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(noRollbackFor = {NoRollbackApiRequestException.class})
+    @Transactional(noRollbackFor = { NoRollbackApiRequestException.class })
     public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
 
-        LocalDateTime currentTime = LocalDateTime.now();
-        Map<String, String> customHeaders = getDeviceKeyAndIp();
-        User user = findUserByUsername(request.getUsername());
-        validateUser(user, customHeaders, currentTime);
-        checkDeviceKeyAndHandleStatus(user, customHeaders, currentTime);
-        handleLoginAttempts(request.getPassword(), user, customHeaders);
-
-        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
-        return Map.of("user", user, "token", token);
+        return findUserByUsername(request.getUsername())
+                .map(user -> validateAndAuthenticateUser(user, request.getPassword()))
+                .orElseThrow(() -> new ApiRequestException("Invalid username or password", HttpStatus.UNAUTHORIZED));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> getUserByToken() {
         AuthUserProjection user = userRepository.getUserById(getUserId(), AuthUserProjection.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -101,44 +96,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional(readOnly = true)
     public Map<String, String> forgotUsername(String email, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        UserUsernameProjection user = userRepository.getUserByEmail(email, UserUsernameProjection.class)
+
+        return userRepository.getUserByEmail(email, UserUsernameProjection.class)
+                .map(user -> {
+                    sendUsernameEmail(user.getUsername(), email);
+                    return Map.of("message", "Check your email for your username");
+                })
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND_WITH_EMAIL, HttpStatus.NOT_FOUND));
-        emailService.sendUsernameToUsersEmail(user.getUsername(), email);
-        return Map.of("message", "Check your email for your username");
-    }
-
-    @Override
-    @Transactional
-    public Map<String, String> resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult).processPassword(
-                request.getPassword(), request.getConfirmPassword()
-        );
-        PasswordResetToken resetToken = passwordResetService.validateAndExpirePasswordResetToken(token);
-        User user = resetToken.getUser();
-        resetValidPassword(user, request.getPassword());
-        return Map.of("message", "Password has been reset. Try to login with your new password");
-    }
-
-    @Override
-    @Transactional(noRollbackFor = {NoRollbackApiRequestException.class})
-    public Map<String, Object> newDeviceVerification(String deviceVerificationCode, boolean trust) {
-        String hashedDeviceCode = decodeAndHashDeviceVerificationCode(deviceVerificationCode);
-        User user = deviceService.retrieveAndValidateDeviceVerificationCode(hashedDeviceCode);
-
-        if (!trust) {
-            lockUserAndSendEmail(user);
-            throw new NoRollbackApiRequestException(AUTHORIZATION_ERROR, HttpStatus.LOCKED);
-        }
-
-        loginAttemptService.updateLoginAttempt(user.getId());
-        String deviceKey = userServiceHelper.generateRandomCode();
-        user = userRepository.save(deviceService.verifyNewDevice(user, hashValue(Base64.getUrlDecoder().decode(deviceKey))));
-        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
-        String deviceToken = jwtProvider.createDeviceToken(deviceKey);
-
-        return Map.of("user", user, "token", token, "deviceToken", deviceToken);
     }
 
     /**
@@ -148,12 +115,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     public Map<String, String> forgotPassword(String email, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        User user = userRepository.getUserByEmail(email, User.class).orElseThrow(
-                () -> new ApiRequestException(USER_NOT_FOUND_WITH_EMAIL, HttpStatus.NOT_FOUND)
-        );
-        String otp = userServiceHelper.generateOTP();
-        String hashedOtp = hashValue(otp);
-        return passwordResetService.createAndSendPasswordResetOtpEmail(user, otp, hashedOtp);
+        return userRepository.getUserByEmail(email, User.class)
+                .map(passwordResetService::createAndSendPasswordResetOtpEmail)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND_WITH_EMAIL, HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> verifyOtp(String otp, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
+        return passwordResetService.verifyOtp(otp);
     }
 
     /**
@@ -161,62 +134,123 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      */
     @Override
     @Transactional
-    public Map<String, String> verifyOtp(String otp, BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult);
-        String token = userServiceHelper.generateRandomCode();
-        return passwordResetService.verifyOtp(hashValue(otp), token);
+    public Map<String, String> resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult).processPassword(
+                request.getPassword(), request.getConfirmPassword());
+        return passwordResetService.validateAndExpirePasswordResetToken(token)
+                .map(resetToken -> {
+                    User user = resetToken.getUser();
+                    resetValidPassword(user, request.getPassword());
+                    return Map.of("message", "Password has been reset. Try to login with your new password");
+                })
+                .orElseThrow(() -> new ApiRequestException("Password reset token is invalid.", HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(noRollbackFor = { NoRollbackApiRequestException.class })
+    public Map<String, Object> newDeviceVerification(String deviceVerificationCode, boolean trust) {
+        return deviceService.retrieveAndValidateDeviceVerificationCode(deviceVerificationCode)
+                .map(user -> handleDeviceVerification(user, trust))
+                .orElseThrow(() -> new ApiRequestException("User not found after device verification.",
+                        HttpStatus.FORBIDDEN));
+    }
+
+    private Map<String, Object> handleDeviceVerification(User user, boolean trust) {
+        if (!trust) {
+            lockUserAndSendEmail(user);
+            throw new NoRollbackApiRequestException(AUTHORIZATION_ERROR, HttpStatus.LOCKED);
+        }
+        updateLoginAttempt(user.getId());
+        return processNewDeviceVerification(user);
+    }
+
+    private Map<String, Object> processNewDeviceVerification(User user) {
+        String deviceKey = userServiceHelper.generateRandomCode();
+        user = userRepository.save(deviceService.processNewDevice(user, deviceKey));
+        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
+        String deviceToken = jwtProvider.createDeviceToken(deviceKey);
+
+        return Map.of("user", user, "token", token, "deviceToken", deviceToken);
+    }
+
+    private void updateLoginAttempt(Long userId) {
+        loginAttemptService.updateLoginAttempt(userId);
+    }
+
+    private void sendUsernameEmail(String username, String email) {
+        emailService.sendUsernameToUsersEmail(username, email);
     }
 
     private void createAndSendPasswordResetOtpEmail(User user) {
-        String otp = userServiceHelper.generateOTP();
-        String hashedOtp = hashValue(otp);
-        passwordResetService.createAndSendPasswordResetOtpEmail(user, otp, hashedOtp);
+        passwordResetService.createAndSendPasswordResetOtpEmail(user);
     }
 
     private void resetValidPassword(User user, String requestPassword) {
         if (userServiceHelper.isPasswordsEqual(requestPassword, user.getPassword())) {
-            user.setPassword(userServiceHelper.encodePassword(requestPassword));
-            userRepository.save(user);
+            throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.BAD_REQUEST);
         }
-        throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.BAD_REQUEST);
+        user.setPassword(userServiceHelper.encodePassword(requestPassword));
+        userRepository.save(user);
     }
 
-    private String decodeAndHashDeviceVerificationCode(String deviceVerificationCode) {
-        return userServiceHelper.hash(Base64.getUrlDecoder().decode(deviceVerificationCode));
+    private Optional<User> findUserByUsername(String username) {
+        return userRepository.findUserByUsername(username);
     }
 
-    private User findUserByUsername(String username) {
-        User user = userRepository.findUserByUsername(username);
-        if (user == null) {
-            throw new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-        return user;
+    private Map<String, Object> validateAndAuthenticateUser(User user, String password) {
+        LocalDateTime currentTime = LocalDateTime.now();
+        Map<String, String> customHeaders = getDeviceKeyAndIp();
+        validateUser(user, customHeaders, currentTime);
+        checkDeviceKeyAndHandleStatus(user, customHeaders);
+        handleLoginAttempts(password, user, customHeaders);
+        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
+        return Map.of("user", user, "token", token);
     }
 
+    // handles user's status and handle them accordingly
     private void validateUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime) {
+        switch (user.getUserStatus()) {
+            case ACTIVE -> handleActiveUser(user);
+            case SUSPENDED -> handleSuspendedUser(user);
+            case LOCKED -> handleLockedUser(user, customHeaders, currentTime);
+            case PENDING_USER_CONFIRMATION -> handlePendingUser(user, customHeaders, currentTime);
+            case null, default -> throw new ApiRequestException("Unknown user status", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private void handleActiveUser(User user) {
         if (!user.isVerified()) {
             throw new ApiRequestException(VERIFY_ACCOUNT_WITH_EMAIL, HttpStatus.BAD_REQUEST);
         }
+    }
 
-        if (user.getUserStatus().equals(UserStatus.LOCKED)) {
-            handleLockedUser(user, customHeaders, currentTime);
+    private void handleSuspendedUser(User user) {
+
+    }
+
+    private void handlePendingUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime) {
+        if (deviceService.isDeviceVerificationCodeSent(user.getId(), currentTime)) {
+            // TODO: should I create a login attempt on these?
+            throw new NoRollbackApiRequestException(DEVICE_KEY_NOT_FOUND_OR_MATCH, HttpStatus.FORBIDDEN);
+        } else {
+            handleUnverifiedDevice(user, customHeaders);
         }
     }
 
-    private void checkDeviceKeyAndHandleStatus(User user, Map<String, String> customHeaders, LocalDateTime currentTime) {
+    private void checkDeviceKeyAndHandleStatus(User user, Map<String, String> customHeaders) {
         if (!deviceService.verifyDevice(user.getId(), customHeaders.get(AUTH_USER_DEVICE_KEY))) {
             handleUnverifiedDevice(user, customHeaders);
         }
     }
 
     private void handleUnverifiedDevice(User user, Map<String, String> customHeaders) {
-        String randomCode = userServiceHelper.generateRandomCode();
-        String hashedRandomCode = userServiceHelper.hash(Base64.getUrlDecoder().decode(randomCode));
         user.setUserStatus(UserStatus.PENDING_USER_CONFIRMATION);
         user = userRepository.save(user);
-
         loginAttemptService.generateLoginAttempt(false, true, user, customHeaders.get(AUTH_USER_IP_HEADER));
-        deviceService.sendDeviceVerificationEmail(user, randomCode, hashedRandomCode, customHeaders);
+        deviceService.sendDeviceVerificationEmail(user, customHeaders);
 
         throw new NoRollbackApiRequestException(DEVICE_KEY_NOT_FOUND_OR_MATCH, HttpStatus.FORBIDDEN);
     }
@@ -235,26 +269,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         createAndSendPasswordResetOtpEmail(user);
     }
 
-    private String getDeviceKey() {
-        HttpServletRequest request = getRequest();
-        String deviceKey = request.getHeader(AUTH_USER_DEVICE_KEY);
-
-        if (deviceKey == null || deviceKey.isEmpty()) {
-            deviceKey = "";
-        } else {
-            // TODO: change this to Api-gateway?
-            deviceKey = decodeAndHashDeviceVerificationCode(jwtProvider.parseDeviceToken(deviceKey));
-        }
-        return deviceKey;
+    private String getDeviceKey(HttpServletRequest request) {
+        return request.getHeader(AUTH_USER_DEVICE_KEY);
     }
 
     private Map<String, String> getDeviceKeyAndIp() {
         HttpServletRequest request = getRequest();
+        Map<String, String> headers = extractHeaders(request);
+        // Use your logging framework to log headers, here we use System.out for simplicity
+        headers.forEach((key, value) -> log.info("{}: {}", key, value));
+
         return Map.of(
-                AUTH_USER_DEVICE_KEY, getDeviceKey(),
-                AUTH_USER_IP_HEADER, request.getHeader(AUTH_USER_IP_HEADER),
-                AUTH_USER_AGENT_HEADER, request.getHeader(AUTH_USER_AGENT_HEADER)
-        );
+                AUTH_USER_DEVICE_KEY, getDeviceKey(request),
+                AUTH_USER_IP_HEADER, request.getHeader("x-forwarded-for"),
+                AUTH_USER_AGENT_HEADER, request.getHeader("user-agent"));
     }
 
     private Long getUserId() {
@@ -262,17 +290,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return Long.parseLong(request.getHeader(AUTH_USER_ID_HEADER));
     }
 
+    @SuppressWarnings("null")
     private HttpServletRequest getRequest() {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
         return ((ServletRequestAttributes) attributes).getRequest();
     }
 
-    private String hashValue(String value) {
-        return userServiceHelper.hash(value);
-    }
-
-    private String hashValue(byte[] bytes) {
-        return userServiceHelper.hash(bytes);
+    private Map<String, String> extractHeaders(HttpServletRequest request) {
+        Map<String, String> headersMap = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            headersMap.put(headerName, request.getHeader(headerName));
+        }
+        return headersMap;
     }
 
 }

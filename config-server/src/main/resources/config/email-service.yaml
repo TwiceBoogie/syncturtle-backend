@@ -10,7 +10,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:03d481c72b55618b92e6fa6213496e957889955a27433b1320cfa94f2796e61f}
+      token: ${VAULT_TOKEN:1ac3cdad3d5acd21b543211ceb8493bda84c282957f8443734c3361f20c8c9be}
       fail-fast: true
       config.lifecycle.enabled: true
       rabbitmq:

@@ -1,6 +1,7 @@
 package dev.twiceb.passwordservice.dto.request;
 
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -17,5 +18,5 @@ public class UpdatePasswordRequest {
     private boolean isFavorite;
     private Long rotationPolicyId;
     @Size(max = 10, message = "Maximum 10 tags allowed")
-    private Set<Long> tags = new HashSet<>();
+    private Set<@Positive Long> tags = new HashSet<>();
 }

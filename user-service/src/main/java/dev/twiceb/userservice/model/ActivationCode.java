@@ -28,7 +28,7 @@ public class ActivationCode extends AuditableEntity {
     @Column(name = "expiration_time", nullable = false)
     private LocalDateTime expirationTime;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 

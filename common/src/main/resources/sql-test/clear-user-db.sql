@@ -1,0 +1,16 @@
+DELETE FROM "user-test".public.user_profiles;
+DELETE FROM "user-test".public.activation_codes;
+DELETE FROM "user-test".public.password_reset_otp;
+DELETE FROM "user-test".public.password_reset_token;
+DELETE FROM "user-test".public.user_devices;
+DELETE FROM "user-test".public.login_attempts;
+DELETE FROM "user-test".public.locked_users;
+DELETE FROM "user-test".public.users;
+ALTER SEQUENCE "user-test".public.users_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.user_profiles_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.activation_codes_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.password_reset_otp_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.password_reset_token_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.user_devices_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.login_attempts_id_seq RESTART WITH 1;
+ALTER SEQUENCE "user-test".public.locked_users_id_seq RESTART WITH 1;

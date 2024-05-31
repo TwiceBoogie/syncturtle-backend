@@ -18,31 +18,21 @@ sql_roles=(
 
 start_vault_server() {
   echo "Starting vault server."
-  vault server -dev -dev-root-token-id="$VAULT_TOKEN" &
+  vault server -dev -dev-root-token-id="$VAULT_TOKEN" -dev-listen-address="0.0.0.0:8200" -config=setup.hcl &
 
   sleep 5
 #  vault_pid=$(pgrep -f "vault server -dev -dev-root-token-id=$VAULT_TOKEN")
 #  echo "Vault server PID: $vault_pid"
+  vault secrets enable -path=secret kv-v2
 
+  vault policy write user-service-policy ./policies/user-service-policy.hcl
+  vault policy write email-service-policy ./policies/email-service-policy.hcl
+  vault policy write password-service-policy ./policies/password-service-policy.hcl
+  vault auth enable approle
 
-  echo 'path "secrets/password-service*" {
-          capabilities = ["create", "read", "update", "delete", "list"]
-        }
-        path "secret/application*" {
-          capabilities = ["create", "read", "update", "delete", "list"]
-        }
-        path "transit/decrypt/password" {
-          capabilities = ["update"]
-        }
-        path "transit/encrypt/password" {
-          capabilities = ["update"]
-        }
-        path "database/creds/password-service" {
-          capabilities = ["read"]
-        }
-        path "sys/renew/*" {
-          capabilities = ["update"]
-        }' | vault policy write password-service -
+  vault write auth/approle/role/user-service token_ttl=1h token_max_ttl=4h token_policies="user-service-policy"
+  vault write auth/approle/role/email-service token_ttl=1h token_max_ttl=4h token_policies="email-service-policy"
+  vault write auth/approle/role/password-service token_ttl=1h token_max_ttl=4h token_policies="password-service-policy"
 
   vault secrets enable database
 

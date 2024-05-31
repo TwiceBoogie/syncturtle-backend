@@ -1,0 +1,2 @@
+ALTER TABLE user_actions
+ADD COLUMN is_user_notified BOOLEAN DEFAULT FALSE;

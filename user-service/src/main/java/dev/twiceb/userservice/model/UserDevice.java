@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -25,6 +27,9 @@ public class UserDevice {
 
     @Column(name = "device_name", nullable = false)
     private String deviceName;
+
+    @OneToMany(mappedBy = "userDevice", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<UserAction> userActionHistory = new ArrayList<>();
 
     @Column(name = "last_access", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime lastAccess = LocalDateTime.now();

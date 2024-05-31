@@ -10,4 +10,9 @@ class PasswordsServiceApplicationTests {
     void contextLoads() {
     }
 
+    @Test
+    public void main() {
+        PasswordServiceApplication.main(new String[] {});
+    }
+
 }

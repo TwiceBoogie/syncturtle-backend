@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,7 +16,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI defineOpenApi() {
         Server server = new Server();
-        server.setUrl("http://localhost:8001");
+        server.setUrl("https://localhost:8000");
         server.setDescription("Development");
 
         Contact myContact = new Contact();
@@ -28,5 +29,14 @@ public class OpenApiConfig {
                 .description("This API exposes endpoints to manage users.")
                 .contact(myContact);
         return new OpenAPI().info(information).servers(List.of(server));
+    }
+
+    @Bean
+    public GroupedOpenApi publicApi() {
+        return GroupedOpenApi.builder()
+                .group("public-apis")
+                .packagesToScan("dev.twiceb.userservice.controller.rest")
+                .pathsToMatch("/ui/**")
+                .build();
     }
 }

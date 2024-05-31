@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.controller.api;
 
 import dev.twiceb.userservice.service.UserClientService;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static dev.twiceb.common.constants.PathConstants.*;
 
+@Hidden
 @RestController
 @RequestMapping(API_V1_USER)
 @RequiredArgsConstructor

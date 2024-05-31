@@ -2,6 +2,7 @@ package dev.twiceb.passwordservice.mapper;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.passwordservice.dto.request.*;
+import dev.twiceb.passwordservice.dto.response.EncryptionKeysResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -97,5 +98,9 @@ public class PasswordMapper {
         return basicMapper.getHeaderResponse(passwordService.searchPasswordsByQuery(
                 request, bindingResult, pageable), PasswordsResponse.class
         );
+    }
+
+    public HeaderResponse<EncryptionKeysResponse> getEncryptionKeys(Pageable pageable) {
+        return basicMapper.getHeaderResponse(passwordService.getEncryptionKeys(pageable), EncryptionKeysResponse.class);
     }
 }

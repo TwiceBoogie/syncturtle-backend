@@ -13,8 +13,8 @@ import dev.twiceb.userservice.repository.PasswordResetOtpRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -28,11 +28,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserServiceHelper extends ServiceHelper {
@@ -44,7 +46,6 @@ public class UserServiceHelper extends ServiceHelper {
     @PersistenceContext
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordResetOtpRepository passwordResetOtpRepository;
 
     public UserServiceHelper processBindingResults(BindingResult bindingResult) {
         this.processInputErrors(bindingResult);
@@ -60,18 +61,6 @@ public class UserServiceHelper extends ServiceHelper {
             throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
         }
     }
-
-    public void buildAndSendEmail(User user, String verification, String otp, String resetToken) {
-
-    }
-
-//    public PasswordResetOtp generatePasswordResetOtp(User user, String otp) {
-//        String hashedOtp = hash(otp);
-//        PasswordResetOtp otpEntity = new PasswordResetOtp();
-//        otpEntity.setHashedOtp(hashedOtp);
-//        otpEntity.setUser(user);
-//        return otpEntity;
-//    }
 
     private String generateRandomString(byte[] randomBytes) {
         SecureRandom secureRandom = new SecureRandom();
@@ -94,7 +83,7 @@ public class UserServiceHelper extends ServiceHelper {
         StringBuilder otp = new StringBuilder();
         Random random = new Random();
 
-        for (int i=0; i < OTP_LENGTH; i++) {
+        for (int i = 0; i < OTP_LENGTH; i++) {
             int index = random.nextInt(numbers.length());
             otp.append(numbers.charAt(index));
         }
@@ -112,7 +101,7 @@ public class UserServiceHelper extends ServiceHelper {
 
     public String hash(byte[] value) {
         try {
-        return hashCodeString(value);
+            return hashCodeString(value);
         } catch (NoSuchAlgorithmException e) {
             throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -139,6 +128,23 @@ public class UserServiceHelper extends ServiceHelper {
 
     public boolean isPasswordsEqual(String password, String passwordFromDb) {
         return passwordEncoder.matches(password, passwordFromDb);
+    }
+
+    public String decodeAndHashDeviceVerificationCode(String deviceVerificationCode) {
+        return decodeBase64(deviceVerificationCode)
+                .map(this::hash)
+                .orElseThrow(() -> {
+                    log.error("Invalid device verification code: {}", deviceVerificationCode);
+                    return new ApiRequestException("Device verification invalid", HttpStatus.BAD_REQUEST);
+                });
+    }
+
+    private Optional<byte[]> decodeBase64(String input) {
+        try {
+            return Optional.of(Base64.getUrlDecoder().decode(input));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     @Override

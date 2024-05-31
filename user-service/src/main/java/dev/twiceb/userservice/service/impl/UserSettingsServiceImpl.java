@@ -12,10 +12,12 @@ import dev.twiceb.userservice.repository.projection.AuthUserProjection;
 import dev.twiceb.userservice.repository.projection.ProfilePicUrlProjection;
 import dev.twiceb.userservice.service.AuthenticationService;
 import dev.twiceb.userservice.service.UserSettingsService;
+import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -31,6 +33,7 @@ public class UserSettingsServiceImpl implements UserSettingsService {
     private static final int MAX_PROFILE_PIC_COUNT = 10;
 
     private final AuthenticationService authenticationService;
+    private final UserServiceHelper userServiceHelper;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final FileClient fileClient;
@@ -38,12 +41,10 @@ public class UserSettingsServiceImpl implements UserSettingsService {
 
     @Override
     @Transactional
-    public String updateUsername(String username) {
-        if (username.isEmpty() || username.length() > 50) {
-            throw new ApiRequestException(INCORRECT_USERNAME_LENGTH, HttpStatus.BAD_REQUEST);
-        }
+    public String updateUsername(String username, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
         if (userRepository.existsUserByUsername(username)) {
-            throw new ApiRequestException(USERNAME_ALREADY_TAKEN, HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException(USERNAME_ALREADY_TAKEN, HttpStatus.CONFLICT);
         }
 
         User user = authenticationService.getAuthenticatedUser();
@@ -55,9 +56,10 @@ public class UserSettingsServiceImpl implements UserSettingsService {
 
     @Override
     @Transactional
-    public Map<String, Object> updateEmail(String email) {
+    public Map<String, Object> updateEmail(String email, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
         if (userRepository.isUserExistByEmail(email)) {
-            throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.CONFLICT);
         }
         Long authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updateEmail(email, authUserId);
@@ -69,12 +71,8 @@ public class UserSettingsServiceImpl implements UserSettingsService {
 
     @Override
     @Transactional
-    public Map<String, Object> updatePhone(String countryCode, Long phone) {
-        int phoneLength = String.valueOf(phone).length();
-
-        if (phoneLength < 6 || phoneLength > 10) {
-            throw new ApiRequestException(INVALID_PHONE_NUMBER, HttpStatus.BAD_REQUEST);
-        }
+    public Map<String, Object> updatePhone(String countryCode, Long phone, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
         Long authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updatePhone(countryCode, phone, authUserId);
 
@@ -88,10 +86,8 @@ public class UserSettingsServiceImpl implements UserSettingsService {
 
     @Override
     @Transactional
-    public String updateGender(String gender) {
-        if (gender.isEmpty() || gender.length() > 30) {
-            throw new ApiRequestException(INVALID_GENDER_LENGTH, HttpStatus.BAD_REQUEST);
-        }
+    public String updateGender(String gender, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
         Long authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updateGender(gender, authUserId);
         return gender;

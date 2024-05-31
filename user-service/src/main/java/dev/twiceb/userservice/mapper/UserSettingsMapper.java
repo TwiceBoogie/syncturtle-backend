@@ -10,6 +10,7 @@ import dev.twiceb.userservice.repository.projection.ProfilePicUrlProjection;
 import dev.twiceb.userservice.service.UserSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -23,24 +24,27 @@ public class UserSettingsMapper {
     private final UserSettingsService userSettingsService;
     private final BasicMapper mapper;
 
-    public String updateUsername(SettingsRequest request) {
-        return userSettingsService.updateUsername(request.getUsername());
+    public String updateUsername(SettingsRequest request, BindingResult bindingResult) {
+        return userSettingsService.updateUsername(request.getUsername(), bindingResult);
     }
 
-    public AuthenticationResponse updateEmail(SettingsRequest request) {
-        Map<String, Object> map = userSettingsService.updateEmail(request.getEmail());
+    public AuthenticationResponse updateEmail(SettingsRequest request, BindingResult bindingResult) {
+        Map<String, Object> map = userSettingsService.updateEmail(request.getEmail(), bindingResult);
         AuthenticationResponse authenticationResponse = authenticationMapper.getAuthenticationResponse(map);
         authenticationResponse.getUser().setEmail(request.getEmail());
         return authenticationResponse;
     }
 
-    public UserPhoneResponse updatePhone(SettingsRequest request) {
-        Map<String, Object> phoneParams = userSettingsService.updatePhone(request.getCountryCode(), request.getPhone());
+    public UserPhoneResponse updatePhone(SettingsRequest request, BindingResult bindingResult) {
+        Map<String, Object> phoneParams = userSettingsService.updatePhone(request.getCountryCode(),
+                request.getPhone(),
+                bindingResult
+        );
         return new UserPhoneResponse((String) phoneParams.get("countryCode"), (Long) phoneParams.get("phone"));
     }
 
-    public String updateGender(SettingsRequest request) {
-        return userSettingsService.updateGender(request.getGender());
+    public String updateGender(SettingsRequest request, BindingResult bindingResult) {
+        return userSettingsService.updateGender(request.getGender(), bindingResult);
     }
 
     public ProfilePicResponse updateProfilePic(Long newUserProfileId) {

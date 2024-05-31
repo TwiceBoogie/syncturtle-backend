@@ -32,8 +32,13 @@ spring:
         - id: login
           uri: lb://user-service
           predicates:
-            - Path=/ui/v1/auth/email-verification, /ui/v1/auth/password
+            - Path=/ui/v1/auth/login
           filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@userKeyResolver}"
             - name: DeviceAuth
         - id: public
           uri: lb://user-service
@@ -46,7 +51,7 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/user/**, /api/v1/auth/**
+            - Path=/ui/v1/user/**, /api/v1/user/**, /api/v1/auth/**
           filters:
             - name: Auth
         - id: password-service
@@ -55,10 +60,19 @@ spring:
             - Path=/ui/v1/password/**
           filters:
             - name: Auth
+            - name: DeviceAuth
         - id: task-service
           uri: lb://task-service
           predicates:
             - Path=/ui/v1/task/**, /api/v1/task/**
+        - id: user-service-doc
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/v3/api-docs
+        - id: password-service-doc
+          uri: lb://password-service
+          predicates:
+            - Path=/password-service/v3/api-docs
         # - id: retry
         #   uri: lb://user-service
         #   predicates:
@@ -74,6 +88,9 @@ spring:
         #           maxBackoff: 50ms
         #           factor: 3
         #           basedOnPreviousValue: false
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: 6379
 management:
   endpoint:
     shutdown:
@@ -93,3 +110,23 @@ eureka:
     register-with-eureka: true
   instance:
     hostname: ${EUREKA_HOST:localhost}
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway Service
+      - url: /user-service/v3/api-docs
+        name: User Service
+      - url: /password-service/v3/api-docs
+        name: Password Service
+logging:
+  level:
+    org:
+      springframework:
+        cache: TRACE
