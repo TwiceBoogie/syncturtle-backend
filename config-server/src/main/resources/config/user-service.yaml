@@ -10,7 +10,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:1ac3cdad3d5acd21b543211ceb8493bda84c282957f8443734c3361f20c8c9be}
+      token: ${VAULT_TOKEN:c5c2aa4759528908a5c81e5b27a78fcdb5cf19716fe8bf83b7dd67bb1bba0055}
       fail-fast: true
       config.lifecycle.enabled: true
       database:

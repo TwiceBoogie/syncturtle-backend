@@ -62,7 +62,6 @@ public class EncryptionKeyDbTest {
         User user = userOpt.get();
 
         // Initialize the lazy collection
-        Hibernate.initialize(user.getEncryptionKeys());
 
         // Generate encryption key and find rotation policy
         SecretKey randomKey = envelopeEncryption.generateKey();

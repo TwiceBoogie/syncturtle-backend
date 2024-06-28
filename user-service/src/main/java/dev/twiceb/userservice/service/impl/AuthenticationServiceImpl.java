@@ -275,9 +275,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private Map<String, String> getDeviceKeyAndIp() {
         HttpServletRequest request = getRequest();
-        Map<String, String> headers = extractHeaders(request);
-        // Use your logging framework to log headers, here we use System.out for simplicity
-        headers.forEach((key, value) -> log.info("{}: {}", key, value));
 
         return Map.of(
                 AUTH_USER_DEVICE_KEY, getDeviceKey(request),

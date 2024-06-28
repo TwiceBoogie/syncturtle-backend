@@ -15,34 +15,38 @@ source rabbitmq.sh
 # shellcheck disable=SC2034
 os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 # shellcheck disable=SC2034
-arch=$(uname -m)
+if [ "$os_name" = "linux" ]; then
+    arch=$(dpkg --print-architecture)
+else
+    arch=$(uname -m)
+fi
 # Array to store rows
-rows=()
-
-# Function to print the table header
-print_table_header() {
-    printf "+------------+----------+-------+---------+-------------+\n"
-    printf "| %-10s | %-8s | %-5s | %-7s | %-11s |\n" "steps" "pid" "name" "status" "messages"
-    printf "+------------+----------+-------+---------+-------------+\n"
-}
-
-add_row() {
-    local row=("$1" "$2" "$3" "$4" "$5")
-    rows+=("${row[@]}")
-}
-
-# Function to add a row to the table
-print_row() {
-    local status_color=""
-
-    if [ "$4" = "success" ]; then
-        status_color=$(tput setaf 2) # Green color
-    else
-        status_color=$(tput setaf 1) # Red color
-    fi
-
-    printf "| %-10s | %-8s | %-5s | ${status_color}%-7s$(tput sgr0) | %-11s |\n" "$1" "$2" "$3" "$4" "$5"
-}
+#rows=()
+#
+## Function to print the table header
+#print_table_header() {
+#    printf "+------------+----------+-------+---------+-------------+\n"
+#    printf "| %-10s | %-8s | %-5s | %-7s | %-11s |\n" "steps" "pid" "name" "status" "messages"
+#    printf "+------------+----------+-------+---------+-------------+\n"
+#}
+#
+#add_row() {
+#    local row=("$1" "$2" "$3" "$4" "$5")
+#    rows+=("${row[@]}")
+#}
+#
+## Function to add a row to the table
+#print_row() {
+#    local status_color=""
+#
+#    if [ "$4" = "success" ]; then
+#        status_color=$(tput setaf 2) # Green color
+#    else
+#        status_color=$(tput setaf 1) # Red color
+#    fi
+#
+#    printf "| %-10s | %-8s | %-5s | ${status_color}%-7s$(tput sgr0) | %-11s |\n" "$1" "$2" "$3" "$4" "$5"
+#}
 
 logo() {
   RED='\033[0;31m'
@@ -62,6 +66,26 @@ logo() {
                                           |_|
   "
   echo -e "${NC}" # Reset color
+}
+
+check_docker_permissions() {
+    if docker ps &>/dev/null; then
+        echo "Docker is accessible without sudo. Proceeding with the script."
+        return 0
+    else
+        echo "Failed to access Docker without sudo. Checking with sudo..."
+        if sudo docker ps &>/dev/null; then
+            echo "Docker is accessible with sudo, but the script requires no sudo for Docker."
+            echo "Please configure your Docker permissions to allow non-sudo access:"
+            echo "1. Add your user to the Docker group: sudo usermod -aG docker \${USER}"
+            echo "2. Log out and back in for this to take effect."
+            echo "3. Verify with: docker ps"
+            return 1
+        else
+            echo "Docker is not accessible, even with sudo. Please ensure Docker is installed and configured correctly."
+            return 2
+        fi
+    fi
 }
 
 
@@ -106,9 +130,9 @@ create_databases() {
 run_liquibase() {
   echo "Running liquibase command for services."
 
-  cd ./user-service || exit && mvn liquibase:update && cd .. || exit
-  cd ./password-service || exit && mvn liquibase:update && cd .. || exit
-  cd ./task-service || exit && mvn liquibase:update && cd .. || exit
+  ./mvnw -pl user-service liquibase:update
+  ./mvnw -pl password-service liquibase:update
+  ./mvnw -pl task-service liquibase:update
   docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d user -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_user_svc\";"
   docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d password -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_password_svc\";"
   docker exec -i ms-postgres psql -U "$POSTGRES_USERNAME" -d task -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"access_task_svc\";"
@@ -195,12 +219,11 @@ main() {
     start_vault_server
     setup_rabbitmq
     # run_services
-    echo "user_service: $USER_SERVICE_PW"
-    echo "password_service: $PASSWORD_SERVICE_PW"
-    echo "task_service: $TASK_SERVICE_PW"
-    echo "email_service: $EMAIL_SERVICE_PW"
+#    echo "user_service: $USER_SERVICE_PW"
+#    echo "password_service: $PASSWORD_SERVICE_PW"
+#    echo "task_service: $TASK_SERVICE_PW"
+#    echo "email_service: $EMAIL_SERVICE_PW"
     echo "vault_token: $VAULT_TOKEN"
-
   fi
 }
 

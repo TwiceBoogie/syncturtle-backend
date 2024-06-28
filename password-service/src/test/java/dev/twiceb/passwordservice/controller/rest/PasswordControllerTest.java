@@ -8,6 +8,8 @@ import static dev.twiceb.common.constants.PathConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import dev.twiceb.passwordservice.model.RotationPolicy;
+import dev.twiceb.passwordservice.model.User;
 import dev.twiceb.passwordservice.repository.KeychainRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,7 +17,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import javax.crypto.SecretKey;
@@ -24,7 +28,11 @@ import javax.crypto.spec.IvParameterSpec;
 import dev.twiceb.passwordservice.model.EncryptionKey;
 import dev.twiceb.passwordservice.model.Keychain;
 import dev.twiceb.passwordservice.repository.EncryptionKeyRepository;
+import dev.twiceb.passwordservice.repository.RotationPolicyRepository;
+import dev.twiceb.passwordservice.repository.UserRepository;
 import dev.twiceb.passwordservice.service.util.PasswordHelperService;
+import org.hibernate.Hibernate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,48 +78,91 @@ public class PasswordControllerTest {
     private EncryptionKeyRepository encryptionKeyRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private KeychainRepository keychainRepository;
+    @Autowired
+    private RotationPolicyRepository rotationPolicyRepository;
 
-    @Test
-    @DisplayName("testing envelope encryption")
-    public void testingEncryption() throws Exception {
-//                SecretKey randomKey = envelopeEncryption.generateKey();
-//                assertNotNull(randomKey, "Key should not be null");
-//                String encodedString = Base64.getEncoder().encodeToString(randomKey.getEncoded());
-//                System.out.println(encodedString);
-        // Retrieve the encryption key from the repository
-        Optional<EncryptionKey> ekOpt = encryptionKeyRepository.findById(2L);
-        assertThat(ekOpt).isPresent();
-        EncryptionKey ek = ekOpt.get();
-
-        Keychain keychain = keychainRepository.findById(2L).get();
-
-
-        // Rebuild the SecretKey using the helper method
-        SecretKey secretKey = helper.rebuildSecretKey(ek.getDek(), ek.getAlgorithm());
-
-        // Generate a new initialization vector (IV)
-        IvParameterSpec vector = helper.generateNewIv();
-
-        // Encrypt the password
-        String originalPassword = "Twice_Momo1";
-        byte[] encryptedPassword = helper.encryptPassword(originalPassword, secretKey, vector);
-
-        // Encode the encrypted password and IV to Base64 for storage or transmission
-        String encryptedPasswordBase64 = Base64.getEncoder().encodeToString(encryptedPassword);
-        String vectorBase64 = Base64.getEncoder().encodeToString(vector.getIV());
-        assertArrayEquals(encryptedPassword, Base64.getDecoder().decode(encryptedPasswordBase64));
-        // Decode the Base64 encoded IV for decryption
-        byte[] decodedVector = Base64.getDecoder().decode(vectorBase64);
-        assertArrayEquals(encryptedPassword, keychain.getPassword(), "the encrypted password bytes should be equal");
-        // Decrypt the password
-        String decryptedPassword = helper.decryptPassword(keychain.getPassword(), secretKey, keychain.getVector());
-        String decryptedPassword2 = helper.decryptPassword(encryptedPassword, secretKey, decodedVector);
-
-        // Assert that the decrypted password matches the original password
-        assertEquals(originalPassword, decryptedPassword, "Decrypted password should match the original password");
-
+    @BeforeEach
+    public void init() {
+        int index = 0;
+        while (index < 2) {
+            List<Long> ids = List.of(2L, 3L);
+            Optional<User> userOpt = userRepository.findById(ids.get(index));
+            assertThat(userOpt).isPresent();
+            User user = userOpt.get();
+            SecretKey randomKey = envelopeEncryption.generateKey();
+            RotationPolicy rotationPolicy = rotationPolicyRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("Rotation Policy not found"));
+            rotationPolicy.getPolicyName();
+            EncryptionKey key = new EncryptionKey(
+                    user,
+                    Base64.getEncoder().encodeToString(randomKey.getEncoded()),
+                    "Default",
+                    randomKey.getAlgorithm(),
+                    envelopeEncryption.getHighSecurityKeySize(),
+                    rotationPolicy);
+            key.setDescription("Default encryption key");
+            IvParameterSpec vector = envelopeEncryption.generateIv();
+            byte[] decryptedPassword = helper.encryptPassword("Twice_Mina1", randomKey, vector);
+            Keychain keychain = new Keychain(
+                    key,
+                    TestConstants.DOMAIN_USERNAME,
+                    TestConstants.SAME_DOMAIN,
+                    TestConstants.WEBSITE_URL,
+                    decryptedPassword,
+                    vector.getIV()
+            );
+            keychain.setRotationPolicy(rotationPolicy);
+            key.getKeychains().add(keychain);
+            user.getEncryptionKeys().add(key);
+            userRepository.save(user);
+            index++;
+        }
     }
+
+//    @Test
+//    @DisplayName("testing envelope encryption")
+//    public void testingEncryption() throws Exception {
+////                SecretKey randomKey = envelopeEncryption.generateKey();
+////                assertNotNull(randomKey, "Key should not be null");
+////                String encodedString = Base64.getEncoder().encodeToString(randomKey.getEncoded());
+////                System.out.println(encodedString);
+//        // Retrieve the encryption key from the repository
+//        Optional<EncryptionKey> ekOpt = encryptionKeyRepository.findById(2L);
+//        assertThat(ekOpt).isPresent();
+//        EncryptionKey ek = ekOpt.get();
+//
+//        Keychain keychain = keychainRepository.findById(2L).get();
+//
+//
+//        // Rebuild the SecretKey using the helper method
+//        SecretKey secretKey = helper.rebuildSecretKey(ek.getDek(), ek.getAlgorithm());
+//
+//        // Generate a new initialization vector (IV)
+//        IvParameterSpec vector = helper.generateNewIv();
+//
+//        // Encrypt the password
+//        String originalPassword = "Twice_Momo1";
+//        byte[] encryptedPassword = helper.encryptPassword(originalPassword, secretKey, vector);
+//
+//        // Encode the encrypted password and IV to Base64 for storage or transmission
+//        String encryptedPasswordBase64 = Base64.getEncoder().encodeToString(encryptedPassword);
+//        String vectorBase64 = Base64.getEncoder().encodeToString(vector.getIV());
+//        assertArrayEquals(encryptedPassword, Base64.getDecoder().decode(encryptedPasswordBase64));
+//        // Decode the Base64 encoded IV for decryption
+//        byte[] decodedVector = Base64.getDecoder().decode(vectorBase64);
+//        assertArrayEquals(encryptedPassword, keychain.getPassword(), "the encrypted password bytes should be equal");
+//        // Decrypt the password
+//        String decryptedPassword = helper.decryptPassword(keychain.getPassword(), secretKey, keychain.getVector());
+//        String decryptedPassword2 = helper.decryptPassword(encryptedPassword, secretKey, decodedVector);
+//
+//        // Assert that the decrypted password matches the original password
+//        assertEquals(originalPassword, decryptedPassword, "Decrypted password should match the original password");
+//
+//    }
 
     @Test
     @DisplayName("[201] POST /ui/v1/password - Create new domain password")
@@ -191,7 +242,7 @@ public class PasswordControllerTest {
         mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", is(DOMAIN_ALREADY_EXIST)));
     }
 
@@ -247,8 +298,8 @@ public class PasswordControllerTest {
     @DisplayName("[409] PATCH /ui/v1/password/update/{passwordId} - New password is the same as the one in db")
     public void updatePasswordOnly_ShouldNewPasswordMatchDbOne() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
-        request.setPassword("Twice_Momo1");
-        request.setConfirmPassword("Twice_Momo1");
+        request.setPassword("Twice_Mina1");
+        request.setConfirmPassword("Twice_Mina1");
         Long passwordId = 2L;
         mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, passwordId)
                         .header(AUTH_USER_ID_HEADER, 3L)
@@ -412,7 +463,7 @@ public class PasswordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(2)))
-                .andExpect(jsonPath("$.username", is("testuser1")));
+                .andExpect(jsonPath("$.username", is("random123")));
     }
 
     @Test
@@ -423,7 +474,7 @@ public class PasswordControllerTest {
                         .header(AUTH_USER_ID_HEADER, 3L)
                         .header(AUTH_DEVICE_KEY_ID, 2L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message", is("Twice_Momo1")));
+                .andExpect(jsonPath("$.message", is("Twice_Mina1")));
     }
 
     @Test

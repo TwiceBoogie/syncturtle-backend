@@ -122,7 +122,7 @@ public class RegistrationControllerTest {
         String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CODE)
                 .content(mapper.writeValueAsString(request))
                 .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

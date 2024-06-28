@@ -134,7 +134,7 @@ INSERT INTO activation_codes (
 VALUES (
         'ACTIVATION',
         'f6774519d1c7a3389ef327e9c04766b999db8cdfb85d1346c471ee86d65885bc',
-        '2024-06-01 10:00:00',
+        '2025-06-01 10:00:00',
         (
             SELECT id
             FROM users
