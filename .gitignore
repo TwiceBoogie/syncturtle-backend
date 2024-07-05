@@ -3,6 +3,10 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+work/
+vault/
+intermediate_bundle.pem
+vault_intermediate.csr
 
 ### STS ###
 .apt_generated

@@ -216,8 +216,8 @@ main() {
     wait_for_containers
     create_databases
     run_liquibase
-    start_vault_server
-    setup_rabbitmq
+    # start_vault_server
+    # setup_rabbitmq
     # run_services
 #    echo "user_service: $USER_SERVICE_PW"
 #    echo "password_service: $PASSWORD_SERVICE_PW"

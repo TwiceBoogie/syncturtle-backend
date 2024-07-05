@@ -44,6 +44,7 @@ install_vault_binary() {
 
   echo "Vault installed at: $vault_bin"
   echo "Vault version: $($vault_bin --version)"
+  cd ../ || exit
 }
 
 check_vault_exist() {

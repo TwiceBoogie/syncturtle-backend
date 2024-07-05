@@ -5,12 +5,15 @@ spring:
     name: user-service
   cloud:
     vault:
-      scheme: http
-      host: localhost
+      scheme: https
+      host: vault.twiceb.internal
       port: 8200
-      uri: http://localhost:8200
+      uri: https://vault.twiceb.internal:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:c5c2aa4759528908a5c81e5b27a78fcdb5cf19716fe8bf83b7dd67bb1bba0055}
+      token: ${VAULT_TOKEN:hvs.MQAch7wJPKlAZoko9pYh3nis}
+      ssl:
+        trust-store: file:/home/parallels/Projects/personaVault/work/keystore.jks
+        trust-store-password: changeit
       fail-fast: true
       config.lifecycle.enabled: true
       database:

@@ -1,0 +1,101 @@
+# OpenSSL Configuration for Enterprise CA
+# This configuration separates the root and intermediate certificate authorities
+
+# Main CA settings
+[ ca ]
+default_ca = CA_default          # Default CA section
+
+[ CA_default ]
+dir               = work/ca           # Root directory for CA files
+certs             = $dir/certs        # Where to store all certificates
+crl_dir           = $dir/crl          # Where to store Certificate Revocation Lists (CRLs)
+new_certs_dir     = $dir/newcerts     # Where to store new certificates
+database          = $dir/index.txt    # Database of issued certificates
+serial            = $dir/serial       # File keeping track of the next serial number
+RANDFILE          = $dir/private/.rand # File for random number generation
+
+# Directories for root and intermediate CAs
+private_key       = $dir/private/ca.key.pem  # Root CA private key
+certificate       = $dir/certs/ca.cert.pem   # Root CA certificate
+
+# CRL settings
+crlnumber         = $dir/crlnumber    # File keeping track of the next CRL number
+crl               = $dir/crl/ca.crl.pem # CRL file
+crl_extensions    = crl_ext           # CRL extensions
+default_crl_days  = 30                # How long before the next CRL
+
+# Default hashing algorithm
+default_md        = sha256            # Use SHA-256 for cryptographic security
+
+# Certificate and name options
+name_opt          = ca_default
+cert_opt          = ca_default
+default_days      = 375               # How long certs are valid
+preserve          = no
+policy            = policy_strict     # Strict policy for certificate issuance
+copy_extensions   = copy
+
+# Policies for certificate issuance
+[ policy_strict ]
+countryName             = match
+stateOrProvinceName     = match
+organizationName        = match
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+# Settings for the `req` tool
+[ req ]
+default_bits        = 2048
+distinguished_name  = req_distinguished_name
+string_mask         = utf8only
+default_md          = sha256
+x509_extensions     = v3_ca
+
+# Fields for the CSR
+[ req_distinguished_name ]
+countryName                     = Country Name (2 letter code)
+stateOrProvinceName             = State or Province Name
+localityName                    = Locality Name
+0.organizationName              = Organization Name
+organizationalUnitName          = Organizational Unit Name
+commonName                      = Common Name
+emailAddress                    = Email Address
+
+countryName_default             = NN
+stateOrProvinceName_default     = Vault Test
+0.organizationName_default      = spring-cloud-vault-config
+
+# Extensions for a typical CA
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+# Extensions for a typical intermediate CA
+[ v3_intermediate_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+# Extensions for user/client certificates
+[ usr_cert ]
+basicConstraints = CA:FALSE
+nsCertType = client, email
+nsComment = "OpenSSL Generated Client Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth, emailProtection
+
+# Extensions for server certificates
+[ server_cert ]
+basicConstraints = CA:FALSE
+nsCertType = server
+nsComment = "OpenSSL Generated Server Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
