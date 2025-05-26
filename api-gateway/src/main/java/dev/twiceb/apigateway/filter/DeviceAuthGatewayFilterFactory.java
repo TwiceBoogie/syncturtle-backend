@@ -18,6 +18,7 @@ import static dev.twiceb.common.constants.PathConstants.AUTH_DEVICE_KEY_ID;
 import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -81,7 +82,7 @@ public class DeviceAuthGatewayFilterFactory
         }
     }
 
-    private Mono<Void> addHeadersAndContinue(ServerWebExchange exchange, GatewayFilterChain chain, Long deviceId) {
+    private Mono<Void> addHeadersAndContinue(ServerWebExchange exchange, GatewayFilterChain chain, UUID deviceId) {
         ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
                 .headers(httpHeaders -> {
                     httpHeaders.remove(AUTH_USER_DEVICE_KEY);

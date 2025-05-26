@@ -60,14 +60,25 @@ spring:
           uri: lb://task-service
           predicates:
             - Path=/ui/v1/task/**, /api/v1/task/**
+        # Swagger/OpenAPI doc rewrites
         - id: user-service-doc
           uri: lb://user-service
           predicates:
             - Path=/user-service/v3/api-docs
+          filters:
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         - id: password-service-doc
           uri: lb://password-service
           predicates:
             - Path=/password-service/v3/api-docs
+          filters:
+            - RewritePath=/password-service/(?<segment>.*), /$\{segment}
+        - id: task-service-doc
+          uri: lb://task-service
+          predicates:
+            - Path=/task-service/v3/api-docs
+          filters:
+            - RewritePath=/task-service/(?<segment>.*), /$\{segment}
         # - id: retry
         #   uri: lb://user-service
         #   predicates:
@@ -96,6 +107,12 @@ management:
     web:
       exposure:
         include: "*"
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411
+  tracing:
+    sampling:
+      probability: 1.0
 
 eureka:
   client:
@@ -104,7 +121,7 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
   instance:
-    hostname: ${EUREKA_HOST:localhost}
+    hostname: ${HOST_NAME:localhost}
 springdoc:
   api-docs:
     enabled: true
@@ -120,6 +137,8 @@ springdoc:
         name: User Service
       - url: /password-service/v3/api-docs
         name: Password Service
+      - url: /task-service/v3/api-docs
+        name: Task Service
 logging:
   level:
     org:

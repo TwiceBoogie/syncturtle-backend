@@ -2,11 +2,13 @@ package dev.twiceb.userservice.service;
 
 import dev.twiceb.common.dto.response.UserDeviceResponse;
 
+import java.util.UUID;
+
 public interface UserClientService {
 
-    String getUserEmail(Long userId);
-    void increaseNotificationCount(Long userId);
-    void decreaseNotificationCount(Long userId);
-    void resetNotificationCount(Long userId);
-    UserDeviceResponse getUserDevice(Long userId);
+    String getUserEmail(UUID userId);
+    void increaseNotificationCount(UUID userId);
+    void decreaseNotificationCount(UUID userId);
+    void resetNotificationCount(UUID userId);
+    UserDeviceResponse getUserDevice(UUID userId);
 }

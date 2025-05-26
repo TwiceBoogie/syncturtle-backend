@@ -7,6 +7,7 @@ import dev.twiceb.userservice.repository.projection.LoginAttemptProjection;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Service interface for handling login attempts and related user actions.
@@ -24,17 +25,17 @@ public interface LoginAttemptService {
     void generateLoginAttempt(boolean success, boolean newDevice, User user, String ipAddress);
 
     /**
-     * Handles the login attempts for a user account.
+     * Handles the login attempts for a user.
      * It checks if there are any successful attempts starting from the specified start date.
      * If there are any successful attempts, it won't count any failed attempts
      * within the period from the start date to the current time and those will be ignored.
      *
      * @param isPasswordMatch boolean from previous password check
-     * @param user The user account being verified.
+     * @param user The user user being verified.
      * @param customHeaders The custom headers containing additional information such as the user's IP address.
      *
      * @throws NoRollbackApiRequestException If the provided password is incorrect, indicating a failed login attempt.
-     *                                     If the maximum number of login attempts is reached, the user's account will be locked.
+     *                                     If the maximum number of login attempts is reached, the user's user will be locked.
      */
     void handleLoginAttempt(boolean isPasswordMatch, User user, Map<String, String> customHeaders);
 
@@ -43,28 +44,28 @@ public interface LoginAttemptService {
      *
      * @param userId The ID of the user whose login attempt is being updated.
      */
-    void updateLoginAttempt(Long userId);
+    void updateLoginAttempt(UUID userId);
 
     /**
-     * Locks the user's account for a specified reason.
+     * Locks the user's user for a specified reason.
      *
-     * @param user   The user whose account is being locked.
-     * @param reason The reason for locking the account.
+     * @param user   The user whose user is being locked.
+     * @param reason The reason for locking the user.
      * @return The updated user with the locked status.
      */
     User lockUser(User user, String reason);
 
     /**
-     * Handles the case where the user's account is locked.
+     * Handles the case where the user's user is locked.
      * If the lockout duration has not yet elapsed, a {@link NoRollbackApiRequestException} is thrown.
      * Otherwise, the user's status is updated to active.
      *
-     * @param user          The user whose account is locked.
+     * @param user          The user whose user is locked.
      * @param customHeaders The custom headers containing the user's IP address and other information.
      * @param currentTime   The current time used to calculate the lockout duration.
      * @throws NoRollbackApiRequestException If the lockout duration has not yet elapsed.
      */
     void handleLockedUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime);
 
-    LoginAttemptProjection getRecentLoginAttempt(Long userId);
+    LoginAttemptProjection getRecentLoginAttempt(UUID userId);
 }

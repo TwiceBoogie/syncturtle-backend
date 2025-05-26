@@ -1,8 +1,8 @@
 package dev.twiceb.taskservice.amqp;
 
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
-import dev.twiceb.taskservice.model.Accounts;
-import dev.twiceb.taskservice.repository.AccountsRepository;
+import dev.twiceb.taskservice.model.User;
+import dev.twiceb.taskservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -12,17 +12,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AmqpConsumer {
 
-    private final AccountsRepository accountsRepository;
+    private final UserRepository userRepository;
 
     @SneakyThrows
     @RabbitListener(queues = "q.tasksvc")
     public void userCreatedListener(UserPrincipleResponse res) {
-        if (accountsRepository.isAccountExist(res.getId())) {
+        if (userRepository.isAccountExist(res.getId())) {
             throw new RuntimeException("Account already exist");
         }
 
-        Accounts account = new Accounts(res.getId(), res.getUserStatus(), res.getRole());
+        User account = new User(res.getId(), res.getUserStatus(), res.getRole());
 
-        accountsRepository.save(account);
+        userRepository.save(account);
     }
 }

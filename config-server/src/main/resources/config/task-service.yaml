@@ -5,12 +5,15 @@ spring:
     name: task-service
   cloud:
     vault:
-      scheme: http
-      host: localhost
+      scheme: https
+      host: vault.twiceb.internal
       port: 8200
-      uri: http://localhost:8200
+      uri: https://vault.twiceb.internal:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:e5a1ebbd6a1eb3546ee1731358af46dcb7bc93c25dbf3debf1b649dac37cb1a3}
+      token: ${VAULT_TOKEN:hvs.Dja4eR4ujYtNUWiVrNXjFeqJ}
+      ssl:
+        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
+        trust-store-password: changeit
       fail-fast: true
       config.lifecycle.enabled: true
       database:
@@ -45,6 +48,22 @@ spring:
     user: sebastian
     password: Twice_Mina1
     change-log: classpath:db/changelog/db.changelog-master.xml
+  rabbitmq:
+    addresses: ${RABBITMQ_HOST:localhost}:5672
+  kafka:
+    bootstrap-servers: ${BROKER_HOST:localhost:9092}
+    consumer:
+      group-id: task
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://${EUREKA_HOST:localhost}:8761/eureka
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: ${HOST_NAME:localhost}
+
 management:
   endpoints:
     web:
@@ -53,6 +72,12 @@ management:
   endpoint:
     shutdown:
       enabled: true
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411
+  tracing:
+    sampling:
+      probability: 1.0
 
 rabbitmq:
   exchanges:

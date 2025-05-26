@@ -21,37 +21,39 @@ import dev.twiceb.common.dto.response.UserPrincipleResponse;
 @Configuration
 public class RedisConfig {
 
-    @Bean
-    LettuceConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory();
-    }
+        @Bean
+        LettuceConnectionFactory redisConnectionFactory() {
+                return new LettuceConnectionFactory();
+        }
 
-    @Bean
-    RedisCacheManager cacheManager(LettuceConnectionFactory redisConnectionFactory) {
-        ObjectMapper myMapper = new ObjectMapper();
-        myMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        myMapper.registerModule(new Hibernate6Module()
-                .enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
-                .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
-        myMapper.activateDefaultTyping(myMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.EVERYTHING,
-                JsonTypeInfo.As.PROPERTY);
-        Jackson2JsonRedisSerializer<UserPrincipleResponse> serializer = new Jackson2JsonRedisSerializer<>(myMapper,
-                UserPrincipleResponse.class);
+        @Bean
+        RedisCacheManager cacheManager(LettuceConnectionFactory redisConnectionFactory) {
+                ObjectMapper myMapper = new ObjectMapper();
+                myMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                myMapper.registerModule(new Hibernate6Module()
+                                .enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
+                                .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
+                myMapper.activateDefaultTyping(
+                                myMapper.getPolymorphicTypeValidator(),
+                                ObjectMapper.DefaultTyping.NON_FINAL_AND_ENUMS,
+                                JsonTypeInfo.As.PROPERTY);
+                Jackson2JsonRedisSerializer<UserPrincipleResponse> serializer = new Jackson2JsonRedisSerializer<>(
+                                myMapper,
+                                UserPrincipleResponse.class);
 
-        RedisSerializationContext.SerializationPair<UserPrincipleResponse> serializationPair = RedisSerializationContext.SerializationPair
-                .fromSerializer(serializer);
-        RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeValuesWith(serializationPair)
-                .entryTtl(Duration.ofHours(1)); // Set time-to-live for cache entries to 1 hr
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(cacheConfig)
-                .build();
-    }
+                RedisSerializationContext.SerializationPair<UserPrincipleResponse> serializationPair = RedisSerializationContext.SerializationPair
+                                .fromSerializer(serializer);
+                RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                                .serializeValuesWith(serializationPair)
+                                .entryTtl(Duration.ofHours(1)); // Set time-to-live for cache entries to 1 hr
+                return RedisCacheManager.builder(redisConnectionFactory)
+                                .cacheDefaults(cacheConfig)
+                                .build();
+        }
 
-    @Bean
-    KeyGenerator customKeyGenerator() {
-        return (target, method, params) -> params[0];
-    }
+        @Bean
+        KeyGenerator customKeyGenerator() {
+                return (target, method, params) -> params[0];
+        }
 
 }

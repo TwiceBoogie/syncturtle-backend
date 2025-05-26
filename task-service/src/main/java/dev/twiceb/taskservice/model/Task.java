@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,65 +16,52 @@ import java.util.List;
 @Getter
 @Setter
 @Table(name = "tasks")
-public class Task {
+public class Task extends ProjectBaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @Column(name = "name", nullable = false)
+        private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    private Accounts account;
+        @Column(name = "description", nullable = false)
+        private String description;
 
-    @Column(name = "task_title", nullable = false)
-    private String taskTitle;
+        @Column(name = "start_date")
+        private LocalDateTime startDate;
 
-    @Column(name = "task_description", nullable = false)
-    private String taskDescription;
+        @Column(name = "target_date")
+        private LocalDateTime targetDate;
 
-    @Column(name = "due_date", nullable = false)
-    private LocalDate dueDate;
+        @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+        @JoinColumn(name = "parent_id")
+        private Task parent;
 
-    @Column(name = "priority", nullable = false)
-    @ColumnTransformer(
-            read = "priority",
-            write = "?::priority_status"
-    )
-    private PriorityStatus priority = PriorityStatus.NONE;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "module_id")
+        private Module module;
 
-    @Column(name = "status", nullable = false)
-    @ColumnTransformer(
-            read = "status",
-            write = "?::task_status"
-    )
-    private EventStatus taskStatus = EventStatus.IN_PROGRESS;
+        @Column(name = "completed_at")
+        private LocalDateTime completedAt;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
+        @Column(name = "priority", nullable = false)
+        @ColumnTransformer(read = "priority", write = "?::priority_status")
+        private PriorityStatus priority = PriorityStatus.NONE;
 
-    @Column(name = "completed_date")
-    private LocalDateTime completedDate;
+        @Column(name = "status", nullable = false)
+        @ColumnTransformer(read = "status", write = "?::task_status")
+        private EventStatus taskStatus = EventStatus.IN_PROGRESS;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TaskAttachment> attachments = new ArrayList<>();
+        @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<TaskAttachment> attachments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SubTasks> subtasks = new ArrayList<>();
+        @ManyToMany
+        @JoinTable(name = "task_tags", joinColumns = { @JoinColumn(name = "task_id") }, inverseJoinColumns = {
+                        @JoinColumn(name = "tag_id") })
+        private List<Tags> tags = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "task_tags",
-            joinColumns = {@JoinColumn(name = "task_id")},
-            inverseJoinColumns = {@JoinColumn(name = "tag_id")}
-    )
-    private List<Tags> tags = new ArrayList<>();
+        public Task() {
+        }
 
-    public Task() {}
-
-    public Task(Accounts account, String taskTitle, String taskDescription, LocalDate dueDate) {
-        this.account = account;
-        this.taskTitle = taskTitle;
-        this.taskDescription = taskDescription;
-        this.dueDate = dueDate;
-    }
+        public Task(String name, String description) {
+                this.name = name;
+                this.description = description;
+        }
 }

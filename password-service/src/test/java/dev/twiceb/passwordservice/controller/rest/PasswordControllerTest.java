@@ -17,10 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -75,28 +72,29 @@ public class PasswordControllerTest {
     private PasswordHelperService helper;
 
     @Autowired
-    private EncryptionKeyRepository encryptionKeyRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private KeychainRepository keychainRepository;
-    @Autowired
     private RotationPolicyRepository rotationPolicyRepository;
+
+    // For now but change
+    private UUID encryptionKey1;
+    private UUID encryptionKey2;
+    private UUID keychainId1;
+    private UUID keychainId2;
 
     @BeforeEach
     public void init() {
         int index = 0;
+        List<String> ids = List.of("f4f8a3d9-66d3-4e1a-a610-0cce26aaa956", "a0c60a16-d82e-46bc-942b-22f9ebbdbee5");
         while (index < 2) {
-            List<Long> ids = List.of(2L, 3L);
-            Optional<User> userOpt = userRepository.findById(ids.get(index));
+            Optional<User> userOpt = userRepository.findById(UUID.fromString(ids.get(index)));
             assertThat(userOpt).isPresent();
             User user = userOpt.get();
             SecretKey randomKey = envelopeEncryption.generateKey();
             RotationPolicy rotationPolicy = rotationPolicyRepository.findById(1L)
                     .orElseThrow(() -> new RuntimeException("Rotation Policy not found"));
-            rotationPolicy.getPolicyName();
+
             EncryptionKey key = new EncryptionKey(
                     user,
                     Base64.getEncoder().encodeToString(randomKey.getEncoded()),
@@ -118,7 +116,16 @@ public class PasswordControllerTest {
             keychain.setRotationPolicy(rotationPolicy);
             key.getKeychains().add(keychain);
             user.getEncryptionKeys().add(key);
-            userRepository.save(user);
+            user = userRepository.save(user);
+            EncryptionKey keyExample = user.getEncryptionKeys().getFirst();
+            if (index == 0) {
+                encryptionKey1 = keyExample.getId();
+                keychainId1 = keyExample.getKeychains().getFirst().getId();
+
+            } else {
+                encryptionKey2 = keyExample.getId();
+                keychainId2 = keyExample.getKeychains().getFirst().getId();
+            }
             index++;
         }
     }
@@ -167,16 +174,9 @@ public class PasswordControllerTest {
     @Test
     @DisplayName("[201] POST /ui/v1/password - Create new domain password")
     public void createNewPassword() throws Exception {
-        CreatePasswordRequest request = new CreatePasswordRequest();
-        request.setEncryptionId(TestConstants.ENCRYPTION_ID);
-        request.setDomain(TestConstants.DOMAIN);
-        request.setWebsiteUrl(TestConstants.WEBSITE_URL);
-        request.setUsername(TestConstants.DOMAIN_USERNAME);
-        request.setPassword(TestConstants.DOMAIN_PASSWORD);
-        request.setConfirmPassword(TestConstants.DOMAIN_CONFIRM_PASSWORD);
-        request.setNotes(TestConstants.DOMAIN_NOTES);
-        request.setPasswordExpiryPolicy(TestConstants.DOMAIN_EXPIRY_POLICY);
-        request.setCategory(TestConstants.DOMAIN_CATEGORIES);
+        CreatePasswordRequest request = getCreatePasswordRequest(
+                this.encryptionKey1, TestConstants.DOMAIN, TestConstants.WEBSITE_URL
+        );
         mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER,
                                 TestConstants.USER_ID)
                         .content(mapper.writeValueAsString(request))
@@ -189,17 +189,10 @@ public class PasswordControllerTest {
     @Test
     @DisplayName("[401] POST /ui/v1/password - Encryption key wrong ownership")
     public void createNewPassword_ShouldUserNotOwnKey() throws Exception {
-        CreatePasswordRequest request = new CreatePasswordRequest();
-        request.setEncryptionId(TestConstants.ENCRYPTION_ID);
-        request.setDomain(TestConstants.DOMAIN);
-        request.setWebsiteUrl(TestConstants.WEBSITE_URL);
-        request.setUsername(TestConstants.DOMAIN_USERNAME);
-        request.setPassword(TestConstants.DOMAIN_PASSWORD);
-        request.setConfirmPassword(TestConstants.DOMAIN_CONFIRM_PASSWORD);
-        request.setNotes(TestConstants.DOMAIN_NOTES);
-        request.setPasswordExpiryPolicy(TestConstants.DOMAIN_EXPIRY_POLICY);
-        request.setCategory(TestConstants.DOMAIN_CATEGORIES);
-        mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER, 1l)
+        CreatePasswordRequest request = getCreatePasswordRequest(
+                this.encryptionKey2, TestConstants.DOMAIN, TestConstants.WEBSITE_URL
+        );
+        mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isUnauthorized())
@@ -209,16 +202,9 @@ public class PasswordControllerTest {
     @Test
     @DisplayName("[404] POST /ui/v1/password - Encryption key not found")
     public void createNewPassword_ShouldEncryptionKeyNotFound() throws Exception {
-        CreatePasswordRequest request = new CreatePasswordRequest();
-        request.setEncryptionId(50L);
-        request.setDomain(TestConstants.DOMAIN);
-        request.setWebsiteUrl(TestConstants.WEBSITE_URL);
-        request.setUsername(TestConstants.DOMAIN_USERNAME);
-        request.setPassword(TestConstants.DOMAIN_PASSWORD);
-        request.setConfirmPassword(TestConstants.DOMAIN_CONFIRM_PASSWORD);
-        request.setNotes(TestConstants.DOMAIN_NOTES);
-        request.setPasswordExpiryPolicy(TestConstants.DOMAIN_EXPIRY_POLICY);
-        request.setCategory(TestConstants.DOMAIN_CATEGORIES);
+        CreatePasswordRequest request = getCreatePasswordRequest(
+                UUID.randomUUID(), TestConstants.DOMAIN, TestConstants.WEBSITE_URL
+        );
         mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -226,19 +212,27 @@ public class PasswordControllerTest {
                 .andExpect(jsonPath("$.message", is(NO_RESOURCE_FOUND)));
     }
 
-    @Test
-    @DisplayName("[400] POST /ui/v1/password - Domain already exist")
-    public void createNewPassword_ShouldDomainExist() throws Exception {
+    private CreatePasswordRequest getCreatePasswordRequest(UUID encryptionId, String domain, String website) {
         CreatePasswordRequest request = new CreatePasswordRequest();
-        request.setEncryptionId(TestConstants.ENCRYPTION_ID);
-        request.setDomain(TestConstants.SAME_DOMAIN);
-        request.setWebsiteUrl(TestConstants.SAME_WEBSITE_URL);
+        request.setEncryptionId(encryptionId);
+        request.setDomain(domain);
+        request.setWebsiteUrl(website);
         request.setUsername(TestConstants.DOMAIN_USERNAME);
         request.setPassword(TestConstants.DOMAIN_PASSWORD);
         request.setConfirmPassword(TestConstants.DOMAIN_CONFIRM_PASSWORD);
         request.setNotes(TestConstants.DOMAIN_NOTES);
         request.setPasswordExpiryPolicy(TestConstants.DOMAIN_EXPIRY_POLICY);
         request.setCategory(TestConstants.DOMAIN_CATEGORIES);
+        return request;
+    }
+
+
+    @Test
+    @DisplayName("[400] POST /ui/v1/password - Domain already exist")
+    public void createNewPassword_ShouldDomainExist() throws Exception {
+        CreatePasswordRequest request = getCreatePasswordRequest(
+                this.encryptionKey1, TestConstants.SAME_DOMAIN, TestConstants.SAME_WEBSITE_URL
+        );
         mockMvc.perform(post(UI_V1_PASSWORD).header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -252,10 +246,9 @@ public class PasswordControllerTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setPassword("Twice_Momo1");
         request.setConfirmPassword("Twice_Momo1");
-        Long passwordId = 1L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, passwordId)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, this.keychainId1)
                         .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
-                        .header(AUTH_DEVICE_KEY_ID, 1L)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -268,10 +261,9 @@ public class PasswordControllerTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setPassword("Twice_Momo1");
         request.setConfirmPassword("Twice_Momo1");
-        Long passwordId = 50L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, passwordId)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, UUID.randomUUID())
                         .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
-                        .header(AUTH_DEVICE_KEY_ID, 1L)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
@@ -284,10 +276,9 @@ public class PasswordControllerTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setPassword("Twice_Momo1");
         request.setConfirmPassword("Twice_Momo1");
-        Long passwordId = 1L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, UUID.randomUUID())
+                        .header(AUTH_DEVICE_KEY_ID, UUID.randomUUID())
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isUnauthorized())
@@ -300,10 +291,9 @@ public class PasswordControllerTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setPassword("Twice_Mina1");
         request.setConfirmPassword("Twice_Mina1");
-        Long passwordId = 2L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isConflict())
@@ -315,10 +305,9 @@ public class PasswordControllerTest {
     public void updateTags() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setTags(TestConstants.DOMAIN_CATEGORIES);
-        Long passwordId = 2L;
-        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNoContent());
@@ -329,10 +318,9 @@ public class PasswordControllerTest {
     public void updateTags_ShouldPasswordNotFound() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setTags(TestConstants.DOMAIN_CATEGORIES);
-        Long passwordId = 60L;
-        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, UUID.randomUUID())
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
@@ -344,10 +332,9 @@ public class PasswordControllerTest {
     public void updateTags_ShouldTagsNotValid() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setTags(TestConstants.INVALID_DOMAIN_CATEGORIES);
-        Long passwordId = 2L;
-        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(put(UI_V1_PASSWORD + UPDATE_PASSWORD_TAGS, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest());
@@ -358,10 +345,9 @@ public class PasswordControllerTest {
     public void favoritePassword() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setFavorite(true);
-        Long passwordId = 2L;
-        mockMvc.perform(put(UI_V1_PASSWORD + FAVORITE_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(put(UI_V1_PASSWORD + FAVORITE_PASSWORD, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNoContent());
@@ -372,10 +358,9 @@ public class PasswordControllerTest {
     public void favoritePassword_ShouldPasswordNotFound() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setFavorite(true);
-        Long passwordId = 50L;
-        mockMvc.perform(put(UI_V1_PASSWORD + FAVORITE_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(put(UI_V1_PASSWORD + FAVORITE_PASSWORD, UUID.randomUUID())
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
@@ -387,10 +372,9 @@ public class PasswordControllerTest {
     public void updateUsername() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setUsername("randomUsername");
-        Long passwordId = 2L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD_USERNAME, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD_USERNAME, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -402,10 +386,9 @@ public class PasswordControllerTest {
     public void updateUsername_ShouldPasswordNotFound() throws Exception {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setUsername("randomUsername");
-        Long passwordId = 50L;
-        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD_USERNAME, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(patch(UI_V1_PASSWORD + UPDATE_PASSWORD_USERNAME, UUID.randomUUID())
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
@@ -417,8 +400,8 @@ public class PasswordControllerTest {
     public void getPasswords() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
         mockMvc.perform(get(UI_V1_PASSWORD)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(pageable))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -430,8 +413,8 @@ public class PasswordControllerTest {
     public void getPasswords_CriteriaExpiring() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
         mockMvc.perform(get(UI_V1_PASSWORD, "expiring")
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(pageable))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -443,8 +426,8 @@ public class PasswordControllerTest {
     public void getPasswords_CriteriaRecent() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
         mockMvc.perform(get(UI_V1_PASSWORD, "recent")
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(pageable))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -455,24 +438,22 @@ public class PasswordControllerTest {
     @DisplayName("[200] GET /ui/v1/password/{passwordId}/info - Get password info")
     public void getPassword() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
-        Long passwordId = 2L;
-        mockMvc.perform(get(UI_V1_PASSWORD + GET_PASSWORD_INFO, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L)
+        mockMvc.perform(get(UI_V1_PASSWORD + GET_PASSWORD_INFO, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1)
                         .content(mapper.writeValueAsString(pageable))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(2)))
+                .andExpect(jsonPath("$.id", is(this.keychainId1.toString())))
                 .andExpect(jsonPath("$.username", is("random123")));
     }
 
     @Test
     @DisplayName("[200] GET /ui/v1/password/decrypt/{passwordId} - Get decrypted password")
     public void getPassword_Decrypt() throws Exception {
-        Long passwordId = 2L;
-        mockMvc.perform(get(UI_V1_PASSWORD + GET_DECRYPTED_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L))
+        mockMvc.perform(get(UI_V1_PASSWORD + GET_DECRYPTED_PASSWORD, this.keychainId1)
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Twice_Mina1")));
     }
@@ -480,10 +461,9 @@ public class PasswordControllerTest {
     @Test
     @DisplayName("[401] GET /ui/v1/password/decrypt/{passwordId} - Password not found")
     public void getPassword_DecryptNotFound() throws Exception {
-        Long passwordId = 50L;
-        mockMvc.perform(get(UI_V1_PASSWORD + GET_DECRYPTED_PASSWORD, passwordId)
-                        .header(AUTH_USER_ID_HEADER, 3L)
-                        .header(AUTH_DEVICE_KEY_ID, 2L))
+        mockMvc.perform(get(UI_V1_PASSWORD + GET_DECRYPTED_PASSWORD, UUID.randomUUID())
+                        .header(AUTH_USER_ID_HEADER, TestConstants.USER_ID)
+                        .header(AUTH_DEVICE_KEY_ID, TestConstants.DEVICE_ID_1))
                 .andExpect(status().isNotFound());
     }
 }

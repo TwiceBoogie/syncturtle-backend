@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
@@ -61,7 +62,7 @@ public class UserSettingsServiceImpl implements UserSettingsService {
         if (userRepository.isUserExistByEmail(email)) {
             throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.CONFLICT);
         }
-        Long authUserId = authenticationService.getAuthenticatedUserId();
+        UUID authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updateEmail(email, authUserId);
         String token = jwtProvider.createToken(email, "USER");
         AuthUserProjection user = userRepository.getAuthUserProjection(authUserId);
@@ -73,7 +74,7 @@ public class UserSettingsServiceImpl implements UserSettingsService {
     @Transactional
     public Map<String, Object> updatePhone(String countryCode, Long phone, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        Long authUserId = authenticationService.getAuthenticatedUserId();
+        UUID authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updatePhone(countryCode, phone, authUserId);
 
         return Map.of("countryCode", countryCode, "phone", phone);
@@ -88,7 +89,7 @@ public class UserSettingsServiceImpl implements UserSettingsService {
     @Transactional
     public String updateGender(String gender, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        Long authUserId = authenticationService.getAuthenticatedUserId();
+        UUID authUserId = authenticationService.getAuthenticatedUserId();
         userRepository.updateGender(gender, authUserId);
         return gender;
     }

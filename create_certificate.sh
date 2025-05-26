@@ -93,6 +93,7 @@ openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/vault.key.pem 2048
 
 echo "[INFO] Generating CSR for Vault server"
 openssl req -config ${DIR}/intermediate_openssl.cnf \
+      -extensions v3_req \
       -key ${INTERMEDIATE_CA_DIR}/private/vault.key.pem \
       -new -sha256 -out ${INTERMEDIATE_CA_DIR}/csr/vault.csr.pem \
       -subj "/C=US/ST=Wisconsin/L=Portage/O=twiceb/OU=Vault/CN=vault.twiceb.internal"

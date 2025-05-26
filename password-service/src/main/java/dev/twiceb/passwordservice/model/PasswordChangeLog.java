@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Setter
@@ -42,5 +43,5 @@ public class PasswordChangeLog {
     private String changeResult = "pending";
 
     @Column(name = "user_device_id", nullable = false)
-    private Long userDeviceId;
+    private UUID userDeviceId;
 }

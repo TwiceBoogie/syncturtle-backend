@@ -26,7 +26,7 @@ public class PasswordChangeProducer {
     private final KafkaTemplate<String, PasswordChangeEvent> kafkaTemplate;
     private static final int MAX_RETRIES = 3;
 
-    public void sendPasswordChangeEvent(Long authUserId, LocalDateTime expirationTime, Long deviceKeyId) {
+    public void sendPasswordChangeEvent(UUID authUserId, LocalDateTime expirationTime, UUID deviceKeyId) {
         ProducerRecord<String, PasswordChangeEvent> record = getPasswordChangeEvent(
                 PASSWORD_CHANGE_TOPIC, authUserId, expirationTime, deviceKeyId
         );
@@ -51,9 +51,9 @@ public class PasswordChangeProducer {
 
     private static ProducerRecord<String, PasswordChangeEvent> getPasswordChangeEvent(
             String topic,
-            Long authUserId,
+            UUID authUserId,
             LocalDateTime expirationTime,
-            Long deviceKeyId) {
+            UUID deviceKeyId) {
         // Adding metadata
         PasswordChangeEvent event = toPasswordChangeEvent(expirationTime, deviceKeyId);
         ProducerRecord<String, PasswordChangeEvent> producerRecord = new ProducerRecord<>(topic, event);
@@ -66,7 +66,7 @@ public class PasswordChangeProducer {
         return producerRecord;
     }
 
-    private static PasswordChangeEvent toPasswordChangeEvent(LocalDateTime expirationTime, Long deviceKeyId) {
+    private static PasswordChangeEvent toPasswordChangeEvent(LocalDateTime expirationTime, UUID deviceKeyId) {
         return PasswordChangeEvent.builder()
                 .expirationTime(expirationTime)
                 .deviceKeyId(deviceKeyId)

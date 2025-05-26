@@ -147,7 +147,7 @@ public class AuthenticationControllerTest {
     }
 
     @Test
-    @DisplayName("[403] POST /ui/v1/auth/login - User account is locked until they verify new device")
+    @DisplayName("[403] POST /ui/v1/auth/login - User user is locked until they verify new device")
     public void login_ShouldUserBeLockedForNewDeviceVerification() throws Exception {
         authenticationRequest.setUsername(TestConstants.AUTH_USER_USERNAME_PENDING);
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)

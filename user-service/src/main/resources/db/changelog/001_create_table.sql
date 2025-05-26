@@ -39,7 +39,7 @@ VALUES ('Default Policy', 5, '5 minutes', '24 hours'),
 -- user_status can be (Suspended, inactive, active, Archived, blocked, expired, pending_deletion, locked)
 -- serial_number UUID DEFAULT gen_random_uuid(),
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    id UUID DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     about VARCHAR(255),
     first_name VARCHAR(36) NOT NULL,
@@ -71,7 +71,7 @@ CREATE INDEX trgm_index ON users USING gin (username gin_trgm_ops);
 CREATE INDEX trgm_email ON users USING gin (email gin_trgm_ops);
 CREATE TABLE IF NOT EXISTS user_profiles (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     is_chosen BOOLEAN DEFAULT FALSE,
     file_name VARCHAR(255) NOT NULL,
     file_path VARCHAR(255) NOT NULL,
@@ -81,18 +81,18 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS user_profile_limit (
-    user_id BIGINT NOT NULL,
+    user_id uuid,
     profile_count INT DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id),
     PRIMARY KEY (user_id)
 );
 CREATE TABLE IF NOT EXISTS activation_codes (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id uuid DEFAULT gen_random_uuid(),
     code_type VARCHAR(20) NOT NULL,
     -- 'activation' or 'device_verification'
     hashed_code VARCHAR(255),
     expiration_time TIMESTAMP NOT NULL,
-    user_id BIGINT,
+    user_id uuid NOT NULL,
     reset_count INT DEFAULT 0,
     created_by VARCHAR(36),
     created_date TIMESTAMP NOT NULL,
@@ -101,28 +101,28 @@ CREATE TABLE IF NOT EXISTS activation_codes (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS password_reset_otp (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    id uuid DEFAULT gen_random_uuid(),
     hashed_otp VARCHAR(255),
     expiration_time TIMESTAMP NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_date TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS password_reset_token (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    id uuid DEFAULT gen_random_uuid(),
     token VARCHAR(255),
     expiration_time TIMESTAMP NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_date TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS user_devices (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    id uuid DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL,
     device_key VARCHAR(255) NOT NULL,
     device_name VARCHAR(255) NOT NULL,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -149,7 +149,7 @@ CREATE TABLE user_actions (
     action_type VARCHAR(50) NOT NULL,
     action_status VARCHAR(50) NOT NULL DEFAULT 'pending',
     verification_code VARCHAR(64),
-    user_device_id BIGINT,
+    user_device_id uuid NOT NULL,
     is_user_notified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -157,8 +157,8 @@ CREATE TABLE user_actions (
     FOREIGN KEY (user_device_id) REFERENCES user_devices(id)
 );
 CREATE TABLE IF NOT EXISTS login_attempts (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    id uuid DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL,
     attempt_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     success BOOLEAN DEFAULT FALSE,
     ip_address VARCHAR(50),
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 );
 CREATE TABLE IF NOT EXISTS recovery_attempts (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     attempt_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     success BOOLEAN DEFAULT FALSE,
     ip_address VARCHAR(50),
@@ -184,15 +184,15 @@ CREATE TABLE IF NOT EXISTS locked_users (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     lockout_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lockout_end TIMESTAMP NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     lockout_reason VARCHAR(255) NOT NULL,
     is_requested_by_user BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    id uuid DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL,
     token_type VARCHAR(25),
     expiration_date TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

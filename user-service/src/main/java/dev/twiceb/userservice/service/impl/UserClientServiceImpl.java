@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class UserClientServiceImpl implements UserClientService {
@@ -17,28 +19,28 @@ public class UserClientServiceImpl implements UserClientService {
     private final BasicMapper mapper;
 
     @Override
-    public String getUserEmail(Long userId) {
+    public String getUserEmail(UUID userId) {
         return userRepository.getUserEmail(userId);
     }
 
     @Override
-    public void increaseNotificationCount(Long userId) {
+    public void increaseNotificationCount(UUID userId) {
         userRepository.increaseNotificationCount(userId);
     }
 
     @Override
-    public void decreaseNotificationCount(Long userId) {
+    public void decreaseNotificationCount(UUID userId) {
         userRepository.decreaseNotificationCount(userId);
     }
 
     @Override
-    public void resetNotificationCount(Long userId) {
+    public void resetNotificationCount(UUID userId) {
         userRepository.resetNotificationCount(userId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserDeviceResponse getUserDevice(Long userId) {
+    public UserDeviceResponse getUserDevice(UUID userId) {
 
         return null;
     }

@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-declare VAULT_ADDR
-declare VAULT_TOKEN
-
-generate_vault_var() {
-  export VAULT_ADDR="http://127.0.0.1:8200"
-  local vault_token
-  vault_token=$(openssl rand -hex 32)
-  export VAULT_TOKEN="$vault_token"
-}
-
 install_vault_via_brew() {
   echo "Installing vault using brew."
   brew tap hashicorp/tap
@@ -30,7 +20,7 @@ install_vault_binary() {
   echo -e "\n"
 
   echo "Downloading Vault..."
-  vault_version="1.15.4"
+  vault_version="1.19.4"
   # shellcheck disable=SC2154
   vault_filename="vault_${vault_version}_${os_name}_${arch}.zip"
   vault_url="https://releases.hashicorp.com/vault/${vault_version}/${vault_filename}"

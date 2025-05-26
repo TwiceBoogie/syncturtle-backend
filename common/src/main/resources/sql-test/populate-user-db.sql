@@ -1,5 +1,6 @@
 -- users
 INSERT INTO users (
+        id,
         email,
         about,
         first_name,
@@ -20,6 +21,7 @@ INSERT INTO users (
         modified_by
     )
 VALUES (
+        '9dcfb00a-eefc-4fe6-bded-d1ecc7bcb9d4',
         'john.doe@example.com',
         'Software Developer',
         'John',
@@ -41,6 +43,7 @@ VALUES (
         'admin'
     ),
     (
+        'f4f8a3d9-66d3-4e1a-a610-0cce26aaa956',
         'jane.smith@example.com',
         'Graphic Designer',
         'Jane',
@@ -61,6 +64,7 @@ VALUES (
         'admin'
     ),
     (
+        'a0c60a16-d82e-46bc-942b-22f9ebbdbee5',
         'sam.wilson@example.com',
         'Project Manager',
         'Sam',
@@ -81,6 +85,7 @@ VALUES (
         'admin'
     ),
     (
+        'eca2b19e-5455-4261-b895-4af21a3fabe9',
         'lisa.jones@example.com',
         'Data Analyst',
         'Lisa',
@@ -101,6 +106,7 @@ VALUES (
         'admin'
     ),
     (
+        'dfaccc53-2b41-40d5-ba45-b16a521c13f9',
         'michael.brown@example.com',
         'Marketing Specialist',
         'Michael',
@@ -192,6 +198,7 @@ VALUES (
         NOW()
     );
 INSERT INTO user_devices (
+        id,
         user_id,
         device_key,
         device_name,
@@ -199,6 +206,7 @@ INSERT INTO user_devices (
         first_access_timestamp
     )
 VALUES (
+        '35efd331-8f96-454e-87c6-b4a1f3d7436f',
         (
             SELECT id
             FROM users
@@ -210,6 +218,7 @@ VALUES (
         '2024-03-01 10:00:00'
     ),
     (
+        '159768d8-a81a-4bf7-88b1-9c1fe793bf7d',
         (
             SELECT id
             FROM users
@@ -221,6 +230,7 @@ VALUES (
         '2024-03-01 10:00:00'
     ),
     (
+        'c344a237-46e3-413a-9d95-6d5a6aca76dd',
         (
             SELECT id
             FROM users
@@ -232,6 +242,7 @@ VALUES (
         '2024-03-01 10:00:00'
     ),
     (
+        '39add4e3-819b-4ce4-9807-60d6cc77790f',
         (
             SELECT id
             FROM users
@@ -243,6 +254,7 @@ VALUES (
         '2024-03-01 10:00:00'
     ),
     (
+        'b93a7ac0-f57c-4fe0-b8ed-95c65035c82f',
         (
             SELECT id
             FROM users

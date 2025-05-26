@@ -5,6 +5,7 @@ import dev.twiceb.userservice.model.User;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * DeviceService provides operations for device management, including
@@ -20,7 +21,7 @@ public interface DeviceService {
      * @param hashedDeviceKey The hashed device key to be verified.
      * @return true if the device key matches; false otherwise.
      */
-    boolean verifyDevice(Long userId, String hashedDeviceKey);
+    boolean verifyDevice(UUID userId, String hashedDeviceKey);
 
     /**
      * Retrieves and validates the device verification code provided.
@@ -62,5 +63,5 @@ public interface DeviceService {
      * @return true if the device verification code is valid or has been reissued;
      *         false if the code has already been used or null.
      */
-    boolean isDeviceVerificationCodeSent(Long userId, LocalDateTime currentTime);
+    boolean isDeviceVerificationCodeSent(UUID userId, LocalDateTime currentTime);
 }

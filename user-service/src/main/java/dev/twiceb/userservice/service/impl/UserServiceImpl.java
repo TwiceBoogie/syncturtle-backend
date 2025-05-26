@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.USER_NOT_FOUND;
 
@@ -24,14 +25,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User getUserById(Long userId) {
+    public User getUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserDeviceProjection getUserDeviceDetails(Long userId) {
+    public UserDeviceProjection getUserDeviceDetails(UUID userId) {
         return null;
     }
 

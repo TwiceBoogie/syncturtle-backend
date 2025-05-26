@@ -8,14 +8,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class CreatePasswordRequest {
-    private Long encryptionId;
+    private UUID encryptionId;
 
     @NotBlank(message = EMPTY_DOMAIN)
     private String domain;

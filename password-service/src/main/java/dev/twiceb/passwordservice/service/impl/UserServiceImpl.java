@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.USER_NOT_FOUND;
 
@@ -21,13 +22,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getAuthUser() {
-        Long authUserId = AuthUtil.getAuthenticatedUserId();
+        UUID authUserId = AuthUtil.getAuthenticatedUserId();
         return userRepository.findById(authUserId)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.UNAUTHORIZED));
     }
 
     @Override
-    public Optional<User> getUserById(Long userId) {
+    public Optional<User> getUserById(UUID userId) {
         return userRepository.findById(userId);
     }
 
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Boolean isUserExists(Long userId) {
+    public Boolean isUserExists(UUID userId) {
         return userRepository.existsById(userId);
     }
 }

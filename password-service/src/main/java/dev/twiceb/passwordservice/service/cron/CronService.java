@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,7 @@ public class CronService {
         updateKeychainStatusToExpired();
         List<KeychainNotificationProjection> keychains = keychainRepository.findAllNotNotificationSent();
         List<NotificationRequest> request = new ArrayList<>();
-        List<Long> keychainIds = new ArrayList<>();
+        List<UUID> keychainIds = new ArrayList<>();
         keychains.forEach((keychain) -> {
             keychainIds.add(keychain.getId());
 
@@ -137,7 +138,7 @@ public class CronService {
     @Transactional
     protected void updateKeychainStatusToSoon() {
         List<KeychainExpiringProjection> keychains = keychainRepository.findAllKeychainsByStatus(DomainStatus.ACTIVE);
-        List<Long> keychainIds = new ArrayList<>();
+        List<UUID> keychainIds = new ArrayList<>();
 
         for (KeychainExpiringProjection entity : keychains) {
             LocalDate currentTime = LocalDate.now();
@@ -156,7 +157,7 @@ public class CronService {
     @Transactional
     protected void updateKeychainStatusToExpired() {
         List<KeychainExpiringProjection> keychains = keychainRepository.findAllKeychainsByStatus(DomainStatus.SOON);
-        List<Long> keychainIds = new ArrayList<>();
+        List<UUID> keychainIds = new ArrayList<>();
 
         for (KeychainExpiringProjection entity : keychains) {
             LocalDate currentTime = LocalDate.now();

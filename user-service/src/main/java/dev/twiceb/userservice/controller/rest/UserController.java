@@ -5,11 +5,9 @@ import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static dev.twiceb.common.constants.PathConstants.TOKEN;
 import static dev.twiceb.common.constants.PathConstants.UI_V1_USER;
 
 @RestController

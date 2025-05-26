@@ -3,11 +3,12 @@ package dev.twiceb.passwordservice.repository.projection;
 import dev.twiceb.passwordservice.model.User;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public interface KeychainNotificationProjection {
-    Long getId();
+    UUID getId();
     User getAccount();
-    default Long getUserId() { return getAccount().getId();}
+    default UUID getUserId() { return getAccount().getId();}
     String getDomain();
     LocalDate getExpiryDate();
 }

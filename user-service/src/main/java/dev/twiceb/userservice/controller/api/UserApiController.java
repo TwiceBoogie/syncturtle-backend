@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 import static dev.twiceb.common.constants.PathConstants.*;
 
 @Hidden
@@ -19,22 +21,22 @@ public class UserApiController {
     private final UserClientService userService;
 
     @GetMapping(GET_USER_EMAIL)
-    public String getUserEmail(@PathVariable("userId") Long userId) {
+    public String getUserEmail(@PathVariable("userId") UUID userId) {
         return userService.getUserEmail(userId);
     }
 
     @GetMapping(ADD_NOTIFICATION)
-    public void increaseNotificationCount(@PathVariable("userId") Long userId) {
+    public void increaseNotificationCount(@PathVariable("userId") UUID userId) {
         userService.increaseNotificationCount(userId);
     }
 
     @GetMapping(SUB_NOTIFICATION)
-    public void decreaseNotificationCount(@PathVariable("userId") Long userId) {
+    public void decreaseNotificationCount(@PathVariable("userId") UUID userId) {
         userService.decreaseNotificationCount(userId);
     }
 
     @GetMapping(NOTIFICATION_USER_ID)
-    public void resetNotificationCount(@PathVariable("userId") Long userId) {
+    public void resetNotificationCount(@PathVariable("userId") UUID userId) {
         userService.resetNotificationCount(userId);
     }
 }

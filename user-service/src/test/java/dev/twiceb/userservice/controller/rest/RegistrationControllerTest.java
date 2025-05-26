@@ -158,7 +158,7 @@ public class RegistrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deviceToken", isA(String.class)))
                 .andExpect(jsonPath("$.message", is(
-                        "You've activated your account and you're now ready to use it! Try and login to access your account.")));
+                        "You've activated your user and you're now ready to use it! Try and login to access your user.")));
     }
 
     @Test

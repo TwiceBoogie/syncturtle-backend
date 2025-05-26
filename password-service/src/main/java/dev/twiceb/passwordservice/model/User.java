@@ -10,6 +10,7 @@ import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -19,8 +20,8 @@ import java.util.List;
 public class User {
 
     @Id
-    @Column(name = "id", nullable = false)
-    private Long id;
+    @Column(columnDefinition = "UUID")
+    private UUID id;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
@@ -48,7 +49,7 @@ public class User {
 
     public User() {}
 
-    public User(Long id, String fullName, String username, UserStatus userStatus, UserRole role) {
+    public User(UUID id, String fullName, String username, UserStatus userStatus, UserRole role) {
         this.id = id;
         this.fullName = fullName;
         this.username = username;

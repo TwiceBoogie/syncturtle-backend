@@ -1,15 +1,13 @@
 package dev.twiceb.passwordservice.service.util;
 
 import dev.twiceb.passwordservice.model.PasswordComplexityMetric;
-import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
+// import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class PasswordComplexityAnalyzer {
 
@@ -93,10 +91,14 @@ public class PasswordComplexityAnalyzer {
 
         for (int i = 0; i < password.length(); i++) {
             int ascii = password.charAt(i);
-            if (ascii >= 65 && ascii <= 90) uppercase++;
-            if (ascii >= 97 && ascii <= 122) lowercase++;
-            if (ascii >= 48 && ascii <= 57) numbers++;
-            if ((ascii >= 33 && ascii <= 47) || (ascii >= 58 && ascii <= 64)) specialChar++;
+            if (ascii >= 65 && ascii <= 90)
+                uppercase++;
+            if (ascii >= 97 && ascii <= 122)
+                lowercase++;
+            if (ascii >= 48 && ascii <= 57)
+                numbers++;
+            if ((ascii >= 33 && ascii <= 47) || (ascii >= 58 && ascii <= 64))
+                specialChar++;
         }
 
         metric.setNumericCharactersCount(numbers);
@@ -104,7 +106,6 @@ public class PasswordComplexityAnalyzer {
         metric.setUppercaseLettersCount(uppercase);
         metric.setLowercaseLettersCount(lowercase);
     }
-
 
     // https://leetcode.com/problems/word-break/solutions/4852733/bottom-up-dp-easy-to-understand/
     private static int wordBreak(String s, Set<String> wordDict) {
@@ -120,16 +121,19 @@ public class PasswordComplexityAnalyzer {
         for (int startIndex = length - 1; startIndex >= 0; startIndex--) {
             for (int endIndex = length - 1; endIndex >= startIndex; endIndex--) {
                 String subString = s.substring(startIndex, endIndex + 1);
-                String hashedSubString = hashCodeString(subString.getBytes(StandardCharsets.UTF_8));
+                // String hashedSubString =
+                // hashCodeString(subString.getBytes(StandardCharsets.UTF_8));
                 int subStrLength = endIndex - startIndex + 1;
 
                 for (String wordHash : wordDict) {
                     // Check if the length of the substring matches the length of the word hash
                     if (subStrLength == wordHash.length()) {
-                        // Check if the hash value of the substring matches any hash value in the dictionary
+                        // Check if the hash value of the substring matches any hash value in the
+                        // dictionary
                         if (table.containsKey(subString) && table.containsKey(wordHash)) {
                             table.put(subString, true);
-                            // We have found a substring that can successfully be broken into words, so break the loop
+                            // We have found a substring that can successfully be broken into words, so
+                            // break the loop
                             break;
                         }
                     }
@@ -146,7 +150,8 @@ public class PasswordComplexityAnalyzer {
         return count;
     }
 
-    private static String hashCodeString(byte[] data)  {
+    @SuppressWarnings("unused")
+    private static String hashCodeString(byte[] data) {
         MessageDigest digest = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");

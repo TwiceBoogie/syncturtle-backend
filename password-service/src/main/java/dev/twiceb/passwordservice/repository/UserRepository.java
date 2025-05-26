@@ -6,10 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.UUID;
+
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     Long getUserByUsername(String username);
 
     @Query("SELECT user FROM User user WHERE user.id = :userId")
-    VaultHealthProjection getUsersVaultHealth(@Param("userId") Long userId);
+    VaultHealthProjection getUsersVaultHealth(@Param("userId") UUID userId);
 }

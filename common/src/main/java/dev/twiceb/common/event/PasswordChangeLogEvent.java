@@ -1,8 +1,13 @@
 package dev.twiceb.common.event;
 
+import java.util.UUID;
+
 public interface PasswordChangeLogEvent {
-    Long getId();
+    UUID getId();
+
     boolean isChangeSuccess();
+
     String getChangeResult();
-    Long getUserDeviceId();
+
+    UUID getUserDeviceId();
 }

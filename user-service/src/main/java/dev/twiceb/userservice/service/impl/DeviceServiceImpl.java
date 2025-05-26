@@ -36,7 +36,7 @@ public class DeviceServiceImpl implements DeviceService {
      */
     @Override
     @Transactional
-    public boolean verifyDevice(Long userId, String deviceKey) {
+    public boolean verifyDevice(UUID userId, String deviceKey) {
         return Optional.of(helper.decodeAndHashDeviceVerificationCode(deviceKey))
                 .map(key -> userDeviceRepository.existsByHashedDeviceKey(key, userId))
                 .orElse(false);
@@ -84,7 +84,7 @@ public class DeviceServiceImpl implements DeviceService {
      */
     @Override
     @Transactional
-    public boolean isDeviceVerificationCodeSent(Long userId, LocalDateTime currentTime) {
+    public boolean isDeviceVerificationCodeSent(UUID userId, LocalDateTime currentTime) {
         ActivationCode activationCode = getLatestDeviceVerificationCode(userId);
 
         if (activationCode == null) {
@@ -121,7 +121,7 @@ public class DeviceServiceImpl implements DeviceService {
         return ac.getUser();
     }
 
-    private ActivationCode getLatestDeviceVerificationCode(Long userId) {
+    private ActivationCode getLatestDeviceVerificationCode(UUID userId) {
         return activationCodeRepository
                 .findFirstByUser_IdAndCodeTypeOrderByExpirationTimeAsc(userId, ActivationCodeType.DEVICE_VERIFICATION)
                 .orElse(null);

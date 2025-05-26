@@ -15,6 +15,8 @@ import dev.twiceb.passwordservice.dto.response.PasswordsResponse;
 import dev.twiceb.passwordservice.service.PasswordService;
 import lombok.RequiredArgsConstructor;
 
+import java.util.UUID;
+
 @Component
 @RequiredArgsConstructor
 public class PasswordMapper {
@@ -27,30 +29,30 @@ public class PasswordMapper {
                 GenericResponse.class);
     }
 
-    public GenericResponse updatePasswordOnly(Long passwordId, UpdatePasswordRequest request,
-                                          BindingResult bindingResult) {
+    public GenericResponse updatePasswordOnly(UUID passwordId, UpdatePasswordRequest request,
+                                              BindingResult bindingResult) {
         return basicMapper.convertToResponse(
                 passwordService.updatePasswordOnly(passwordId, request.getPassword(), bindingResult),
                 GenericResponse.class);
     }
 
-    public GenericResponse updateUsername(Long passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
+    public GenericResponse updateUsername(UUID passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
         return basicMapper.convertToResponse(passwordService.updateUsername(
                 passwordId, request.getUsername(), bindingResult), GenericResponse.class);
     }
 
-    public GenericResponse updatePasswordNotes(Long passwordId, UpdatePasswordRequest request,
+    public GenericResponse updatePasswordNotes(UUID passwordId, UpdatePasswordRequest request,
                                                BindingResult bindingResult) {
         return basicMapper.convertToResponse(passwordService.updatePasswordNotes(
                 passwordId, request.getNotes(), bindingResult), GenericResponse.class);
     }
 
-    public void updateTagsOnPassword(Long passwordId, UpdatePasswordRequest request,
+    public void updateTagsOnPassword(UUID passwordId, UpdatePasswordRequest request,
                                      BindingResult bindingResult) {
         passwordService.updateTagsOnPassword(passwordId, request.getTags(), bindingResult);
     }
 
-    public void favoritePassword(Long passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
+    public void favoritePassword(UUID passwordId, UpdatePasswordRequest request, BindingResult bindingResult) {
         passwordService.favoritePassword(passwordId, request.isFavorite(), bindingResult);
     }
 
@@ -59,7 +61,7 @@ public class PasswordMapper {
                 PasswordsResponse.class);
     }
 
-    public PasswordsResponse getPassword(Long keychainId) {
+    public PasswordsResponse getPassword(UUID keychainId) {
         return basicMapper.convertToResponse(passwordService.getPassword(keychainId), PasswordsResponse.class);
     }
 
@@ -76,7 +78,7 @@ public class PasswordMapper {
         };
     }
 
-    public GenericResponse getDecryptedPassword(Long passwordId) {
+    public GenericResponse getDecryptedPassword(UUID passwordId) {
         return basicMapper.convertToResponse(passwordService.getDecryptedPassword(passwordId),
                 GenericResponse.class);
     }
@@ -85,7 +87,7 @@ public class PasswordMapper {
         return basicMapper.convertToResponse(passwordService.generateSecurePassword(length), GenericResponse.class);
     }
 
-    public GenericResponse deletePassword(Long passwordId) {
+    public GenericResponse deletePassword(UUID passwordId) {
         return basicMapper.convertToResponse(passwordService.deletePassword(passwordId), GenericResponse.class);
     }
 

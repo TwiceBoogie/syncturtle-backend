@@ -15,9 +15,9 @@ public class ErrorMessage {
         public static final String OTP_HAS_EXPIRED = "OTP has expired";
         public static final String OTP_NOT_FOUND = "OTP is invalid or not found.";
 
-        public static final String USER_NOT_FOUND_WITH_EMAIL = "Sorry, we couldn't find an account associated " +
+        public static final String USER_NOT_FOUND_WITH_EMAIL = "Sorry, we couldn't find an user associated " +
                         "with the provided email address. Please double-check the email you entered and try again." +
-                        " If you don't have an account, you can sign up for a new one.";
+                        " If you don't have an user, you can sign up for a new one.";
         public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
         public static final String EMAIL_ALREADY_TAKEN = "Email has already been taken.";
         public static final String BLANK_NAME = "What’s your name?";

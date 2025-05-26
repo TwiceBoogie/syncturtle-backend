@@ -7,13 +7,13 @@ INSERT INTO rotation_policies (
 VALUES ('Default', 90, 30, 'encryption_key');
 INSERT INTO users (id, full_name, username, user_status)
 VALUES (
-        2,
+        'f4f8a3d9-66d3-4e1a-a610-0cce26aaa956',
         'Jane Smith',
         'jane.smith123',
         'ACTIVE'
     ),
     (
-        3,
+        'a0c60a16-d82e-46bc-942b-22f9ebbdbee5',
         'Sam Wilson',
         'sam.wilson123',
         'ACTIVE'

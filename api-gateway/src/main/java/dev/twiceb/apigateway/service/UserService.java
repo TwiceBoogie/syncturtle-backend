@@ -1,5 +1,7 @@
 package dev.twiceb.apigateway.service;
 
+import java.util.UUID;
+
 import dev.twiceb.common.dto.response.UserPrincipleResponse;
 
 /**
@@ -34,6 +36,6 @@ public interface UserService {
      * @return The id of the valid user device, or null if the device key is not
      *         valid.
      */
-    Long getValidUserDeviceId(UserPrincipleResponse user, String deviceKey);
+    UUID getValidUserDeviceId(UserPrincipleResponse user, String deviceKey);
 
 }

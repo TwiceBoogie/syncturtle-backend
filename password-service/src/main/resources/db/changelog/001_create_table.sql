@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- CREATE UNIQUE INDEX idx_unique_account_domain ON keychain (user_id, domain);
 CREATE TABLE IF NOT EXISTS users (
-    id INT8 NOT NULL,
+    id uuid NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     user_status VARCHAR(36) NOT NULL,
@@ -28,11 +28,11 @@ INSERT INTO rotation_policies (policy_name, max_rotation_days, notification_days
 VALUES ('Default', 90, 30, 'encryption_key');
 
 CREATE TABLE IF NOT EXISTS encryption_key (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    id uuid NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     dek VARCHAR(255) NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id uuid NOT NULL,
     algorithm VARCHAR(50),
     key_size INT,
     expiration_date DATE,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS encryption_key (
 );
 
 CREATE TABLE IF NOT EXISTS keychain (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    id uuid NOT NULL,
     username VARCHAR(255) NOT NULL,
     domain VARCHAR(255) NOT NULL,
     website_url VARCHAR(255) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS keychain (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     encrypted_password BYTEA NOT NULL,
     vector BYTEA NOT NULL,
-    dek_id BIGINT NOT NULL,
+    dek_id uuid NOT NULL,
     rotation_policy_id BIGINT NOT NULL,
     FOREIGN KEY (dek_id) REFERENCES encryption_key(id),
     FOREIGN KEY (rotation_policy_id) REFERENCES rotation_policies(id),
@@ -76,7 +76,7 @@ CREATE INDEX trgm_index ON keychain USING gin (domain gin_trgm_ops);
 -- Metrics related to password complexity
 CREATE TABLE IF NOT EXISTS password_complexity_metrics (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
-    keychain_id BIGINT NOT NULL,
+    keychain_id uuid NOT NULL,
     password_length INT NOT NULL,
     character_types_used INT NOT NULL,
     dictionary_word_count INT NOT NULL,
@@ -96,8 +96,8 @@ CREATE TABLE IF NOT EXISTS password_complexity_metrics (
 );
 -- Password reuse statistics
 CREATE TABLE IF NOT EXISTS password_reuse_statistics (
-    id BIGINT GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL,
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     reuse_count INT NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id),
@@ -107,14 +107,14 @@ CREATE TABLE IF NOT EXISTS password_reuse_statistics (
 -- Password change logs
 CREATE TABLE IF NOT EXISTS password_change_logs (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
-    keychain_id BIGINT NOT NULL,
+    keychain_id uuid NOT NULL,
     changed_by_user user_role DEFAULT 'ADMIN' NOT NULL,
     change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     change_reason TEXT,
     change_type VARCHAR(50), -- type of change (routine change, forced)
     change_success BOOLEAN,
     change_result TEXT,
-    user_device_id BIGINT NOT NULL,
+    user_device_id uuid NOT NULL,
     FOREIGN KEY (keychain_id) REFERENCES keychain(id),
     PRIMARY KEY (id)
 );
@@ -142,7 +142,7 @@ ALTER TABLE categories
 ADD CONSTRAINT unique_name_color UNIQUE (name, color);
 
 CREATE TABLE IF NOT EXISTS keychain_categories (
-    keychain_id BIGINT NOT NULL,
+    keychain_id uuid NOT NULL,
     category_id BIGINT NOT NULL,
     FOREIGN KEY (keychain_id) REFERENCES keychain(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,

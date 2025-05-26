@@ -10,17 +10,18 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface TasksRepository extends JpaRepository<Task, Long> {
+public interface TasksRepository extends JpaRepository<Task, UUID> {
 
-    @Query("SELECT t FROM Task t WHERE t.account.userId = :userId ORDER BY t.dueDate ASC")
-    <T> Page<T> getTasksByUserId(@Param("userId") Long userId, Pageable pageable, Class<T> clazz);
+    @Query("SELECT t FROM Task t WHERE t.account.userId = :userId ORDER BY t.targetDate ASC")
+    <T> Page<T> getTasksByUserId(@Param("userId") UUID userId, Pageable pageable, Class<T> clazz);
 
     @Query("SELECT st FROM Task t JOIN t.subtasks st WHERE t.id = :taskId AND t.account.userId = :userId")
-    List<SubtaskProjection> findSubtasksByTaskId(@Param("taskId") Long taskId, @Param("userId") Long userId);
+    List<SubtaskProjection> findSubtasksByTaskId(@Param("taskId") UUID taskId, @Param("userId") Long userId);
 
     @Query("SELECT t FROM Task t WHERE t.account.userId = :userId AND t.id = :taskId")
-    <T> Optional<T> findTaskByUserAndTaskId(@Param("userId") Long userId, @Param("taskId") Long taskId, Class<T> clazz);
+    <T> Optional<T> findTaskByUserAndTaskId(@Param("userId") UUID userId, @Param("taskId") Long taskId, Class<T> clazz);
 
 
 }

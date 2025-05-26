@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import dev.twiceb.common.util.TestConstants;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,7 +59,7 @@ public class EncryptionKeyDbTest {
     @DisplayName("testing encryptionKey transit to vault")
     public void testingRepo() throws Exception {
         // Ensure the user exists in the database
-        Optional<User> userOpt = userRepository.findById(2L);
+        Optional<User> userOpt = userRepository.findById(UUID.fromString(TestConstants.USER_ID));
         assertThat(userOpt).isPresent();
         User user = userOpt.get();
 

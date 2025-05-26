@@ -77,7 +77,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 "deviceToken",
                 deviceToken,
                 "message",
-                "You've activated your account and you're now ready to use it! Try and login to access your account.");
+                "You've activated your user and you're now ready to use it! Try and login to access your user.");
     }
 
     private User createUserAndSave(String email, String firstName, String lastName, String rawPassword) {

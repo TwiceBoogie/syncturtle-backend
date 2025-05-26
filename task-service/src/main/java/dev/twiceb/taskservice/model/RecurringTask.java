@@ -9,7 +9,8 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
-public class RecurringTasks {
+@Table(name = "recurring_tasks")
+public class RecurringTask {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +18,7 @@ public class RecurringTasks {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
-    private Accounts account;
+    private User account;
 
     @Column(name = "task_title", nullable = false)
     private String taskTitle;
@@ -34,9 +35,9 @@ public class RecurringTasks {
     @Column(name = "recurrence_end_date")
     private Date recurrenceEndDate;
 
-    public RecurringTasks() {}
+    public RecurringTask() {}
 
-    public RecurringTasks(Accounts account, String taskTitle, String taskDescription, String recurrencePattern) {
+    public RecurringTask(User account, String taskTitle, String taskDescription, String recurrencePattern) {
         this.account = account;
         this.taskTitle = taskTitle;
         this.taskDescription = taskDescription;

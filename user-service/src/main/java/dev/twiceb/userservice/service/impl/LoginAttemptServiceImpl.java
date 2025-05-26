@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.INCORRECT_PASSWORD;
 import static dev.twiceb.common.constants.ErrorMessage.LOCKED_ACCOUNT_AFTER_N_ATTEMPTS;
@@ -65,7 +66,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
 
     @Override
     @Transactional
-    public void updateLoginAttempt(Long userId) {
+    public void updateLoginAttempt(UUID userId) {
         LoginAttempt loginAttempt = loginAttemptRepository.findFirstByUserIdOrderByAttemptTimestampDesc(userId);
         // TODO: if login attempt is null then throw error
         loginAttempt.setSuccess(true);
@@ -98,7 +99,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
 
     @Override
     @Transactional
-    public LoginAttemptProjection getRecentLoginAttempt(Long userId) {
+    public LoginAttemptProjection getRecentLoginAttempt(UUID userId) {
         return loginAttemptRepository.findRecentLoginAttempt(userId)
                 .orElse(null);
     }
@@ -126,11 +127,11 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
         return currentTime.minus(resetDuration);
     }
 
-    private boolean checkLoginAttempts(Long userId, LocalDateTime startDate) {
+    private boolean checkLoginAttempts(UUID userId, LocalDateTime startDate) {
         return loginAttemptRepository.isAttemptInResetDuration(userId, startDate);
     }
 
-    private int countFailedLoginAttempts(Long userId, LocalDateTime startDate) {
+    private int countFailedLoginAttempts(UUID userId, LocalDateTime startDate) {
         return loginAttemptRepository.countFailedAttempts(userId, startDate);
     }
 }

@@ -47,7 +47,7 @@ public interface RegistrationControllerSwagger {
                                                  BindingResult bindingResult);
 
     @PostMapping(REGISTRATION_CODE)
-    @Operation(summary = "Send account verification email", responses = {
+    @Operation(summary = "Send user verification email", responses = {
             @ApiResponse(responseCode = "200",
                     description = "Successful response",
                     content = @Content(mediaType = "application/json",
@@ -75,7 +75,7 @@ public interface RegistrationControllerSwagger {
 
 
     @GetMapping(REGISTRATION_ACTIVATE_CODE)
-    @Operation(summary = "Activate account", responses = {
+    @Operation(summary = "Activate user", responses = {
             @ApiResponse(responseCode = "200",
                     description = "Successful response",
                     content = @Content(mediaType = "application/json",

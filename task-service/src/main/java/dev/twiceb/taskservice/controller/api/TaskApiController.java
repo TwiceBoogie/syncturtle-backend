@@ -21,26 +21,17 @@ public class TaskApiController {
     private final TaskMapper taskMapper;
 
     @GetMapping
-    public HeaderResponse<TasksResponse> getTasks(
-            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-            Pageable pageable
-    ) {
-        return taskMapper.getTasks(userId, pageable);
+    public HeaderResponse<TasksResponse> getTasks(Pageable pageable) {
+        return taskMapper.getTasks(pageable);
     }
 
     @GetMapping(GET_SUBTASKS_FOR_TASK)
-    public List<SubtasksResponse> getSubtasksForTask(
-            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-            @PathVariable("taskId") Long taskId
-    ) {
-        return taskMapper.getSubtasks(userId, taskId);
+    public List<SubtasksResponse> getSubtasksForTask(@PathVariable("taskId") Long taskId) {
+        return taskMapper.getSubtasks(taskId);
     }
 
     @GetMapping(GET_RECURRING_TASKS)
-    public HeaderResponse<RecurringTasksResponse> getRecurringTasks(
-            @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-            Pageable pageable
-    ) {
-        return taskMapper.getRecurringTasks(userId, pageable);
+    public HeaderResponse<RecurringTasksResponse> getRecurringTasks(Pageable pageable) {
+        return taskMapper.getRecurringTasks(pageable);
     }
 }

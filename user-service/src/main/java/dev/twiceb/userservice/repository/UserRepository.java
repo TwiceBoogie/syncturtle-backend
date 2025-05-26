@@ -11,61 +11,62 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT user FROM User user WHERE user.email = :email")
     <T> Optional<T> getUserByEmail(@Param("email") String email, Class<T> type);
 
     @Query("SELECT user FROM User user WHERE user.id = :userId")
-    <T> Optional<T> getUserById(@Param("userId") Long userId, Class<T> clazz);
+    <T> Optional<T> getUserById(@Param("userId") UUID userId, Class<T> clazz);
 
     Optional<User> findUserByUsername(String username);
 
     @Query("SELECT user FROM User user WHERE user.id = :userId")
-    AuthUserProjection getAuthUserProjection(@Param("userId") Long userId);
+    AuthUserProjection getAuthUserProjection(@Param("userId") UUID userId);
 
     @Query("SELECT CASE WHEN count(user) > 0 THEN true ELSE false END FROM User user WHERE user.id = :userId")
-    boolean isUserExist(@Param("userId") Long userId);
+    boolean isUserExist(@Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.userStatus = :userStatus WHERE user.id = :userId")
-    void updateUserStatus(@Param("userStatus") UserStatus userStatus, @Param("userId") Long userId);
+    void updateUserStatus(@Param("userStatus") UserStatus userStatus, @Param("userId") UUID userId);
 
     @Query("SELECT CASE WHEN count(user) > 0 THEN true ELSE false END FROM User user WHERE user.email = :email")
     boolean isUserExistByEmail(@Param("email") String email);
 
     @Modifying
     @Query("UPDATE User user SET user.verified = true WHERE user.id = :userId")
-    void updateActiveUserProfile(@Param("userId") Long userId);
+    void updateActiveUserProfile(@Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.password = :password WHERE user.id = :userId")
-    void updatePassword(@Param("password") String password, @Param("userId") Long userId);
+    void updatePassword(@Param("password") String password, @Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.email = :email WHERE user.id = :userId")
-    void updateEmail(@Param("email") String email, @Param("userId") Long userId);
+    void updateEmail(@Param("email") String email, @Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.countryCode = :countryCode, user.phone = :phone WHERE user.id = :userId")
     void updatePhone(@Param("countryCode") String countryCode, @Param("phone") Long phone,
-            @Param("userId") Long userId);
+            @Param("userId") UUID userId);
 
     @Query("SELECT user.email FROM User user WHERE user.id = :userId")
-    String getUserEmail(@Param("userId") Long userId);
+    String getUserEmail(@Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.notificationCount = user.notificationCount + 1 WHERE user.id = :userId")
-    void increaseNotificationCount(@Param("userId") Long userId);
+    void increaseNotificationCount(@Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.notificationCount = CASE WHEN user.notificationCount > 0 " +
             "THEN user.notificationCount - 1 ELSE user.notificationCount END WHERE user.id = :userId")
-    void decreaseNotificationCount(@Param("userId") Long userId);
+    void decreaseNotificationCount(@Param("userId") UUID userId);
 
     @Modifying
     @Query("UPDATE User user SET user.notificationCount = 0 WHERE user.id = :userId")
-    void resetNotificationCount(@Param("userId") Long userId);
+    void resetNotificationCount(@Param("userId") UUID userId);
 
     @Query("SELECT COUNT(user) FROM User user WHERE user.createdDate > :timePeriod")
     int countUsersByTimePeriod(@Param("timePeriod") LocalDateTime timePeriod);
@@ -77,7 +78,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Modifying
     @Query("UPDATE User user SET user.gender = :gender WHERE user.id = :userId")
-    void updateGender(@Param("gender") String gender, @Param("userId") Long userId);
+    void updateGender(@Param("gender") String gender, @Param("userId") UUID userId);
 
     // @Query("SELECT u.id AS userId, ud.id AS userDeviceId, ud.deviceKey AS
     // deviceKey, la.ipAddress AS ipAddress " +

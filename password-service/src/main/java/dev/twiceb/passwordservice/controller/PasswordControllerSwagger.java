@@ -25,6 +25,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 import static dev.twiceb.common.constants.PathConstants.*;
@@ -85,7 +86,7 @@ public interface PasswordControllerSwagger {
                     )
             }
     )
-    ResponseEntity<GenericResponse> updatePasswordOnly(@PathVariable("passwordId") Long passwordId,
+    ResponseEntity<GenericResponse> updatePasswordOnly(@PathVariable("passwordId") UUID passwordId,
                                                        @Valid @RequestBody UpdatePasswordRequest request,
                                                        BindingResult bindingResult
     );
@@ -98,7 +99,7 @@ public interface PasswordControllerSwagger {
                             schema = @Schema(implementation = GenericResponse.class))
             }
     )
-    ResponseEntity<GenericResponse> updateUsername(@PathVariable("passwordId") Long passwordId,
+    ResponseEntity<GenericResponse> updateUsername(@PathVariable("passwordId") UUID passwordId,
                                                    @Valid @RequestBody UpdatePasswordRequest request,
                                                    BindingResult bindingResult
     );
@@ -112,7 +113,7 @@ public interface PasswordControllerSwagger {
                     )
             }
     )
-    ResponseEntity<GenericResponse> updatePasswordNotes(@PathVariable("passwordId") Long passwordId,
+    ResponseEntity<GenericResponse> updatePasswordNotes(@PathVariable("passwordId") UUID passwordId,
                                                         @Valid @RequestBody UpdatePasswordRequest request,
                                                         BindingResult bindingResult
     );
@@ -136,7 +137,7 @@ public interface PasswordControllerSwagger {
             }
     )
     ResponseEntity<Void> updateTagsOnPassword(@Valid @RequestBody UpdatePasswordRequest request,
-                                              @PathVariable("passwordId") Long passwordId,
+                                              @PathVariable("passwordId") UUID passwordId,
                                               BindingResult bindingResult
     );
 
@@ -153,7 +154,7 @@ public interface PasswordControllerSwagger {
             }
     )
     ResponseEntity<Void> favoritePassword(@Valid @RequestBody UpdatePasswordRequest request,
-                                          @PathVariable("passwordId") Long passwordId,
+                                          @PathVariable("passwordId") UUID passwordId,
                                           BindingResult bindingResult
     );
 
@@ -183,7 +184,7 @@ public interface PasswordControllerSwagger {
                             examples = @ExampleObject(value = ApiResponseExamples.API_ERROR_NO_RESOURCE))
             }
     )
-    ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") Long keychainId);
+    ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") UUID keychainId);
 
     @GetMapping(GET_PASSWORD_WITH_CRITERIA)
     @ApiResponse(responseCode = "200",
@@ -213,7 +214,7 @@ public interface PasswordControllerSwagger {
                             examples = @ExampleObject(value = ApiResponseExamples.API_ERROR_NO_RESOURCE))
             }
     )
-    ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") Long passwordId);
+    ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") UUID passwordId);
 
     @DeleteMapping(DELETE_PASSWORD)
     @ApiResponse(responseCode = "200",
@@ -231,7 +232,7 @@ public interface PasswordControllerSwagger {
                             examples = @ExampleObject(value = ApiResponseExamples.API_ERROR_NO_RESOURCE))
             }
     )
-    ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") Long passwordId);
+    ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") UUID passwordId);
 
     @DeleteMapping(DELETE_ALL)
     @ApiResponse(responseCode = "200",

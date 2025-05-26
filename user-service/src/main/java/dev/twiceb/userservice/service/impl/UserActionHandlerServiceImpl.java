@@ -16,6 +16,8 @@ import dev.twiceb.userservice.service.UserActionHandlerService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class UserActionHandlerServiceImpl implements UserActionHandlerService {
@@ -27,14 +29,14 @@ public class UserActionHandlerServiceImpl implements UserActionHandlerService {
 
     @Override
     @Transactional
-    public void handlePasswordChangeEvent(PasswordChangeEvent event, Long authUserId) {
+    public void handlePasswordChangeEvent(PasswordChangeEvent event, UUID authUserId) {
         userDeviceRepository.findById(event.getDeviceKeyId())
                 .filter(userDevice -> isDeviceOwnedByUser(userDevice, authUserId))
                 .map(userDevice -> generateUserActionAndSendEmail(userDevice, event))
                 .orElseThrow(() -> new ApiRequestException("something"));
     }
 
-    private boolean isDeviceOwnedByUser(UserDevice device, Long authUserId) {
+    private boolean isDeviceOwnedByUser(UserDevice device, UUID authUserId) {
         return device.getUser().getId().equals(authUserId);
     }
 

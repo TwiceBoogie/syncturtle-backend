@@ -30,43 +30,43 @@ public class TaskMapper {
     private final BasicMapper basicMapper;
     private final TaskService taskService;
 
-    public GenericResponse createNewTask(Long userId, NewTaskRequest request, BindingResult bindingResult) {
-        return basicMapper.convertToResponse(taskService.createNewTask(userId, request, bindingResult), GenericResponse.class);
+    public GenericResponse createNewTask(NewTaskRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(taskService.createNewTask(request, bindingResult), GenericResponse.class);
     }
 
-    public GenericResponse uploadAttachments(Long userId, Long taskId, MultipartFile[] files) {
-        return basicMapper.convertToResponse(taskService.uploadAttachments(userId, taskId, files), GenericResponse.class);
+    public GenericResponse uploadAttachments(Long taskId, MultipartFile[] files) {
+        return basicMapper.convertToResponse(taskService.uploadAttachments(taskId, files), GenericResponse.class);
     }
 
-    public FileImageResponse getFileImage(Long userId, Long taskAttachmentId) {
-        return basicMapper.convertToResponse(taskService.getFileImage(userId, taskAttachmentId), FileImageResponse.class);
+    public FileImageResponse getFileImage(Long taskAttachmentId) {
+        return basicMapper.convertToResponse(taskService.getFileImage(taskAttachmentId), FileImageResponse.class);
     }
 
-    public GenericResponse createNewRecurringTask(Long userId, NewRecurringEventRequest request, BindingResult bindingResult) {
+    public GenericResponse createNewRecurringTask(NewRecurringEventRequest request, BindingResult bindingResult) {
         return basicMapper.convertToResponse(
-                taskService.createNewRecurringTask(userId, request, bindingResult), GenericResponse.class
+                taskService.createNewRecurringTask(request, bindingResult), GenericResponse.class
         );
     }
 
-    public GenericResponse addSubTaskToTask(Long userId, Long taskId, NewSubTaskRequest request, BindingResult bindingResult) {
+    public GenericResponse addSubTaskToTask(Long taskId, NewSubTaskRequest request, BindingResult bindingResult) {
         return basicMapper.convertToResponse(taskService.addSubtaskToTask(
-                userId, taskId, request, bindingResult), GenericResponse.class);
+                taskId, request, bindingResult), GenericResponse.class);
     }
 
-    public GenericResponse updateTask(Long userId, UpdateTaskRequest request, BindingResult bindingResult) {
-        return basicMapper.convertToResponse(taskService.updateTask(userId, request, bindingResult), GenericResponse.class);
+    public GenericResponse updateTask(UpdateTaskRequest request, BindingResult bindingResult) {
+        return basicMapper.convertToResponse(taskService.updateTask(request, bindingResult), GenericResponse.class);
     }
 
-    public HeaderResponse<TasksResponse> getTasks(Long userId, Pageable pageable) {
-        Page<TaskProjection> tasks = taskService.getTasks(userId, pageable);
+    public HeaderResponse<TasksResponse> getTasks(Pageable pageable) {
+        Page<TaskProjection> tasks = taskService.getTasks(pageable);
         return basicMapper.getHeaderResponse(tasks, TasksResponse.class);
     }
 
-    public List<SubtasksResponse> getSubtasks(Long userId, Long taskId) {
-        return basicMapper.convertToResponseList(taskService.getSubtasks(userId, taskId), SubtasksResponse.class);
+    public List<SubtasksResponse> getSubtasks(Long taskId) {
+        return basicMapper.convertToResponseList(taskService.getSubtasks(taskId), SubtasksResponse.class);
     }
 
-    public HeaderResponse<RecurringTasksResponse> getRecurringTasks(Long userId, Pageable pageable) {
-        return basicMapper.getHeaderResponse(taskService.getRecurringTask(userId, pageable), RecurringTasksResponse.class);
+    public HeaderResponse<RecurringTasksResponse> getRecurringTasks(Pageable pageable) {
+        return basicMapper.getHeaderResponse(taskService.getRecurringTask(pageable), RecurringTasksResponse.class);
     }
 }

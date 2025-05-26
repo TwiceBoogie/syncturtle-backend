@@ -8,17 +8,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
+// import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.vault.core.VaultOperations;
+// import org.springframework.scheduling.TaskScheduler;
+// import org.springframework.vault.core.VaultOperations;
 import org.springframework.vault.core.lease.SecretLeaseContainer;
 import org.springframework.vault.core.lease.domain.RequestedSecret;
 import org.springframework.vault.core.lease.event.SecretLeaseCreatedEvent;
 import org.springframework.vault.core.lease.event.SecretLeaseExpiredEvent;
 
 /**
- * This class manages lease rotation of dynamic database credentials obtained from HashiCorpVault
+ * This class manages lease rotation of dynamic database credentials obtained
+ * from HashiCorpVault
  */
 // https://itnext.io/how-to-rotate-expired-spring-cloud-vault-relational-db-credentials-without-restarting-the-app-66976fbb4bbe
 @Slf4j
@@ -67,6 +68,7 @@ public class VaultLeaseConfig {
      * It performs a soft eviction of database connections to force the use
      * of updated creds. The HikariConfigMXBean is then used to update
      * the username and password in the HikariDataSource.
+     * 
      * @param username username extracted from the lease event's secrets
      * @param password password extracted from the lease event's secrets
      */

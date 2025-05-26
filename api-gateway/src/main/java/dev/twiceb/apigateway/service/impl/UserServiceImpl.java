@@ -2,7 +2,7 @@ package dev.twiceb.apigateway.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.cache.RedisCacheManager;
+// import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import static dev.twiceb.common.constants.PathConstants.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -37,10 +38,10 @@ public class UserServiceImpl implements UserService {
         try {
 
             return Optional.ofNullable(
-                            restTemplate.getForObject(
-                                    String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
-                                    UserPrincipleResponse.class,
-                                    email))
+                    restTemplate.getForObject(
+                            String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
+                            UserPrincipleResponse.class,
+                            email))
                     .filter(UserPrincipleResponse::isVerified)
                     .orElseThrow(() -> new ApiRequestException("Email not activated", HttpStatus.BAD_REQUEST));
         } catch (RestClientException e) {
@@ -52,7 +53,7 @@ public class UserServiceImpl implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Long getValidUserDeviceId(UserPrincipleResponse user, String deviceKey) {
+    public UUID getValidUserDeviceId(UserPrincipleResponse user, String deviceKey) {
         String hashedDeviceKey = helper.decodeAndHashDeviceVerificationCode(deviceKey);
         for (UserDeviceResponse userDevice : user.getUserDevices()) {
             if (hashedDeviceKey.equals(userDevice.getDeviceKey())) {

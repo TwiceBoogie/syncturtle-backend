@@ -11,10 +11,9 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 public class InputFieldException extends RuntimeException {
-    private final HttpStatus status;
-    private final Map<String, String> errorsMap;
+    private HttpStatus status;
+    private Map<String, String> errorsMap;
     private BindingResult bindingResult;
-
 
     public InputFieldException(BindingResult bindingResult) {
 
@@ -31,7 +30,8 @@ public class InputFieldException extends RuntimeException {
 
     private Map<String, String> handleErrors(BindingResult bindingResult) {
         Map<String, String> errors = new HashMap<>();
-        bindingResult.getFieldErrors().forEach(fieldError -> errors.put(fieldError.getField(), fieldError.getDefaultMessage()));
+        bindingResult.getFieldErrors()
+                .forEach(fieldError -> errors.put(fieldError.getField(), fieldError.getDefaultMessage()));
         return errors;
     }
 }

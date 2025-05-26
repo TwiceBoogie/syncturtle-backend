@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.NO_DOMAIN_PASSWORDS;
 
@@ -39,7 +40,7 @@ public class PasswordClientServiceImpl implements PasswordClientService {
     @Override
     @Transactional(readOnly = true)
     public boolean isPasswordVaultEmpty() {
-        Long authUserId = AuthUtil.getAuthenticatedUserId();
+        UUID authUserId = AuthUtil.getAuthenticatedUserId();
         return encryptionKeyRepository.isPasswordVaultEmpty(authUserId);
     }
 
@@ -60,7 +61,7 @@ public class PasswordClientServiceImpl implements PasswordClientService {
     @Override
     @Transactional(readOnly = true)
     public PasswordVaultHealthResponse getPasswordVaultHealth() {
-        Long authUserId = AuthUtil.getAuthenticatedUserId();
+        UUID authUserId = AuthUtil.getAuthenticatedUserId();
         if (keychainRepository.countKeychainByEncryptionKey_User_Id(authUserId) == 0) {
             throw new ApiRequestException(NO_DOMAIN_PASSWORDS, HttpStatus.NOT_FOUND);
         }

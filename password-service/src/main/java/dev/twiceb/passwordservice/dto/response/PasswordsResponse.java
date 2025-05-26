@@ -3,13 +3,14 @@ package dev.twiceb.passwordservice.dto.response;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 import lombok.Data;
 
 @Data
 public class PasswordsResponse {
-    private Long id;
+    private UUID id;
     private String username;
     private String domain;
     private String websiteUrl;

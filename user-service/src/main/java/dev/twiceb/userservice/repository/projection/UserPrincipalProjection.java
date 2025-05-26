@@ -1,11 +1,12 @@
 package dev.twiceb.userservice.repository.projection;
 
 import java.util.List;
+import java.util.UUID;
 
 import dev.twiceb.common.enums.UserRole;
 
 public interface UserPrincipalProjection {
-    Long getId();
+    UUID getId();
 
     String getUsername();
 

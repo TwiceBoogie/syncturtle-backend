@@ -1,7 +1,9 @@
 package dev.twiceb.passwordservice.repository.projection;
 
+import java.util.UUID;
+
 public interface BaseKeychainProjection {
-    Long getId();
+    UUID getId();
     String getUsername();
     String getDomain();
 }

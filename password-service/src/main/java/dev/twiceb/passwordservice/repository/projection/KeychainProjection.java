@@ -3,11 +3,12 @@ package dev.twiceb.passwordservice.repository.projection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import dev.twiceb.passwordservice.enums.DomainStatus;
 
 public interface KeychainProjection {
-    Long getId();
+    UUID getId();
     String getUsername();
     String getDomain();
     String getWebsiteUrl();

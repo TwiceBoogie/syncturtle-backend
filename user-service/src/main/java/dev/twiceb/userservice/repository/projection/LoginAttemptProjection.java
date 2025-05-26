@@ -1,6 +1,8 @@
 package dev.twiceb.userservice.repository.projection;
 
+import java.util.UUID;
+
 public interface LoginAttemptProjection {
-    Long getId();
+    UUID getId();
     String getIpAddress();
 }

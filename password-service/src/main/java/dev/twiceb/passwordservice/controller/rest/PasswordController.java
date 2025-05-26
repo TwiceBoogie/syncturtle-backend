@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import static dev.twiceb.common.constants.PathConstants.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -42,7 +43,7 @@ public class PasswordController implements PasswordControllerSwagger {
 
     @Override
     public ResponseEntity<GenericResponse> updatePasswordOnly(
-            @PathVariable("passwordId") Long passwordId,
+            @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
             BindingResult bindingResult
     ) {
@@ -51,7 +52,7 @@ public class PasswordController implements PasswordControllerSwagger {
 
     @Override
     public ResponseEntity<GenericResponse> updateUsername(
-            @PathVariable("passwordId") Long passwordId,
+            @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
             BindingResult bindingResult
     ) {
@@ -60,7 +61,7 @@ public class PasswordController implements PasswordControllerSwagger {
 
     @Override
     public ResponseEntity<GenericResponse> updatePasswordNotes(
-            @PathVariable("passwordId") Long passwordId,
+            @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
             BindingResult bindingResult
     ) {
@@ -70,7 +71,7 @@ public class PasswordController implements PasswordControllerSwagger {
     @Override
     public ResponseEntity<Void> updateTagsOnPassword(
             @Valid @RequestBody UpdatePasswordRequest request,
-            @PathVariable("passwordId") Long passwordId,
+            @PathVariable("passwordId") UUID passwordId,
             BindingResult bindingResult
     ) {
         passwordMapper.updateTagsOnPassword(passwordId, request, bindingResult);
@@ -80,7 +81,7 @@ public class PasswordController implements PasswordControllerSwagger {
     @Override
     public ResponseEntity<Void> favoritePassword(
             @Valid @RequestBody UpdatePasswordRequest request,
-            @PathVariable("passwordId") Long passwordId,
+            @PathVariable("passwordId") UUID passwordId,
             BindingResult bindingResult
     ) {
         passwordMapper.favoritePassword(passwordId, request, bindingResult);
@@ -95,7 +96,7 @@ public class PasswordController implements PasswordControllerSwagger {
     }
 
     @Override
-    public ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") Long keychainId) {
+    public ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") UUID keychainId) {
         return ResponseEntity.ok().body(passwordMapper.getPassword(keychainId));
     }
 
@@ -109,12 +110,12 @@ public class PasswordController implements PasswordControllerSwagger {
     }
 
     @Override
-    public ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") Long passwordId) {
+    public ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") UUID passwordId) {
         return ResponseEntity.ok(passwordMapper.getDecryptedPassword(passwordId));
     }
 
     @Override
-    public ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") Long passwordId) {
+    public ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") UUID passwordId) {
         return ResponseEntity.ok(passwordMapper.deletePassword(passwordId));
     }
 

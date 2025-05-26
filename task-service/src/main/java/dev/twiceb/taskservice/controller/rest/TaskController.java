@@ -29,30 +29,21 @@ public class TaskController {
         private final TaskMapper taskMapper;
 
         @PostMapping
-        public ResponseEntity<GenericResponse> createNewTask(
-                        @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                        @Valid @RequestBody NewTaskRequest request,
-                        BindingResult bindingResult) {
-                return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.createNewTask(
-                                userId, request, bindingResult));
+        public ResponseEntity<GenericResponse> createNewTask(@Valid @RequestBody NewTaskRequest request,
+                                                             BindingResult bindingResult) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.createNewTask(request, bindingResult));
         }
 
         @PostMapping(UPLOAD_ATTACHMENTS)
-        public ResponseEntity<GenericResponse> uploadAttachments(
-                @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                @RequestParam("files") MultipartFile[] files,
-                @PathVariable("taskId") Long taskId
+        public ResponseEntity<GenericResponse> uploadAttachments(@RequestParam("files") MultipartFile[] files,
+                                                                 @PathVariable("taskId") Long taskId
                 ) {
-                return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.uploadAttachments(
-                        userId, taskId, files));
+                return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.uploadAttachments(taskId, files));
         }
 
         @GetMapping(GET_ATTACHMENT_FILE)
-        public ResponseEntity<byte[]> getFileImage(
-                @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                @PathVariable("taskAttachmentId") Long taskAttachmentId
-        ) {
-                FileImageResponse res = taskMapper.getFileImage(userId, taskAttachmentId);
+        public ResponseEntity<byte[]> getFileImage(@PathVariable("taskAttachmentId") Long taskAttachmentId) {
+                FileImageResponse res = taskMapper.getFileImage(taskAttachmentId);
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(res.getFileType());
                 headers.setContentLength(res.getPhotoContent().length);
@@ -61,29 +52,23 @@ public class TaskController {
         }
 
         @PostMapping(CREATE_RECURRING_TASK)
-        public ResponseEntity<GenericResponse> createRecurringTask(
-                        @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                        @Valid @RequestBody NewRecurringEventRequest request,
-                        BindingResult bindingResult) {
+        public ResponseEntity<GenericResponse> createRecurringTask(@Valid @RequestBody NewRecurringEventRequest request,
+                                                                   BindingResult bindingResult) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.createNewRecurringTask(
-                                userId, request, bindingResult));
+                                request, bindingResult));
         }
 
         @PostMapping(CREATE_SUBTASK)
-        public ResponseEntity<GenericResponse> addSubTaskToTask(
-                        @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                        @PathVariable("taskId") Long taskId,
-                        @Valid @RequestBody NewSubTaskRequest request,
-                        BindingResult bindingResult) {
+        public ResponseEntity<GenericResponse> addSubTaskToTask(@PathVariable("taskId") Long taskId,
+                                                                @Valid @RequestBody NewSubTaskRequest request,
+                                                                BindingResult bindingResult) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.addSubTaskToTask(
-                                userId, taskId, request, bindingResult));
+                                taskId, request, bindingResult));
         }
 
         @PatchMapping
-        public ResponseEntity<GenericResponse> updateTask(
-                        @RequestHeader(name = AUTH_USER_ID_HEADER, defaultValue = "0") Long userId,
-                        @Valid @RequestBody UpdateTaskRequest request,
-                        BindingResult bindingResult) {
-                return ResponseEntity.ok(taskMapper.updateTask(userId, request, bindingResult));
+        public ResponseEntity<GenericResponse> updateTask(@Valid @RequestBody UpdateTaskRequest request,
+                                                          BindingResult bindingResult) {
+                return ResponseEntity.ok(taskMapper.updateTask(request, bindingResult));
         }
 }

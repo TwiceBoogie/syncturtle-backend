@@ -9,6 +9,7 @@ import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import org.springframework.validation.BindingResult;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This interface defines methods for authentication and user management within
@@ -31,7 +32,7 @@ import java.util.Map;
  * <p>
  * Exceptions may be thrown to indicate various error conditions, such as user
  * not found, invalid credentials,
- * or account lockout. These exceptions provide details about the error, which
+ * or user lockout. These exceptions provide details about the error, which
  * can be used to inform the client
  * application about the failure.
  * </p>
@@ -49,7 +50,7 @@ public interface AuthenticationService {
      * 
      * @return The user ID extracts from the request headers.
      */
-    Long getAuthenticatedUserId();
+    UUID getAuthenticatedUserId();
 
     /**
      * Retrieves the authenticated user based on the user ID extracted from the
@@ -84,10 +85,10 @@ public interface AuthenticationService {
      *
      * @return A map containing the authenticated user and a JWT Token.
      *
-     * @throws ApiRequestException           If the user is not found or the account
+     * @throws ApiRequestException           If the user is not found or the user
      *                                       is not verified.
      * @throws NoRollbackApiRequestException If the user's deviceKey is not valid or
-     *                                       the account is locked.
+     *                                       the user is locked.
      */
     Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult);
 
@@ -160,7 +161,7 @@ public interface AuthenticationService {
      * Verifies a new device using the provided device verification code after an
      * unknown login from new device.
      * If trust is false, the user did not make the login request and will lock the
-     * account and start the password
+     * user and start the password
      * reset process.
      *
      * @param deviceVerificationCode The device verification code sent to the user's

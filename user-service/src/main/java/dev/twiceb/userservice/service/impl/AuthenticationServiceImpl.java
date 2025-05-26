@@ -48,7 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * {@inheritDoc}
      */
     @Override
-    public Long getAuthenticatedUserId() {
+    public UUID getAuthenticatedUserId() {
         return getUserId();
     }
 
@@ -176,7 +176,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return Map.of("user", user, "token", token, "deviceToken", deviceToken);
     }
 
-    private void updateLoginAttempt(Long userId) {
+    private void updateLoginAttempt(UUID userId) {
         loginAttemptService.updateLoginAttempt(userId);
     }
 
@@ -282,9 +282,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 AUTH_USER_AGENT_HEADER, request.getHeader("user-agent"));
     }
 
-    private Long getUserId() {
+    private UUID getUserId() {
         HttpServletRequest request = getRequest();
-        return Long.parseLong(request.getHeader(AUTH_USER_ID_HEADER));
+        return UUID.fromString(request.getHeader(AUTH_USER_ID_HEADER));
     }
 
     @SuppressWarnings("null")

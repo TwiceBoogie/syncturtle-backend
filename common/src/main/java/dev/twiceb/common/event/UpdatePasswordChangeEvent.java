@@ -1,17 +1,37 @@
 package dev.twiceb.common.event;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdatePasswordChangeEvent implements PasswordChangeLogEvent{
-    private Long id;
+public class UpdatePasswordChangeEvent implements PasswordChangeLogEvent {
+    private UUID id;
     private boolean changeSuccess;
     private String changeResult;
-    private Long userDeviceId;
+    private UUID userDeviceId;
+
+    @Override
+    public UUID getId() {
+        return this.id;
+    }
+
+    @Override
+    public boolean isChangeSuccess() {
+        return this.changeSuccess;
+    }
+
+    @Override
+    public String getChangeResult() {
+        return this.changeResult;
+    }
+
+    @Override
+    public UUID getUserDeviceId() {
+        return this.userDeviceId;
+    }
 }

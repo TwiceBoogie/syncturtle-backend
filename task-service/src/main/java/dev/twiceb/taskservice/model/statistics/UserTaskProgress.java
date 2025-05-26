@@ -1,6 +1,6 @@
 package dev.twiceb.taskservice.model.statistics;
 
-import dev.twiceb.taskservice.model.Accounts;
+import dev.twiceb.taskservice.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +20,7 @@ public class UserTaskProgress {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Accounts account;
+    private User account;
 
     @Column(name = "completed_tasks", nullable = false)
     private int completedTasks;
@@ -36,7 +36,7 @@ public class UserTaskProgress {
 
     public UserTaskProgress() {}
 
-    public UserTaskProgress(Accounts account, int completedTasks, int totalTasks, BigDecimal completionPercentage) {
+    public UserTaskProgress(User account, int completedTasks, int totalTasks, BigDecimal completionPercentage) {
         this.account = account;
         this.completedTasks = completedTasks;
         this.totalTasks = totalTasks;

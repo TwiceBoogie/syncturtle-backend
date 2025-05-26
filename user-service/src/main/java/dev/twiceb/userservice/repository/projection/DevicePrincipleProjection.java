@@ -1,7 +1,9 @@
 package dev.twiceb.userservice.repository.projection;
 
+import java.util.UUID;
+
 public interface DevicePrincipleProjection {
-    Long getId();
+    UUID getId();
 
     String getDeviceKey();
 }

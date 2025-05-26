@@ -18,12 +18,12 @@ management:
   endpoint:
     shutdown:
       enabled: true
-#  zipkin:
-#    tracing:
-#      endpoint: http://${ZIPKIN_HOST:localhost}:9412
-#  tracing:
-#    sampling:
-#      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411
+  tracing:
+    sampling:
+      probability: 1.0
 eureka:
   client:
     service-url:
@@ -31,4 +31,4 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
   instance:
-    hostname: ${EUREKA_HOST:localhost}
+    hostname: ${HOST_NAME:localhost}

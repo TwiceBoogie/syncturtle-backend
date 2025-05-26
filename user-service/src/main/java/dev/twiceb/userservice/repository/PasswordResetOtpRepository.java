@@ -6,8 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetOtp, Long> {
+public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetOtp, UUID> {
 
     @Query("SELECT CASE WHEN :currentTime < pso.expirationTime THEN true ELSE false END " +
             "FROM PasswordResetOtp pso " +

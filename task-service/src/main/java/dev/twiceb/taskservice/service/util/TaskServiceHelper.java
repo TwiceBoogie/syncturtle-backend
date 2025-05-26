@@ -5,7 +5,7 @@ import dev.twiceb.common.model.Tags;
 import dev.twiceb.common.util.ServiceHelper;
 import dev.twiceb.common.util.UpdateQueryResult;
 import dev.twiceb.taskservice.dto.request.NewSubTaskRequest;
-import dev.twiceb.taskservice.model.SubTasks;
+import dev.twiceb.taskservice.model.SubTask;
 import dev.twiceb.taskservice.model.Task;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -28,23 +28,6 @@ public class TaskServiceHelper extends ServiceHelper {
 
     public void processBindingResults(BindingResult bindingResult) {
         this.processInputErrors(bindingResult);
-    }
-
-    public List<SubTasks> handleSubtasks(List<NewSubTaskRequest> subTasks, Task task) {
-        List<SubTasks> newSubtaskList = new ArrayList<>();
-        for (NewSubTaskRequest subTask : subTasks) {
-            SubTasks newSubTask = new SubTasks(task, subTask.getSubtaskTitle(), subTask.getSubtaskDescription());
-
-            if (subTask.getPriority() != null) {
-                newSubTask.setPriority(subTask.getPriority());
-            }
-            if (subTask.getStatus() != null) {
-                newSubTask.setStatus(subTask.getStatus());
-            }
-
-            newSubtaskList.add(newSubTask);
-        }
-        return newSubtaskList;
     }
 
     public List<Tags> handleTags(List<Integer> existingTagsResult, List<String> tagsRequest) {
