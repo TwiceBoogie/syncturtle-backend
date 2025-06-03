@@ -2,14 +2,7 @@ package dev.twiceb.userservice.service.util;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.util.ServiceHelper;
-import dev.twiceb.userservice.dto.request.RegistrationRequest;
-import dev.twiceb.userservice.enums.ActivationCodeType;
-import dev.twiceb.userservice.model.ActivationCode;
-import dev.twiceb.userservice.model.LoginAttemptPolicy;
-import dev.twiceb.userservice.model.PasswordResetOtp;
-import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.repository.LoginAttemptPolicyRepository;
-import dev.twiceb.userservice.repository.PasswordResetOtpRepository;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -19,18 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
-import org.springframework.vault.core.VaultTemplate;
-import org.springframework.vault.support.Ciphertext;
-import org.springframework.vault.support.Plaintext;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 

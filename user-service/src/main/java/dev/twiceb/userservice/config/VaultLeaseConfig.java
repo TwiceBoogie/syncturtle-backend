@@ -58,6 +58,13 @@ public class VaultLeaseConfig {
                     updateDataSource(username, password);
                 } else if (leaseEvent instanceof SecretLeaseExpiredEvent) {
                     log.warn("==> Lease expired for path: {}", leaseEvent.getSource().getPath());
+
+                    try {
+                        leaseContainer.requestRotatingSecret(vaultCredsPath);
+                    } catch (Exception e) {
+                        log.error("==> Failed to request new Vault crednetials after lease expiry: {}", e.getMessage(),
+                                e);
+                    }
                 }
             }
         });

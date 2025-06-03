@@ -2,12 +2,7 @@ package dev.twiceb.userservice.mapper;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
-import dev.twiceb.userservice.dto.request.AuthenticationCodeRequest;
-import dev.twiceb.userservice.dto.request.AuthenticationRequest;
-import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
-import dev.twiceb.userservice.dto.response.AuthenticationResponse;
-// import dev.twiceb.userservice.service.AuthenticationService;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.service.RegistrationService;
 import lombok.RequiredArgsConstructor;

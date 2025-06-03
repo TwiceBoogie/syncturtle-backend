@@ -6,13 +6,19 @@ import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.mapper.RegistrationMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import static dev.twiceb.common.constants.PathConstants.*;
+
+import java.time.Duration;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,13 +35,28 @@ public class RegistrationController implements RegistrationControllerSwagger {
 
     @Override
     @PostMapping(REGISTRATION_CODE)
-    public ResponseEntity<GenericResponse> sendRegistrationCode(ProcessEmailRequest request, BindingResult bindingResult) {
+    public ResponseEntity<GenericResponse> sendRegistrationCode(ProcessEmailRequest request,
+            BindingResult bindingResult) {
         return ResponseEntity.ok(registrationMapper.sendRegistrationCode(request.getEmail(), bindingResult));
     }
 
     @Override
     @GetMapping(REGISTRATION_ACTIVATE_CODE)
-    public ResponseEntity<RegistrationEndResponse> checkRegistrationCode(@PathVariable String code) {
-        return ResponseEntity.ok(registrationMapper.checkRegistrationCode(code));
+    public ResponseEntity<GenericResponse> checkRegistrationCode(@PathVariable String code,
+            HttpServletResponse response) {
+        RegistrationEndResponse regResponse = registrationMapper.checkRegistrationCode(code);
+
+        // Set the deviceToken cookie
+        ResponseCookie cookie = ResponseCookie.from(AUTH_USER_DEVICE_KEY, regResponse.getDeviceToken())
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(Duration.ofDays(90))
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        GenericResponse responseToClient = new GenericResponse();
+        responseToClient.setMessage(regResponse.getMessage());
+        return ResponseEntity.ok(responseToClient);
     }
 }

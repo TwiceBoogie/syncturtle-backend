@@ -39,7 +39,7 @@ public class EmailConfig {
     private String debug;
 
     @Bean
-    public JavaMailSender getMailSender() {
+    JavaMailSender getMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(host);
         mailSender.setPort(port);
@@ -54,7 +54,7 @@ public class EmailConfig {
     }
 
     @Bean
-    public ITemplateResolver thymeleafTemplateResolver() {
+    ITemplateResolver thymeleafTemplateResolver() {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");
         templateResolver.setSuffix(".html");
@@ -64,7 +64,7 @@ public class EmailConfig {
     }
 
     @Bean
-    public SpringTemplateEngine thymeleafTemplateEngine() {
+    SpringTemplateEngine thymeleafTemplateEngine() {
         SpringTemplateEngine templateEngine = new SpringTemplateEngine();
         templateEngine.setTemplateResolver(thymeleafTemplateResolver());
         return templateEngine;

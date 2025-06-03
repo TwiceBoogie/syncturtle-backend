@@ -9,6 +9,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
 import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
@@ -44,7 +46,7 @@ public class JwtProvider {
     @PostConstruct
     protected void init() {
         secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
-        deviceSecretKey =  Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretDeviceKeyString));
+        deviceSecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretDeviceKeyString));
     }
 
     // https://stackoverflow.com/questions/55102937/how-to-create-a-spring-security-key-for-signing-a-jwt-token
@@ -72,15 +74,23 @@ public class JwtProvider {
     }
 
     public String resolveToken(ServerHttpRequest request) {
-        String bearerToken = request.getHeaders().getFirst(authorizationHeader);
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        // String bearerToken = request.getHeaders().getFirst(authorizationHeader);
+        // if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+        // return bearerToken.substring(7);
+        // }
+        List<HttpCookie> cookies = request.getCookies().get("token");
+        if (cookies != null && !cookies.isEmpty()) {
+            return cookies.get(0).getValue();
         }
         return null;
     }
 
     public String resolveDeviceToken(ServerHttpRequest request) {
-        return request.getHeaders().getFirst(AUTH_USER_DEVICE_KEY);
+        List<HttpCookie> cookies = request.getCookies().get("token");
+        if (cookies != null && !cookies.isEmpty()) {
+            return cookies.get(0).getValue();
+        }
+        return "";
     }
 
     public boolean validateToken(String token, String type) {

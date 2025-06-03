@@ -19,6 +19,7 @@ spring:
               - PATCH
               - OPTIONS
               - HEAD
+            allowCredentials: true
       discovery:
         locator:
           enabled: true
