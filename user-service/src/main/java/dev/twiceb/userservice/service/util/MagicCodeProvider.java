@@ -1,0 +1,117 @@
+package dev.twiceb.userservice.service.util;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Service;
+
+import dev.twiceb.common.enums.AuthErrorCodes;
+import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.userservice.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class MagicCodeProvider {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final UserRepository userRepository;
+
+    // @Value("${auth.magic-link.enabled:true}")
+    // private boolean magicLinkEnabled;
+
+    // @Value("${spring.mail.host}")
+    // private String smtpHost;
+
+    private static final Duration MAGIC_CODE_EXPIRY = Duration.ofMinutes(10);
+    private static final int MAX_ATTEMPTS = 3;
+
+    public Pair<String, String> initiate(String email) {
+        // if (smtpHost == null || smtpHost.isEmpty()) {
+        // throw new AuthException(
+        // "SMTP_NOT_CONFIGURED",
+        // "SMTP is not configured",
+        // email);
+        // }
+
+        // if (!magicLinkEnabled) {
+        // throw new AuthException(
+        // "MAGIC_LINK_LOGIN_DISABLED",
+        // "Magic link login is disabled", email);
+        // }
+
+        String token = this.generateToken();
+        String redisKey = "magic_" + email;
+
+        Map<String, Object> existingData = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
+
+        int currentAttempt = 0;
+        if (existingData != null) {
+            currentAttempt = (int) existingData.get("current_attempt") + 1;
+            if (currentAttempt >= MAX_ATTEMPTS) {
+                boolean userExists = userRepository.existsByEmail(email);
+                throw new AuthException(
+                        userExists ? AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN
+                                : AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP);
+            }
+        }
+
+        Map<String, Object> value = new HashMap<>();
+        value.put("email", email);
+        value.put("token", token);
+        value.put("current_attempt", currentAttempt);
+
+        redisTemplate.opsForValue().set(redisKey, value, MAGIC_CODE_EXPIRY);
+        return Pair.of(redisKey, token);
+    }
+
+    public String validateAndGetEmail(String redisKey, String code) {
+        Map<String, Object> data = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
+        if (data == null) {
+            return this.throwExpired(redisKey);
+        }
+
+        String storedToken = (String) data.get("token");
+        String email = (String) data.get("email");
+
+        if (storedToken.equals(code)) {
+            redisTemplate.delete(redisKey);
+            return email;
+        } else {
+            boolean userExists = userRepository.existsByEmail(email);
+            throw new AuthException(
+                    userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
+                            : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP);
+        }
+    }
+
+    // if return type is null then this code 'String storedToken = (String)
+    // data.get("token");'
+    // says it might be a null pointer
+    private String throwExpired(String redisKey) {
+        String email = redisKey.replace("magic_", "");
+        boolean userExists = userRepository.existsByEmail(email);
+        throw new AuthException(
+                userExists ? AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_IN : AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_UP);
+    }
+
+    private String generateToken() {
+        return Stream.generate(() -> this.randomAlpha(4))
+                .limit(3)
+                .collect(Collectors.joining("-"));
+    }
+
+    private String randomAlpha(int count) {
+        return new Random().ints('a', 'z' + 1)
+                .limit(count)
+                .mapToObj(i -> String.valueOf((char) i))
+                .collect(Collectors.joining());
+    }
+}

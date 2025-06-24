@@ -10,7 +10,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:hvs.aeZAPx5SezRvrVxPP80kGYyT}
+      token: ${VAULT_TOKEN:hvs.UEq2IBfAsRIDGy8lxoT0428T}
 #      ssl:
 #        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
 #        trust-store-password: changeit
@@ -22,6 +22,7 @@ spring:
         backend: database
         username-property: spring.datasource.username
         password-property: spring.datasource.password
+        static-role: false
       rabbitmq:
         enabled: true
         role: my-role

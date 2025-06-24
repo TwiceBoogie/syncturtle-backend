@@ -31,16 +31,19 @@ public class User extends AuditableEntity {
     private String about;
 
     @Column(name = "first_name")
-    private String firstName;
+    private String firstName = "";
 
     @Column(name = "last_name")
-    private String lastName;
+    private String lastName = "";
 
     @Column(name = "username")
-    private String username;
+    private String username = "";
 
     @Column(name = "password")
     private String password;
+
+    @Column(name = "is_password_autoset")
+    private boolean isPasswordAutoSet = false;
 
     @Column(name = "birthday")
     private String birthday;
@@ -97,17 +100,6 @@ public class User extends AuditableEntity {
     private UserProfileLimt userProfileLimt;
 
     public User() {
-    }
-
-    public User(
-            String email, String firstName, String lastName, String username, String password,
-            LoginAttemptPolicy policy) {
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.username = username;
-        this.password = password;
-        this.loginAttemptPolicy = policy;
     }
 
 }

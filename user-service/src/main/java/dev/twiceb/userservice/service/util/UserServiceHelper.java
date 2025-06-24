@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.service.util;
 
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.exception.InputFieldException;
 import dev.twiceb.common.util.ServiceHelper;
 
 import jakarta.persistence.EntityManager;
@@ -34,9 +35,10 @@ public class UserServiceHelper extends ServiceHelper {
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceHelper processBindingResults(BindingResult bindingResult) {
-        this.processInputErrors(bindingResult);
-        return this;
+    public void processBindingResults(BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new InputFieldException(bindingResult);
+        }
     }
 
     public void processPassword(String password1, String password2) {

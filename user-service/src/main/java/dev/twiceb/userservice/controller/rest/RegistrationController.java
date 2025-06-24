@@ -2,6 +2,7 @@ package dev.twiceb.userservice.controller.rest;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.userservice.controller.RegistrationControllerSwagger;
+import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import static dev.twiceb.common.constants.PathConstants.*;
 
 import java.time.Duration;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequiredArgsConstructor
@@ -59,4 +62,12 @@ public class RegistrationController implements RegistrationControllerSwagger {
         responseToClient.setMessage(regResponse.getMessage());
         return ResponseEntity.ok(responseToClient);
     }
+
+    @PostMapping("/magic-sign-up")
+    public ResponseEntity<RegistrationEndResponse> magicRegistration(@RequestBody MagicCodeRequest request,
+            BindingResult bindingResult) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(registrationMapper.magicRegistration(request, bindingResult));
+    }
+
 }

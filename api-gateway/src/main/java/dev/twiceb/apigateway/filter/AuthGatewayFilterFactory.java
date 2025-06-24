@@ -38,7 +38,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
                 exchange.getAttributes().put("email", email);
 
                 UserPrincipleResponse user = userService.getCachedUserDetails(email);
-
+                System.out.println(user);
                 ServerHttpRequest.Builder builder = exchange.getRequest().mutate();
                 builder.header(AUTH_USER_ID_HEADER, String.valueOf(user.getId()));
 

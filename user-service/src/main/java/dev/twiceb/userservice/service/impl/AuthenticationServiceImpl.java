@@ -1,11 +1,14 @@
 package dev.twiceb.userservice.service.impl;
 
+import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
+import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.PasswordResetRequest;
 import dev.twiceb.userservice.model.*;
 import dev.twiceb.userservice.repository.*;
@@ -13,10 +16,13 @@ import dev.twiceb.userservice.repository.projection.AuthUserProjection;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.repository.projection.UserUsernameProjection;
 import dev.twiceb.userservice.service.*;
+import dev.twiceb.userservice.service.util.MagicCodeProvider;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final UserServiceHelper userServiceHelper;
     private final EmailService emailService;
+    private final MagicCodeProvider magicCodeProvider;
     private final JwtProvider jwtProvider;
 
     /**
@@ -70,6 +77,52 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
+    @Override
+    public Map<String, Object> checkEmail(String email, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
+        boolean existing = false;
+        String status = "MAGIC_CODE";
+        boolean isPasswordAutoSet = true;
+        // check if email-service is up (ping)
+        Optional<User> optionalUser = userRepository.getUserByEmail(email, User.class);
+        if (optionalUser.isPresent()) {
+            existing = true;
+            User user = optionalUser.get();
+            if (!user.isPasswordAutoSet()) {
+                status = "CREDENTIAL";
+                isPasswordAutoSet = true;
+            }
+        }
+
+        return Map.of(
+                "existing", existing,
+                "status", status,
+                "passwordAutoSet", isPasswordAutoSet);
+    }
+
+    @Override
+    public void generateMagicCode(String email, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
+        Pair<String, String> keyAndToken = magicCodeProvider.initiate(email);
+        emailService.sendMagicCodeEmail(email, keyAndToken.getSecond());
+    }
+
+    @Override
+    public Map<String, Object> magicLogin(MagicCodeRequest request, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
+        User user = findUserByEmail(request.getEmail())
+                .orElseThrow(() -> new AuthException(AuthErrorCodes.USER_DOES_NOT_EXIST));
+        Map<String, String> customHeaders = getDeviceKeyAndIp();
+        try {
+            String email = magicCodeProvider.validateAndGetEmail("magic_" + request.getEmail(), request.getMagicCode());
+            loginAttemptService.generateLoginAttempt(true, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+        } catch (Exception e) {
+            // TODO: handle exception
+            loginAttemptService.generateLoginAttempt(false, false, user, RESET);
+        }
+        throw new UnsupportedOperationException("Unimplemented method 'magicLogin'");
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -78,7 +131,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
 
-        return findUserByUsername(request.getUsername())
+        return findUserByEmail(request.getUsername())
                 .map(user -> validateAndAuthenticateUser(user, request.getPassword()))
                 .orElseThrow(() -> new ApiRequestException("Invalid username or password", HttpStatus.UNAUTHORIZED));
     }
@@ -135,7 +188,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public Map<String, String> resetPassword(PasswordResetRequest request, String token, BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult).processPassword(
+        userServiceHelper.processBindingResults(bindingResult);
+        userServiceHelper.processPassword(
                 request.getPassword(), request.getConfirmPassword());
         return passwordResetService.validateAndExpirePasswordResetToken(token)
                 .map(resetToken -> {
@@ -198,6 +252,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private Optional<User> findUserByUsername(String username) {
         return userRepository.findUserByUsername(username);
+    }
+
+    private Optional<User> findUserByEmail(String email) {
+        return userRepository.getUserByEmail(email, User.class);
     }
 
     private Map<String, Object> validateAndAuthenticateUser(User user, String password) {

@@ -4,6 +4,8 @@ export const API_ENDPOINT = HOST + "/ui/v1";
 // AuthApi
 export const API_AUTH_ENDPOINT = `${API_ENDPOINT}/auth`;
 export const API_AUTH_LOGIN = `${API_ENDPOINT}/auth/login`;
+export const API_AUTH_MAGIC_LOGIN = `${API_ENDPOINT}/auth/magic-sign-in`;
+export const API_AUTH_MAGIC_REGISTER = `${API_AUTH_ENDPOINT}/magic-sign-up`;
 export const API_AUTH_REGISTRATION_CHECK = `${API_ENDPOINT}/auth/registration/check`;
 export const API_AUTH_REGISTRATION_CODE = `${API_ENDPOINT}/auth/registration/code`;
 export const API_AUTH_REGISTRATION_ACTIVATE = (activationCode: string) =>

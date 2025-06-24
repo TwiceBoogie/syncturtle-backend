@@ -79,6 +79,7 @@ public class JwtProvider {
         // return bearerToken.substring(7);
         // }
         List<HttpCookie> cookies = request.getCookies().get("token");
+        System.out.println(cookies);
         if (cookies != null && !cookies.isEmpty()) {
             return cookies.get(0).getValue();
         }

@@ -1,7 +1,10 @@
 package dev.twiceb.common.exception;
 
 import dev.twiceb.common.dto.response.ApiErrorResponse;
+import dev.twiceb.common.dto.response.AuthErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,7 +40,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoRollbackApiRequestException.class)
-    public ResponseEntity<ApiErrorResponse> handleNoRollbackApiRequestException(NoRollbackApiRequestException exception) {
+    public ResponseEntity<ApiErrorResponse> handleNoRollbackApiRequestException(
+            NoRollbackApiRequestException exception) {
         log.error("Handling NoRollBackApiRequestException: {}", exception.getMessage());
         ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
         apiErrorResponse.setMessage(exception.getMessage());
@@ -53,5 +57,10 @@ public class GlobalExceptionHandler {
         apiErrorResponse.setErrors(null);
 
         return ResponseEntity.status(exception.getHttpStatus()).body(apiErrorResponse);
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<AuthErrorResponse> handleAuthErrorException(AuthException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exception.toErrorResponse());
     }
 }

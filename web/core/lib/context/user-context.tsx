@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useReducer } from "react";
+import { createContext, ReactNode, useMemo, useReducer } from "react";
 
 type ErrorPayload = {
   message: string;
@@ -70,7 +70,11 @@ const UserContext = createContext<{ state: UserState; dispatch: React.Dispatch<A
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(userReducer, initialState);
-  return <UserContext.Provider value={{ state, dispatch }}>{children}</UserContext.Provider>;
+
+  // recreate the context value if state changes
+  // atleast it won't re-render on provider re-mounts if state hasn't actually changed
+  const value = useMemo(() => ({ state, dispatch }), [state]);
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 export default UserContext;

@@ -5,6 +5,7 @@ import dev.twiceb.userservice.controller.AuthenticationControllerSwagger;
 import dev.twiceb.userservice.dto.request.*;
 import dev.twiceb.userservice.dto.response.AuthUserResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
+import dev.twiceb.userservice.dto.response.MagicCodeResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import static dev.twiceb.common.constants.PathConstants.*;
 
 import java.time.Duration;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,6 +26,19 @@ import java.time.Duration;
 public class AuthenticationController implements AuthenticationControllerSwagger {
 
     private final AuthenticationMapper authenticationMapper;
+
+    @PostMapping("/check-email")
+    public ResponseEntity<MagicCodeResponse> checkEmail(@RequestBody MagicCodeRequest request,
+            BindingResult bindingResult) {
+        return ResponseEntity.ok(authenticationMapper.checkEmail(request, bindingResult));
+    }
+
+    @PostMapping("/generate-magic-code")
+    public ResponseEntity<Void> generateMagicCode(@RequestBody MagicCodeRequest request, BindingResult bindingResult) {
+        System.out.println("should be hitting here");
+        authenticationMapper.generateMagicCode(request, bindingResult);
+        return ResponseEntity.ok().build();
+    }
 
     @Override
     public ResponseEntity<AuthUserResponse> login(AuthenticationRequest request, BindingResult bindingResult) {

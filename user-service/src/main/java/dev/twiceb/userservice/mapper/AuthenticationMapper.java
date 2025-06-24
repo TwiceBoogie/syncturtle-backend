@@ -3,9 +3,11 @@ package dev.twiceb.userservice.mapper;
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
+import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.PasswordResetRequest;
 import dev.twiceb.userservice.dto.response.AuthUserResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
+import dev.twiceb.userservice.dto.response.MagicCodeResponse;
 import dev.twiceb.userservice.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,15 @@ public class AuthenticationMapper {
 
     private final AuthenticationService authenticationService;
     private final BasicMapper mapper;
+
+    public MagicCodeResponse checkEmail(MagicCodeRequest request, BindingResult bindingResult) {
+        return mapper.convertToResponse(
+                authenticationService.checkEmail(request.getEmail(), bindingResult), MagicCodeResponse.class);
+    }
+
+    public void generateMagicCode(MagicCodeRequest request, BindingResult bindingResult) {
+        authenticationService.generateMagicCode(request.getEmail(), bindingResult);
+    }
 
     public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult) {
         return mapper.convertToResponse(

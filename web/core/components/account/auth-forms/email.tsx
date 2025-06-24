@@ -1,7 +1,8 @@
-import { Input } from "@/components/form-fields";
+// import { Input } from "@/components/form-fields";
 import { cn } from "@/helpers/common.helper";
 import { checkEmailValidity } from "@/helpers/string.helper";
 import { IEmailCheckData } from "@/types/authentication";
+import { Button, Form, Input } from "@heroui/react";
 import { FC, FormEvent, useMemo, useRef, useState } from "react";
 
 type TAuthEmailForm = {
@@ -32,30 +33,30 @@ export const AuthEmailForm: FC<TAuthEmailForm> = (props) => {
 
   const isButtonDisabled = email.length === 0 || Boolean(emailError?.email) || isSubmitting;
 
-  const [isFocused, setisFocused] = useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   return (
-    <form onSubmit={handleFormSubmit} className="mt-5 space-y-4">
-      <div
-        className={cn(
-          `relative flex items-center rounded-md border`,
-          !isFocused && Boolean(emailError?.email) ? `border-red-500` : `border-onboarding-border-100`
-        )}
+    <Form onSubmit={handleFormSubmit} className="mt-5 space-y-4">
+      <Input
+        label="Email"
+        labelPlacement="outside"
+        required
+        isClearable
+        onValueChange={setEmail}
+        name="email"
+        type="email"
+        placeholder="name@companey.com"
+        radius="sm"
+      />
+
+      <Button
+        type="submit"
+        color="primary"
+        className="w-full"
+        radius="sm"
+        isDisabled={isButtonDisabled}
+        isLoading={isSubmitting}
       >
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="name@companey.com"
-          className={`disable-autofill-style h-[46px] w-full placeholder:text-onboarding-text-400 autofill:bg-red-500 border-0 focus:bg-none active:bg-transparent`}
-          autoComplete="on"
-          autoFocus
-          ref={inputRef}
-        />
-      </div>
-    </form>
+        {isSubmitting ? "Loading" : "Continue"}
+      </Button>
+    </Form>
   );
 };

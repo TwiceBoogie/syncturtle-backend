@@ -65,6 +65,25 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
     }
 
     @Override
+    public void handleLoginAttempt(User user, Map<String, String> customHeaders) {
+        LoginAttemptPolicy policy = user.getLoginAttemptPolicy();
+        // The start date from which login attempts should be considered for
+        // verification.
+        LocalDateTime startDate = calculateResetStartDate(policy.getResetDuration());
+        // if there is a success attempt (true), then it won't count failed attempts
+        boolean countUserAttempts = checkLoginAttempts(user.getId(), startDate);
+
+        if (!countUserAttempts) {
+            int failedAttempts = countFailedLoginAttempts(user.getId(), startDate) + 1;
+            if (failedAttempts >= user.getLoginAttemptPolicy().getMaxAttempts()) {
+                user = lockUserInternal(user, "Too many failed login attempts");
+            }
+            generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+        }
+        generateLoginAttemptInternal(true, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+    }
+
+    @Override
     @Transactional
     public void updateLoginAttempt(UUID userId) {
         LoginAttempt loginAttempt = loginAttemptRepository.findFirstByUserIdOrderByAttemptTimestampDesc(userId);

@@ -3,7 +3,9 @@ package dev.twiceb.userservice.service;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
+import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.PasswordResetRequest;
+import dev.twiceb.userservice.dto.response.MagicCodeResponse;
 import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
 import org.springframework.validation.BindingResult;
@@ -11,39 +13,6 @@ import org.springframework.validation.BindingResult;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * This interface defines methods for authentication and user management within
- * the application.
- * Implementations of this interface handle user authentication, password
- * management, and device verification.
- *
- * <p>
- * Methods in this interface provide functionality to:
- * </p>
- * <ul>
- * <li>Retrieve the authenticated user's ID and details.</li>
- * <li>Process login requests, authenticate users, and generate JWT tokens.</li>
- * <li>Handle forgotten usernames and passwords by sending OTPs for
- * verification.</li>
- * <li>Verify OTPs and reset user passwords.</li>
- * <li>Perform device verification to enhance security.</li>
- * </ul>
- *
- * <p>
- * Exceptions may be thrown to indicate various error conditions, such as user
- * not found, invalid credentials,
- * or user lockout. These exceptions provide details about the error, which
- * can be used to inform the client
- * application about the failure.
- * </p>
- *
- * <p>
- * Implementations of this interface encapsulate the business logic for user
- * authentication and management,
- * providing a standardized API for interacting with user-related functionality
- * throughout the application.
- * </p>
- */
 public interface AuthenticationService {
     /**
      * Retrieves the user ID from the HTTP request headers.
@@ -71,6 +40,12 @@ public interface AuthenticationService {
      *                             found.
      */
     UserPrincipalProjection getUserPrincipleByEmail(String email);
+
+    Map<String, Object> checkEmail(String email, BindingResult bindingResult);
+
+    void generateMagicCode(String email, BindingResult bindingResult);
+
+    Map<String, Object> magicLogin(MagicCodeRequest request, BindingResult bindingResult);
 
     /**
      * Process the login request, authenticates user, and generates a JWT Token upon

@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class RegistrationEndResponse {
-    private String deviceToken;
     private String message;
+    private String deviceToken;
+    private String token;
 }

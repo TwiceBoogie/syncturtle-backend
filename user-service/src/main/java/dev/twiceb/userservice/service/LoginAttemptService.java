@@ -17,30 +17,39 @@ public interface LoginAttemptService {
     /**
      * Generates a login attempt record for the specified user.
      *
-     * @param success    Whether the login attempt was successful.
-     * @param newDevice  Whether the login attempt was from a new device.
-     * @param user       The user associated with the login attempt.
-     * @param ipAddress  The IP address from which the login attempt was made.
+     * @param success   Whether the login attempt was successful.
+     * @param newDevice Whether the login attempt was from a new device.
+     * @param user      The user associated with the login attempt.
+     * @param ipAddress The IP address from which the login attempt was made.
      */
     void generateLoginAttempt(boolean success, boolean newDevice, User user, String ipAddress);
 
     /**
      * Handles the login attempts for a user.
-     * It checks if there are any successful attempts starting from the specified start date.
+     * It checks if there are any successful attempts starting from the specified
+     * start date.
      * If there are any successful attempts, it won't count any failed attempts
-     * within the period from the start date to the current time and those will be ignored.
+     * within the period from the start date to the current time and those will be
+     * ignored.
      *
      * @param isPasswordMatch boolean from previous password check
-     * @param user The user user being verified.
-     * @param customHeaders The custom headers containing additional information such as the user's IP address.
+     * @param user            The user user being verified.
+     * @param customHeaders   The custom headers containing additional information
+     *                        such as the user's IP address.
      *
-     * @throws NoRollbackApiRequestException If the provided password is incorrect, indicating a failed login attempt.
-     *                                     If the maximum number of login attempts is reached, the user's user will be locked.
+     * @throws NoRollbackApiRequestException If the provided password is incorrect,
+     *                                       indicating a failed login attempt.
+     *                                       If the maximum number of login attempts
+     *                                       is reached, the user's user will be
+     *                                       locked.
      */
     void handleLoginAttempt(boolean isPasswordMatch, User user, Map<String, String> customHeaders);
 
+    void handleLoginAttempt(User user, Map<String, String> customHeaders);
+
     /**
-     * Updates the most recent login attempt for the specified user to be marked as successful.
+     * Updates the most recent login attempt for the specified user to be marked as
+     * successful.
      *
      * @param userId The ID of the user whose login attempt is being updated.
      */
@@ -57,13 +66,16 @@ public interface LoginAttemptService {
 
     /**
      * Handles the case where the user's user is locked.
-     * If the lockout duration has not yet elapsed, a {@link NoRollbackApiRequestException} is thrown.
+     * If the lockout duration has not yet elapsed, a
+     * {@link NoRollbackApiRequestException} is thrown.
      * Otherwise, the user's status is updated to active.
      *
      * @param user          The user whose user is locked.
-     * @param customHeaders The custom headers containing the user's IP address and other information.
+     * @param customHeaders The custom headers containing the user's IP address and
+     *                      other information.
      * @param currentTime   The current time used to calculate the lockout duration.
-     * @throws NoRollbackApiRequestException If the lockout duration has not yet elapsed.
+     * @throws NoRollbackApiRequestException If the lockout duration has not yet
+     *                                       elapsed.
      */
     void handleLockedUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime);
 

@@ -11,10 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <head>
-        <meta name="theme-color" content="#fff" />
-      </head>
+    <html lang="en" className="dark">
       <body>
         <AppProvider>
           <div className={cn("h-screen w-full overflow-hidden relative flex flex-col")}>

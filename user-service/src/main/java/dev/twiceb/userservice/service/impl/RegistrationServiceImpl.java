@@ -1,15 +1,20 @@
 package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.common.dto.request.EmailRequest;
+import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.amqp.AmqpPublisher;
+import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.*;
 import dev.twiceb.userservice.repository.*;
 import dev.twiceb.userservice.repository.projection.UserPrincipalProjection;
+import dev.twiceb.userservice.service.LoginAttemptService;
 import dev.twiceb.userservice.service.RegistrationService;
+import dev.twiceb.userservice.service.util.MagicCodeProvider;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +25,7 @@ import org.springframework.validation.BindingResult;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
@@ -31,24 +37,37 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final UserServiceHelper userServiceHelper;
     private final ActivationCodeRepository activationCodeRepository;
     private final LoginAttemptPolicyRepository loginAttemptPolicyRepository;
+    private final LoginAttemptService loginAttemptService;
+    private final MagicCodeProvider magicCodeProvider;
     private final JwtProvider jwtProvider;
     private final AmqpPublisher amqpPublisher;
 
     @Override
     @Transactional
     public Map<String, String> registration(RegistrationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult).processPassword(
+        userServiceHelper.processBindingResults(bindingResult);
+        userServiceHelper.processPassword(
                 request.getPassword(), request.getPasswordConfirm());
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
             User user = createUserAndSave(
                     request.getEmail(),
-                    request.getFirstName(),
-                    request.getLastName(),
-                    request.getPassword());
+                    request.getPassword(),
+                    true);
             return Map.of("message", "User created successfully. You're username is " + user.getUsername()
                     + " Once logged in, you will be able to change your username.");
         }
         throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.CONFLICT);
+    }
+
+    @Override
+    public Map<String, Object> magicRegistration(MagicCodeRequest request, BindingResult bindingResult) {
+        userServiceHelper.processBindingResults(bindingResult);
+        // throw error if user already exist
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AuthException(AuthErrorCodes.USER_ALREADY_EXIST);
+        }
+
+        return validateMagicUser(request.getEmail(), request.getMagicCode());
     }
 
     @Override
@@ -80,18 +99,35 @@ public class RegistrationServiceImpl implements RegistrationService {
                 "You've activated your user and you're now ready to use it! Try and login to access your user.");
     }
 
-    private User createUserAndSave(String email, String firstName, String lastName, String rawPassword) {
-        String username = generateUniqueUsername(lastName, firstName);
+    private Map<String, Object> validateMagicUser(String email, String magicCode) {
+        String redisKey = "magic_" + email;
+        email = magicCodeProvider.validateAndGetEmail(redisKey, magicCode);
+        User user = createUserAndSave(email, redisKey, false);
+        user.setVerified(true);
+        String randomCode = userServiceHelper.generateRandomCode();
+        user = updateUsersDevice(user, randomCode);
+        notifyUserCreation(user);
+        String deviceToken = jwtProvider.createDeviceToken(randomCode);
+        String jwt = jwtProvider.createToken(email, user.getRole().toString());
+        loginAttemptService.generateLoginAttempt(true, true, user, "random");
+        return Map.of(
+                "message",
+                "You've activated your user and you're now ready to use it! Try and login to access your user.",
+                "deviceToken", deviceToken,
+                "token", jwt);
+    }
+
+    private User createUserAndSave(String email, String password, boolean save) {
         LoginAttemptPolicy policy = loginAttemptPolicyRepository.findById(1L).orElseThrow(
                 () -> new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
-        User user = new User(
-                email,
-                firstName,
-                lastName,
-                username,
-                userServiceHelper.encodePassword(rawPassword),
-                policy);
-        return userRepository.save(user);
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(userServiceHelper.encodePassword(password));
+        user.setLoginAttemptPolicy(policy);
+        if (save) {
+            return userRepository.save(user);
+        }
+        return user;
     }
 
     private String generateUniqueUsername(String lastName, String firstName) {

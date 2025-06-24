@@ -10,6 +10,6 @@ public class EmailController {
     @GetMapping("/test")
     public ModelAndView test() {
         // You can add model attributes here if needed
-        return new ModelAndView("deviceVerification-template");
+        return new ModelAndView("magicCode-template");
     }
 }

@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(36) NOT NULL,
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255),
+    is_password_autoset BOOLEAN NOT NULL,
     birthday VARCHAR(255),
     country VARCHAR(255),
     country_code VARCHAR(255),
