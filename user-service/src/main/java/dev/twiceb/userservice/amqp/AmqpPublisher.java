@@ -39,11 +39,11 @@ public class AmqpPublisher {
 
     public void userCreated(UserPrincipalProjection user) {
         if (isTestEnvironment()) {
-            log.info("Skipping AMQP message send in test environment.");
+            log.info("==> Skipping AMQP message send in test environment.");
             return;
         }
 
-        log.info("converting and sending to amqp exchange");
+        log.info("==> converting and sending to amqp exchange");
         UserPrincipleResponse userData = basicMapper.convertToResponse(user,
                 UserPrincipleResponse.class);
         amqpTemplate.convertAndSend(this.fanoutExchange, "", userData);
@@ -51,13 +51,13 @@ public class AmqpPublisher {
 
     public void sendEmail(EmailRequest emailRequest) {
         if (isTestEnvironment()) {
-            log.info("Skipping email send in test environment.");
+            log.info("==> Skipping email send in test environment.");
             return;
         }
         try {
             amqpTemplate.convertAndSend(this.directExchange, this.routingKey, emailRequest);
         } catch (AmqpException ex) {
-            log.error("Error sending email: {}", ex.getMessage());
+            log.error("==> Error sending email: {}", ex.getMessage());
             // TODO: perhaps create a custom exception for this
             throw new ApiRequestException("Failed to send email. Please try again later.",
                     HttpStatus.INTERNAL_SERVER_ERROR);

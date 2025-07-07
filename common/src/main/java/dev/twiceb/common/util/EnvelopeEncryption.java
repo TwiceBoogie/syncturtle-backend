@@ -20,8 +20,8 @@ import java.security.SecureRandom;
 @Component
 public class EnvelopeEncryption {
 
-    private static final int STANDARD_SECURITY_KEY_SIZE = 128; // bits
-    private static final int MEDIUM_SECURITY_KEY_SIZE = 192; // bits
+    // private static final int STANDARD_SECURITY_KEY_SIZE = 128; // bits
+    // private static final int MEDIUM_SECURITY_KEY_SIZE = 192; // bits
     private static final int HIGH_SECURITY_KEY_SIZE = 256; // bits
     private static final String DEFAULT_ALGORITHM = "AES";
 

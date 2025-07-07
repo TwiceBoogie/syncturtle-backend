@@ -31,16 +31,15 @@ const defaultValues: TUniqueCodeFormValues = {
   code: "",
 };
 
-export const AuthUniqueCode: FC<TAuthUniqueCodeForm> = (props) => {
+export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
   const { mode, email, handleEmailClear, generateEmailUniqueCode, isExistingEmail, nextPath } = props;
   const router = useRouter();
   // derived values
   const defaultResetTimerValue = 5;
   // states
-  const [state, action, isPending] = useActionState(sendMagicCode, null);
-  const [errors, setErrors] = useState<Record<string, string>>();
   const [uniqueCodeFormData, setUniqueCodeFormData] = useState<TUniqueCodeFormValues>({ ...defaultValues, email });
   const [isRequestingNewCode, setIsRequestingNewCode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // timer
   const { timer: resendTimerCode, setTimer: setResendCodeTimer } = useTimer(0);
 
@@ -61,21 +60,12 @@ export const AuthUniqueCode: FC<TAuthUniqueCodeForm> = (props) => {
     }
   };
 
-  useEffect(() => {
-    if (state) {
-      if (state.ok) {
-        router.push("/home");
-      } else {
-        setErrors(state.errors);
-      }
-    }
-  }, [state]);
-
   const isRequestNewCodeButtonDisabled = isRequestingNewCode || resendTimerCode > 0;
-  const isButtonDisabled = isRequestingNewCode || !uniqueCodeFormData.code || isPending;
+  const isButtonDisabled = isRequestingNewCode || !uniqueCodeFormData.code || isSubmitting;
 
   return (
-    <Form action={action} validationErrors={errors} className="mt-5 space-y-4">
+    <Form action={sendMagicCode} className="mt-5 space-y-4">
+      <Input type="hidden" name="userAgent" defaultValue={navigator.userAgent} />
       <Input type="hidden" name="mode" defaultValue={mode} />
       <Input
         label="Email"
@@ -116,7 +106,7 @@ export const AuthUniqueCode: FC<TAuthUniqueCodeForm> = (props) => {
         </div>
       </div>
       <Button type="submit" color="primary" className="w-full" radius="sm" isDisabled={isButtonDisabled}>
-        {isPending ? "Sending" : "Send"}
+        {isSubmitting ? "Sending..." : "Send"}
       </Button>
     </Form>
   );

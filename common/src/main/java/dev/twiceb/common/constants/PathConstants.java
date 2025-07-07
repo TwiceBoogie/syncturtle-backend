@@ -14,6 +14,9 @@ public class PathConstants {
     // USER_SERVICE
     public static final String AUTH = "/auth";
     public static final String UI_V1_AUTH = UI_V1 + AUTH;
+    public static final String CHECK_EMAIL = "/check-email";
+    public static final String GENERATE_MAGIC_CODE = "/generate-magic-code";
+    public static final String MAGIC_LOGIN = "/magic-sign-in";
     public static final String LOGIN = "/login";
     public static final String REGISTRATION_CHECK = "/registration/check";
     public static final String REGISTRATION_CODE = "/registration/code";

@@ -34,7 +34,7 @@ public class VaultLeaseConfig {
 
     @PostConstruct
     private void postConstruct() {
-        final String vaultCredsPath = String.format("database/creds/%s", databaseRole);
+        final String vaultCredsPath = "database/creds/%s".formatted(databaseRole);
         SecretLeaseContainer leaseContainer = applicationContext.getBean(SecretLeaseContainer.class);
 
         leaseContainer.addLeaseListener(leaseEvent -> {

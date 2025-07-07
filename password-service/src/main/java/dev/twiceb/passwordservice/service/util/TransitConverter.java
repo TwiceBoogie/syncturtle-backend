@@ -9,8 +9,6 @@ import org.springframework.vault.core.VaultOperations;
 import org.springframework.vault.support.Ciphertext;
 import org.springframework.vault.support.Plaintext;
 
-import java.util.Base64;
-
 @Slf4j
 @Converter
 public class TransitConverter implements AttributeConverter<String, String> {
@@ -31,9 +29,11 @@ public class TransitConverter implements AttributeConverter<String, String> {
         VaultOperations vaultOps = BeanUtil.getBean(VaultOperations.class);
         Ciphertext ciphertext = Ciphertext.of(dbData);
         return vaultOps.opsForTransit().decrypt("password", ciphertext).asString();
-//        byte[] decryptedBytes = vaultOps.opsForTransit().decrypt("password", ciphertext).getPlaintext();
-//        String decrypted = Base64.getEncoder().encodeToString(decryptedBytes);
-//        log.info("Converted to entity attribute: Encrypted -> " + dbData + ", Decrypted -> " + decrypted);
-//        return decrypted;
+        // byte[] decryptedBytes = vaultOps.opsForTransit().decrypt("password",
+        // ciphertext).getPlaintext();
+        // String decrypted = Base64.getEncoder().encodeToString(decryptedBytes);
+        // log.info("Converted to entity attribute: Encrypted -> " + dbData + ",
+        // Decrypted -> " + decrypted);
+        // return decrypted;
     }
 }

@@ -5,6 +5,10 @@ export interface IAuthUser {
   lastName: string;
 }
 
+export interface IAuthUserToken {
+  user: IAuthUser;
+}
+
 export interface IEmailCheckData {
   email: string;
 }
@@ -20,3 +24,17 @@ export interface IRegistrationResponse {
   deviceToken: string;
   token: string;
 }
+
+export type TRegistrationResponse = {
+  message: string;
+  deviceToken: string;
+  token: string;
+};
+
+export type TApiErrorResponse = {
+  errorCode: number;
+  errorMessage: string;
+  payload?: Record<string, any>;
+};
+
+export type TMagicCodeResponse = TRegistrationResponse | TApiErrorResponse;

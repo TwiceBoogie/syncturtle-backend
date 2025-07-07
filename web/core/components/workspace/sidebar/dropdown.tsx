@@ -7,6 +7,8 @@ import { Avatar } from "@heroui/avatar";
 import { ChevronDown, CirclePlus, LogOut, Mails, Menu, Settings } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@heroui/button";
+import { useRootStore } from "@/hooks/use-root-store";
+import { useRouter } from "next/navigation";
 
 export interface IWorkspace {
   readonly id: string;
@@ -26,9 +28,11 @@ export interface IWorkspace {
 }
 
 export const SidebarDropdown = () => {
+  const router = useRouter();
   // store hooks
   const { sidebarCollapsed, toggleSidebar } = useAppTheme();
-  const { signOut, data: currentUser } = useUser();
+  const { data: currentUser } = useUser();
+  const { resetAll } = useRootStore();
   const items = [
     {
       key: "new",
@@ -49,13 +53,15 @@ export const SidebarDropdown = () => {
   ];
 
   const handleSignOut = async () => {
-    await signOut().catch(() => {
-      addToast({
-        title: "Error!",
-        description: "Sign out failed. Please try again.",
-        color: "danger",
-      });
-    });
+    await resetAll()
+      .catch(() => {
+        addToast({
+          title: "Error!",
+          description: "Sign out failed. Please try again.",
+          color: "danger",
+        });
+      })
+      .finally(() => router.push("/"));
   };
 
   const handleItemClick = () => {
@@ -131,7 +137,7 @@ export const SidebarDropdown = () => {
           <DropdownItem key="settings" href="/profile" textValue="settings">
             Settings
           </DropdownItem>
-          <DropdownItem key="signOut" textValue="Sign out">
+          <DropdownItem key="signOut" textValue="Sign out" onPress={handleSignOut}>
             Sign-Out
           </DropdownItem>
         </DropdownMenu>

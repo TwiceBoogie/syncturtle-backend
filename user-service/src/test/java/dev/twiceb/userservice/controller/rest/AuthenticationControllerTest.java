@@ -8,9 +8,7 @@ import static dev.twiceb.common.constants.ErrorMessage.OTP_HAS_EXPIRED;
 import static dev.twiceb.common.constants.ErrorMessage.OTP_NOT_FOUND;
 import static dev.twiceb.common.constants.ErrorMessage.USER_NOT_FOUND_WITH_EMAIL;
 import static dev.twiceb.common.constants.ErrorMessage.VERIFY_ACCOUNT_WITH_EMAIL;
-import static dev.twiceb.common.constants.PathConstants.AUTH_USER_AGENT_HEADER;
 import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
-import static dev.twiceb.common.constants.PathConstants.AUTH_USER_IP_HEADER;
 import static dev.twiceb.common.constants.PathConstants.FORGOT_PASSWORD;
 import static dev.twiceb.common.constants.PathConstants.FORGOT_USERNAME;
 import static dev.twiceb.common.constants.PathConstants.LOGIN;
@@ -49,9 +47,9 @@ import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Sql(value = {"/sql-test/clear-user-db.sql",
-        "/sql-test/populate-user-db.sql"}, executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
-@Sql(value = {"/sql-test/clear-user-db.sql"}, executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
+@Sql(value = { "/sql-test/clear-user-db.sql",
+        "/sql-test/populate-user-db.sql" }, executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(value = { "/sql-test/clear-user-db.sql" }, executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
 public class AuthenticationControllerTest {
 
     @Autowired
@@ -67,7 +65,7 @@ public class AuthenticationControllerTest {
     @BeforeEach
     public void init() {
         authenticationRequest = new AuthenticationRequest();
-        authenticationRequest.setUsername(TestConstants.AUTH_USER_USERNAME);
+        authenticationRequest.setEmail(TestConstants.AUTH_USER_USERNAME);
         authenticationRequest.setPassword(TestConstants.USER_PASSWORD);
     }
 
@@ -75,11 +73,11 @@ public class AuthenticationControllerTest {
     @DisplayName("[200] POST /ui/v1/auth/login - Login")
     public void login() throws Exception {
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.id").value(TestConstants.USER_ID))
                 .andExpect(jsonPath("$.user.email").value(TestConstants.AUTH_USER_EMAIL))
@@ -93,13 +91,13 @@ public class AuthenticationControllerTest {
     @Test
     @DisplayName("[400] POST /ui/v1/auth/login - User not verified")
     public void login_ShouldUserNotVerified() throws Exception {
-        authenticationRequest.setUsername(TestConstants.USER_USERNAME);
+        authenticationRequest.setEmail(TestConstants.USER_USERNAME);
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(VERIFY_ACCOUNT_WITH_EMAIL)));
     }
@@ -108,11 +106,11 @@ public class AuthenticationControllerTest {
     @DisplayName("[403] POST /ui/v1/auth/login - Device key not present or does not belong to user")
     public void login_ShouldDeviceKeyNotBelongToUser() throws Exception {
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, wrongRandomCodeForDeviceKey)
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, wrongRandomCodeForDeviceKey)
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", is(DEVICE_KEY_NOT_FOUND_OR_MATCH)));
     }
@@ -120,14 +118,14 @@ public class AuthenticationControllerTest {
     @Test
     @DisplayName("[400] POST /ui/v1/auth/login - Too many failed attempts")
     public void login_ShouldUserFailLogin() throws Exception {
-        authenticationRequest.setUsername(TestConstants.AUTH_USER_USERNAME_BAD_LOGIN_ATTEMPTS);
+        authenticationRequest.setEmail(TestConstants.AUTH_USER_USERNAME_BAD_LOGIN_ATTEMPTS);
         authenticationRequest.setPassword("password1234");
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(INCORRECT_PASSWORD)));
     }
@@ -135,13 +133,13 @@ public class AuthenticationControllerTest {
     @Test
     @DisplayName("[429] POST /ui/v1/auth/login - User is locked")
     public void login_ShouldUserBeLocked() throws Exception {
-        authenticationRequest.setUsername(TestConstants.AUTH_USER_USERNAME_LOCKED);
+        authenticationRequest.setEmail(TestConstants.AUTH_USER_USERNAME_LOCKED);
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, randomCodeForDeviceKey)
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.message", containsString(LOCKED_ACCOUNT_AFTER_N_ATTEMPTS)));
     }
@@ -149,13 +147,13 @@ public class AuthenticationControllerTest {
     @Test
     @DisplayName("[403] POST /ui/v1/auth/login - User user is locked until they verify new device")
     public void login_ShouldUserBeLockedForNewDeviceVerification() throws Exception {
-        authenticationRequest.setUsername(TestConstants.AUTH_USER_USERNAME_PENDING);
+        authenticationRequest.setEmail(TestConstants.AUTH_USER_USERNAME_PENDING);
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, "")
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, "")
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", is(DEVICE_KEY_NOT_FOUND_OR_MATCH)));
     }
@@ -163,13 +161,13 @@ public class AuthenticationControllerTest {
     @Test
     @DisplayName("[401] POST /ui/v1/auth/login - User not found")
     public void login_ShouldUserNotExist() throws Exception {
-        authenticationRequest.setUsername("randomUser123");
+        authenticationRequest.setEmail("randomUser123");
         mockMvc.perform(post(UI_V1_AUTH + LOGIN)
-                        .content(mapper.writeValueAsString(authenticationRequest))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .header(AUTH_USER_DEVICE_KEY, "")
-                        .header("user-agent", TestConstants.USER_AGENT)
-                        .header("x-forwarded-for", TestConstants.USER_IP))
+                .content(mapper.writeValueAsString(authenticationRequest))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .header(AUTH_USER_DEVICE_KEY, "")
+                .header("user-agent", TestConstants.USER_AGENT)
+                .header("x-forwarded-for", TestConstants.USER_IP))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message", is("Invalid username or password")));
     }
@@ -180,8 +178,8 @@ public class AuthenticationControllerTest {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail(TestConstants.AUTH_USER_EMAIL);
         mockMvc.perform(post(UI_V1_AUTH + FORGOT_USERNAME)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Check your email for your username")));
     }
@@ -192,8 +190,8 @@ public class AuthenticationControllerTest {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail("test@test.com");
         mockMvc.perform(post(UI_V1_AUTH + FORGOT_USERNAME)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(USER_NOT_FOUND_WITH_EMAIL)));
     }
@@ -204,8 +202,8 @@ public class AuthenticationControllerTest {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail(TestConstants.AUTH_USER_EMAIL);
         mockMvc.perform(post(UI_V1_AUTH + FORGOT_PASSWORD)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Check your email for the password otp")));
     }
@@ -216,8 +214,8 @@ public class AuthenticationControllerTest {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail("test@test.com");
         mockMvc.perform(post(UI_V1_AUTH + FORGOT_PASSWORD)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(USER_NOT_FOUND_WITH_EMAIL)));
     }
@@ -228,8 +226,8 @@ public class AuthenticationControllerTest {
         PasswordOtpRequest request = new PasswordOtpRequest();
         request.setOtp("123456");
         mockMvc.perform(post(UI_V1_AUTH + VERIFY_OTP)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OTP verified, check your email for the password reset link.")));
     }
@@ -240,8 +238,8 @@ public class AuthenticationControllerTest {
         PasswordOtpRequest request = new PasswordOtpRequest();
         request.setOtp("123457");
         mockMvc.perform(post(UI_V1_AUTH + VERIFY_OTP)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(OTP_NOT_FOUND)));
     }
@@ -252,8 +250,8 @@ public class AuthenticationControllerTest {
         PasswordOtpRequest request = new PasswordOtpRequest();
         request.setOtp("123458");
         mockMvc.perform(post(UI_V1_AUTH + VERIFY_OTP)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(OTP_HAS_EXPIRED)));
     }
@@ -266,8 +264,8 @@ public class AuthenticationControllerTest {
         request.setConfirmPassword("Twice_Mina1");
         String token = "TNFiPaRHxmRlum7gFCYWFA";
         mockMvc.perform(post(UI_V1_AUTH + RESET, token)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Password has been reset. Try to login with your new password")));
     }
@@ -280,8 +278,8 @@ public class AuthenticationControllerTest {
         request.setConfirmPassword("Twice_Mina1");
         String token = "";
         mockMvc.perform(post(UI_V1_AUTH + RESET, token)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound());
     }
 
@@ -293,8 +291,8 @@ public class AuthenticationControllerTest {
         request.setConfirmPassword("Twice_Mina1");
         String token = "1";
         mockMvc.perform(post(UI_V1_AUTH + RESET, token)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest());
         // .andExpect(jsonPath("$.message", is("Password reset token is invalid")));
         // change since right now it will say for device verification
@@ -308,8 +306,8 @@ public class AuthenticationControllerTest {
         request.setConfirmPassword("Twice_Mina1");
         String token = "G97ySHfAOQtiqRdHsslkEA";
         mockMvc.perform(post(UI_V1_AUTH + RESET, token)
-                        .content(mapper.writeValueAsString(request))
-                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .content(mapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Reset token has expired")));
     }
@@ -319,7 +317,7 @@ public class AuthenticationControllerTest {
     public void verifyDeviceToken() throws Exception {
         String token = "0dtIY2jKYPbPg55q9awpzg";
         mockMvc.perform(get(UI_V1_AUTH + VERIFY_DEVICE_VERIFICATION, token)
-                        .param("trust", "true"))
+                .param("trust", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.id").value(TestConstants.NEW_DEVICE_USER_ID))
                 .andExpect(jsonPath("$.user.email").value(TestConstants.NEW_DEVICE_USER_EMAIL))
@@ -335,7 +333,7 @@ public class AuthenticationControllerTest {
     public void verifyDeviceToken_ShouldNotTrusted() throws Exception {
         String token = "0dtIY2jKYPbPg55q9awpzg";
         mockMvc.perform(get(UI_V1_AUTH + VERIFY_DEVICE_VERIFICATION, token)
-                        .param("trust", "false"))
+                .param("trust", "false"))
                 .andExpect(status().isLocked())
                 .andExpect(jsonPath("$.message", is(AUTHORIZATION_ERROR)));
     }
@@ -345,7 +343,7 @@ public class AuthenticationControllerTest {
     public void verifyDeviceToken_ShouldTokenMissing() throws Exception {
         String token = "";
         mockMvc.perform(get(UI_V1_AUTH + VERIFY_DEVICE_VERIFICATION, token)
-                        .param("trust", "false"))
+                .param("trust", "false"))
                 .andExpect(status().isNotFound());
     }
 
@@ -354,7 +352,7 @@ public class AuthenticationControllerTest {
     public void verifyDeviceToken_ShouldTokenNotExist() throws Exception {
         String token = "1";
         mockMvc.perform(get(UI_V1_AUTH + VERIFY_DEVICE_VERIFICATION, token)
-                        .param("trust", "true"))
+                .param("trust", "true"))
                 .andExpect(status().isBadRequest());
     }
 }

@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Cacheable(value = "users", key = "#email", cacheManager = "cacheManager", unless = "#result == null")
     public UserPrincipleResponse getCachedUserDetails(String email) {
-        log.info("Fetching user details not from redis");
+        log.info(">>> SHOULD NOT REACH HERE IF CACHED <<<");
         try {
 
             return Optional.ofNullable(

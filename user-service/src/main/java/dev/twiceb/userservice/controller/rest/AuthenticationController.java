@@ -3,85 +3,79 @@ package dev.twiceb.userservice.controller.rest;
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.userservice.controller.AuthenticationControllerSwagger;
 import dev.twiceb.userservice.dto.request.*;
-import dev.twiceb.userservice.dto.response.AuthUserResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.MagicCodeResponse;
+import dev.twiceb.userservice.dto.response.MagicKeyResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import static dev.twiceb.common.constants.PathConstants.*;
 
-import java.time.Duration;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
-@RestController
-@RequiredArgsConstructor
-@RequestMapping(UI_V1_AUTH)
+@RestController @RequiredArgsConstructor @RequestMapping(UI_V1_AUTH)
 public class AuthenticationController implements AuthenticationControllerSwagger {
 
     private final AuthenticationMapper authenticationMapper;
 
-    @PostMapping("/check-email")
+    @PostMapping(CHECK_EMAIL)
     public ResponseEntity<MagicCodeResponse> checkEmail(@RequestBody MagicCodeRequest request,
-            BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.checkEmail(request, bindingResult));
+            BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.checkEmail(request,bindingResult));
     }
 
-    @PostMapping("/generate-magic-code")
-    public ResponseEntity<Void> generateMagicCode(@RequestBody MagicCodeRequest request, BindingResult bindingResult) {
-        System.out.println("should be hitting here");
-        authenticationMapper.generateMagicCode(request, bindingResult);
-        return ResponseEntity.ok().build();
+    @PostMapping(GENERATE_MAGIC_CODE)
+    public ResponseEntity<MagicKeyResponse> generateMagicCode(@RequestBody MagicCodeRequest request,
+            BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.generateMagicCode(request,bindingResult));
     }
 
-    @Override
-    public ResponseEntity<AuthUserResponse> login(AuthenticationRequest request, BindingResult bindingResult) {
-        AuthenticationResponse result = authenticationMapper.login(request, bindingResult);
-        ResponseCookie jwtCookie = ResponseCookie.from("token", result.getToken())
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Strict")
-                .maxAge(Duration.ofMillis(14400000))
-                .build();
+    @PostMapping(MAGIC_LOGIN)
+    public ResponseEntity<AuthenticationResponse> magicLogin(@RequestBody MagicCodeRequest request,
+            BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.magicLogin(request,bindingResult));
+    }
 
+    @Override @PostMapping(LOGIN)
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request,
+            BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.login(request,bindingResult));
+    }
+
+    @Override @PostMapping(FORGOT_USERNAME)
+    public ResponseEntity<GenericResponse> forgotUsername(@RequestBody ProcessEmailRequest request,
+            BindingResult bindingResult){
         return ResponseEntity
-                .ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(result.getUser());
+                .ok(authenticationMapper.forgotUsername(request.getEmail(),bindingResult));
     }
 
-    @Override
-    public ResponseEntity<GenericResponse> forgotUsername(ProcessEmailRequest request, BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.forgotUsername(request.getEmail(), bindingResult));
+    @Override @PostMapping(FORGOT_PASSWORD)
+    public ResponseEntity<GenericResponse> forgotPassword(@RequestBody ProcessEmailRequest request,
+            BindingResult bindingResult){
+        return ResponseEntity
+                .ok(authenticationMapper.forgotPassword(request.getEmail(),bindingResult));
     }
 
-    @Override
-    public ResponseEntity<GenericResponse> forgotPassword(ProcessEmailRequest request, BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.forgotPassword(request.getEmail(), bindingResult));
+    @Override @PostMapping(VERIFY_OTP)
+    public ResponseEntity<GenericResponse> verifyOtp(@RequestBody PasswordOtpRequest request,
+            BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.verifyOtp(request.getOtp(),bindingResult));
     }
 
-    @Override
-    public ResponseEntity<GenericResponse> verifyOtp(PasswordOtpRequest request, BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.verifyOtp(request.getOtp(), bindingResult));
+    @Override @PostMapping(RESET)
+    public ResponseEntity<GenericResponse> resetPassword(@RequestBody PasswordResetRequest request,
+            @PathVariable String token, BindingResult bindingResult){
+        return ResponseEntity.ok(authenticationMapper.resetPassword(request,token,bindingResult));
     }
 
-    @Override
-    public ResponseEntity<GenericResponse> resetPassword(PasswordResetRequest request,
-            @PathVariable("token") String token,
-            BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.resetPassword(request, token, bindingResult));
-    }
-
-    @Override
-    public ResponseEntity<AuthenticationResponse> verifyDeviceToken(@PathVariable("token") String token,
-            @RequestParam("trust") boolean trust) {
-        return ResponseEntity.ok(authenticationMapper.verifyDeviceVerification(token, trust));
+    @Override @GetMapping(VERIFY_DEVICE_VERIFICATION)
+    public ResponseEntity<AuthenticationResponse> verifyDeviceToken(@PathVariable String token,
+            @RequestParam boolean trust){
+        return ResponseEntity.ok(authenticationMapper.verifyDeviceVerification(token,trust));
     }
 }

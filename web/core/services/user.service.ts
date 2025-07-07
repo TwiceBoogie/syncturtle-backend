@@ -1,4 +1,4 @@
-import type { IAuthUser } from "@/types/authentication";
+import type { IAuthUser, IAuthUserToken } from "@/types/authentication";
 import { APIService } from "./api.service";
 
 export class UserService extends APIService {
@@ -7,6 +7,6 @@ export class UserService extends APIService {
   }
 
   getCurrentUser() {
-    return this.get<IAuthUser>("/token", {}, { supressRedirect: true });
+    return this.get<IAuthUserToken>("/token", {}, { supressRedirect: true });
   }
 }

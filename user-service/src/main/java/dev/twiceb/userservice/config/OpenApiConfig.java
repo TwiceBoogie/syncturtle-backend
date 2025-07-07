@@ -14,7 +14,7 @@ import java.util.List;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI defineOpenApi() {
+    OpenAPI defineOpenApi() {
         Server server = new Server();
         server.setUrl("http://localhost:8000");
         server.setDescription("Development");
@@ -32,7 +32,7 @@ public class OpenApiConfig {
     }
 
     @Bean
-    public GroupedOpenApi publicApi() {
+    GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("public-apis")
                 .packagesToScan("dev.twiceb.userservice.controller.rest")

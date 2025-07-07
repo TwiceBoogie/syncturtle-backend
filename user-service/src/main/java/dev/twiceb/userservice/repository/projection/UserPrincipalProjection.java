@@ -8,7 +8,7 @@ import dev.twiceb.common.enums.UserRole;
 public interface UserPrincipalProjection {
     UUID getId();
 
-    String getUsername();
+    String getEmail();
 
     boolean isVerified();
 

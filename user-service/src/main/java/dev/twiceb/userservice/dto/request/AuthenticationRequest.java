@@ -9,9 +9,9 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 
 @Data
 public class AuthenticationRequest {
-    @NotBlank
-    @Size(min = 9, message = "Invalid username")
-    private String username;
+
+    @Email
+    private String email;
 
     @NotBlank(message = EMPTY_PASSWORD)
     @Size(min = 8, message = SHORT_PASSWORD)

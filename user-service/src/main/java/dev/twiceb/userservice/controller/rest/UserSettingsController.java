@@ -45,7 +45,7 @@ public class UserSettingsController implements UserSettingsControllerSwagger {
     }
 
     @Override
-    public ResponseEntity<ProfilePicResponse> updateProfilePic(@PathVariable("userProfileId") Long userProfileId) {
+    public ResponseEntity<ProfilePicResponse> updateProfilePic(@PathVariable Long userProfileId) {
         return ResponseEntity.ok(userSettingsMapper.updateProfilePic(userProfileId));
     }
 
@@ -57,7 +57,7 @@ public class UserSettingsController implements UserSettingsControllerSwagger {
 
     @Override
     public ResponseEntity<List<ProfilePicResponse>> deleteProfilePic(
-            @PathVariable("userProfileId") Long userProfileId) {
+            @PathVariable Long userProfileId) {
         HeaderResponse<ProfilePicResponse> res = userSettingsMapper.deleteProfilePic(userProfileId);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }

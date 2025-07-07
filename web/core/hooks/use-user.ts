@@ -15,7 +15,8 @@ export function useUser() {
     dispatch({ type: "SET_ERROR", payload: null });
     try {
       const data = await userService.getCurrentUser();
-      dispatch({ type: "SET_USER", payload: data });
+      console.log("should be my user data", data);
+      dispatch({ type: "SET_USER", payload: data.user });
       return data;
     } catch (error) {
       dispatch({
@@ -53,4 +54,10 @@ export function useUser() {
     }),
     [state.user, state.isLoading, state.error, fetchCurrentUser, signOut]
   );
+}
+
+export function useUserStore() {
+  const ctx = useContext(UserContext);
+  if (!ctx) throw new Error("useUserStore must be used within UserProvider");
+  return ctx;
 }

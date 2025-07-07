@@ -23,7 +23,7 @@ public class AuthenticationApiController {
     private final BasicMapper mapper;
 
     @GetMapping(USER_EMAIL)
-    public UserPrincipleResponse getUserPrincipalById(@PathVariable("email") String email) {
+    public UserPrincipleResponse getUserPrincipalById(@PathVariable String email) {
         return mapper.convertToResponse(
                 authenticationService.getUserPrincipleByEmail(email), UserPrincipleResponse.class);
     }

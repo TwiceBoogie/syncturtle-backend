@@ -79,6 +79,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
                 user = lockUserInternal(user, "Too many failed login attempts");
             }
             generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+            return;
         }
         generateLoginAttemptInternal(true, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
     }

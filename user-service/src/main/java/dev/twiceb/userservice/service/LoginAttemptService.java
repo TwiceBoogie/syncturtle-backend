@@ -1,7 +1,6 @@
 package dev.twiceb.userservice.service;
 
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
-import dev.twiceb.userservice.model.LoginAttempt;
 import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.projection.LoginAttemptProjection;
 

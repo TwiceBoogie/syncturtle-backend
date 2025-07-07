@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS users (
     id uuid NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     user_status VARCHAR(36) NOT NULL,
     role user_role DEFAULT 'USER' NOT NULL,
     PRIMARY KEY (id)

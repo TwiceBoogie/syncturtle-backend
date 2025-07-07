@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    Long getUserByUsername(String username);
+    Long getUserByEmail(String email);
 
     @Query("SELECT user FROM User user WHERE user.id = :userId")
     VaultHealthProjection getUsersVaultHealth(@Param("userId") UUID userId);

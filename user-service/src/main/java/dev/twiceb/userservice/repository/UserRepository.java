@@ -3,7 +3,6 @@ package dev.twiceb.userservice.repository;
 import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.projection.AuthUserProjection;
-import dev.twiceb.userservice.repository.projection.UserDeviceProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,37 +1,24 @@
 package dev.twiceb.passwordservice.service.util;
 
-import dev.twiceb.common.util.AuthUtil;
 import dev.twiceb.common.util.EnvelopeEncryption;
-import dev.twiceb.passwordservice.dto.request.CreatePasswordRequest;
 import dev.twiceb.passwordservice.model.*;
 import dev.twiceb.passwordservice.repository.*;
 import dev.twiceb.passwordservice.repository.projection.DecryptedPasswordProjection;
-import dev.twiceb.passwordservice.repository.projection.ExpiryPolicyProjection;
-import dev.twiceb.passwordservice.service.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.util.ServiceHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Iterator;
@@ -47,7 +34,7 @@ public class PasswordHelperService extends ServiceHelper {
 
     @PersistenceContext
     private final EntityManager entityManager;
-    private final EncryptionKeyRepository encryptionKeyRepository;
+    // private final EncryptionKeyRepository encryptionKeyRepository;
     private final PasswordReuseStatisticRepository passwordReuseStatisticRepository;
     private final CategoryRepository categoryRepository;
     private final EnvelopeEncryption envelopeEncryption;
@@ -101,7 +88,8 @@ public class PasswordHelperService extends ServiceHelper {
         return passwordEncoder.encode(password);
     }
 
-    // changed from 'for-each' to 'iterator' because of 'ConcurrentModificationException'
+    // changed from 'for-each' to 'iterator' because of
+    // 'ConcurrentModificationException'
     // removing an element from list disrupts the iterator used by the loop.
     public boolean searchAndUpdatePasswordReuseStatistic(
             List<PasswordReuseStatistic> passwordReuseStatistics,
@@ -131,7 +119,8 @@ public class PasswordHelperService extends ServiceHelper {
 
     public SecretKey rebuildSecretKey(String dek, String algorithm) {
         byte[] decodedSecretKeyBytes = Base64.getDecoder().decode(dek);
-        if (!(decodedSecretKeyBytes.length == 16 || decodedSecretKeyBytes.length == 24 || decodedSecretKeyBytes.length == 32)) {
+        if (!(decodedSecretKeyBytes.length == 16 || decodedSecretKeyBytes.length == 24
+                || decodedSecretKeyBytes.length == 32)) {
             throw new IllegalArgumentException("Invalid key length: " + decodedSecretKeyBytes.length);
         }
         return new SecretKeySpec(decodedSecretKeyBytes, algorithm);

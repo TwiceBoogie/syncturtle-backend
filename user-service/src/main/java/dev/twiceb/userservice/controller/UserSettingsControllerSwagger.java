@@ -88,7 +88,7 @@ public interface UserSettingsControllerSwagger {
                                         @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(value = ApiResponseExamples.API_ERROR_NO_RESOURCE))
                         })
         })
-        ResponseEntity<ProfilePicResponse> updateProfilePic(@PathVariable("userProfileId") Long userProfileId);
+        ResponseEntity<ProfilePicResponse> updateProfilePic(@PathVariable Long userProfileId);
 
         @PostMapping(AVATAR)
         @Operation(summary = "Upload profile pics", responses = {
@@ -106,5 +106,5 @@ public interface UserSettingsControllerSwagger {
                                         @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(value = ApiResponseExamples.API_ERROR_NO_RESOURCE))
                         })
         })
-        ResponseEntity<List<ProfilePicResponse>> deleteProfilePic(@PathVariable("userProfileId") Long userProfileId);
+        ResponseEntity<List<ProfilePicResponse>> deleteProfilePic(@PathVariable Long userProfileId);
 }

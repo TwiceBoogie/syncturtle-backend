@@ -7,11 +7,14 @@ import dev.twiceb.common.security.JwtProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
 import static dev.twiceb.common.constants.PathConstants.*;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -29,7 +32,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
-            log.info("Inside Auth filter");
+            log.info("==> Inside Auth filter");
             String token = jwtProvider.resolveToken(exchange.getRequest());
             boolean isTokenValid = jwtProvider.validateToken(token, "main");
             if (token != null && isTokenValid) {
@@ -38,9 +41,25 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
                 exchange.getAttributes().put("email", email);
 
                 UserPrincipleResponse user = userService.getCachedUserDetails(email);
-                System.out.println(user);
+
                 ServerHttpRequest.Builder builder = exchange.getRequest().mutate();
                 builder.header(AUTH_USER_ID_HEADER, String.valueOf(user.getId()));
+
+                // CSRF check (for non-GET request)
+                String method = exchange.getRequest().getMethod().name();
+                if (!method.equalsIgnoreCase("GET") && !method.equalsIgnoreCase("HEAD")
+                        && !method.equalsIgnoreCase("OPTIONS")) {
+                    String csrfCookie = null;
+                    List<HttpCookie> cookies = exchange.getRequest().getCookies().get("token");
+                    if (cookies != null && !cookies.isEmpty()) {
+                        csrfCookie = cookies.get(0).getValue();
+                    }
+                    String csrfHeader = exchange.getRequest().getHeaders().getFirst("X-XSRF-TOKEN");
+
+                    if (csrfCookie == null || csrfHeader == null || !csrfCookie.equals(csrfHeader)) {
+                        throw new JwtAuthenticationException("CSRF token mismatch or missing");
+                    }
+                }
 
                 return chain.filter(exchange.mutate().request(builder.build()).build());
             } else {

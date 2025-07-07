@@ -10,7 +10,7 @@ spring:
       port: 8200
       uri: http://localhost:8200
       authentication: TOKEN
-      token: ${VAULT_TOKEN:hvs.UEq2IBfAsRIDGy8lxoT0428T}
+      token: ${VAULT_TOKEN:hvs.4N6YpNW0pl4ONeKbK99rHq0V}
 #      ssl:
 #        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
 #        trust-store-password: changeit

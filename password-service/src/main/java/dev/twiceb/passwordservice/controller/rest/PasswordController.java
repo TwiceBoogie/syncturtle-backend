@@ -34,6 +34,7 @@ public class PasswordController implements PasswordControllerSwagger {
     private final PasswordMapper passwordMapper;
 
     @Override
+    @PostMapping
     public ResponseEntity<GenericResponse> createNewPassword(
             @Valid @RequestBody CreatePasswordRequest request,
             BindingResult bindingResult) {
@@ -42,53 +43,54 @@ public class PasswordController implements PasswordControllerSwagger {
     }
 
     @Override
+    @PatchMapping(UPDATE_PASSWORD)
     public ResponseEntity<GenericResponse> updatePasswordOnly(
             @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(passwordMapper.updatePasswordOnly(passwordId, request, bindingResult));
     }
 
     @Override
+    @PatchMapping(UPDATE_PASSWORD_USERNAME)
     public ResponseEntity<GenericResponse> updateUsername(
             @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(passwordMapper.updateUsername(passwordId, request, bindingResult));
     }
 
     @Override
+    @PatchMapping(UPDATE_PASSWORD_NOTES)
     public ResponseEntity<GenericResponse> updatePasswordNotes(
             @PathVariable("passwordId") UUID passwordId,
             @Valid @RequestBody UpdatePasswordRequest request,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         return ResponseEntity.ok(passwordMapper.updatePasswordNotes(passwordId, request, bindingResult));
     }
 
     @Override
+    @PutMapping("/tags/{passwordId}")
     public ResponseEntity<Void> updateTagsOnPassword(
             @Valid @RequestBody UpdatePasswordRequest request,
             @PathVariable("passwordId") UUID passwordId,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         passwordMapper.updateTagsOnPassword(passwordId, request, bindingResult);
         return ResponseEntity.noContent().build();
     }
 
     @Override
+    @PutMapping(FAVORITE_PASSWORD)
     public ResponseEntity<Void> favoritePassword(
             @Valid @RequestBody UpdatePasswordRequest request,
             @PathVariable("passwordId") UUID passwordId,
-            BindingResult bindingResult
-    ) {
+            BindingResult bindingResult) {
         passwordMapper.favoritePassword(passwordId, request, bindingResult);
         return ResponseEntity.noContent().build();
     }
 
     @Override
+    @GetMapping
     public ResponseEntity<List<PasswordsResponse>> getPasswords(
             @PageableDefault(size = 10) Pageable Pageable) {
         HeaderResponse<PasswordsResponse> res = passwordMapper.getPasswords(Pageable);
@@ -96,50 +98,56 @@ public class PasswordController implements PasswordControllerSwagger {
     }
 
     @Override
+    @GetMapping(GET_PASSWORD_INFO)
     public ResponseEntity<PasswordsResponse> getPasswordInfo(@PathVariable("keychainId") UUID keychainId) {
         return ResponseEntity.ok().body(passwordMapper.getPassword(keychainId));
     }
 
     @Override
+    @GetMapping(GET_PASSWORD_WITH_CRITERIA)
     public ResponseEntity<List<PasswordsResponse>> getPasswordsByCriteria(
             @PathVariable("criteria") String criteria,
-            @PageableDefault(size = 10) Pageable Pageable
-    ) {
+            @PageableDefault(size = 10) Pageable Pageable) {
         HeaderResponse<PasswordsResponse> res = passwordMapper.getPasswordsByCriteria(criteria, Pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
     @Override
+    @GetMapping(GET_DECRYPTED_PASSWORD)
     public ResponseEntity<GenericResponse> getDecryptedPassword(@PathVariable("passwordId") UUID passwordId) {
         return ResponseEntity.ok(passwordMapper.getDecryptedPassword(passwordId));
     }
 
     @Override
+    @DeleteMapping(DELETE_PASSWORD)
     public ResponseEntity<GenericResponse> deletePassword(@PathVariable("passwordId") UUID passwordId) {
         return ResponseEntity.ok(passwordMapper.deletePassword(passwordId));
     }
 
     @Override
+    @DeleteMapping(DELETE_ALL)
     public ResponseEntity<GenericResponse> deleteAllPasswords() {
         return ResponseEntity.ok(passwordMapper.deleteAllPasswords());
     }
 
     @Override
+    @GetMapping(GENERATE_RANDOM_PASSWORD)
     public ResponseEntity<GenericResponse> generateRandomPassword(@PathVariable("length") int length) {
         return ResponseEntity.ok(passwordMapper.generateRandomPassword(length));
     }
 
     @Override
+    @PostMapping(SEARCH_BY_QUERY)
     public ResponseEntity<List<PasswordsResponse>> searchPasswordsByQuery(
             SearchQueryRequest request,
             BindingResult bindingResult,
-            @PageableDefault(size = 10) Pageable Pageable
-    ) {
+            @PageableDefault(size = 10) Pageable Pageable) {
         HeaderResponse<PasswordsResponse> res = passwordMapper.searchPasswordsByQuery(request, bindingResult, Pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
     @Override
+    @GetMapping(GET_ENCRYPTION_KEYS)
     public ResponseEntity<List<EncryptionKeysResponse>> getEncryptionKeys(Pageable pageable) {
         HeaderResponse<EncryptionKeysResponse> res = passwordMapper.getEncryptionKeys(pageable);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());

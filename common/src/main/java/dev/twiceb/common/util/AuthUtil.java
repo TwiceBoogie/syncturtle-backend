@@ -14,6 +14,7 @@ import static dev.twiceb.common.constants.PathConstants.AUTH_USER_ID_HEADER;
 
 public class AuthUtil {
 
+    @SuppressWarnings("null")
     public static UUID getAuthenticatedUserId() {
         RequestAttributes attribs = RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = ((ServletRequestAttributes) attribs).getRequest();

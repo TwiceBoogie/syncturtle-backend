@@ -1,6 +1,5 @@
 package dev.twiceb.userservice.service;
 
-import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.userservice.dto.request.*;
 import org.springframework.validation.BindingResult;
 

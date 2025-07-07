@@ -33,8 +33,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Long getUserIdByUsername(String username) {
-        return userRepository.getUserByUsername(username.substring(1));
+    public Long getUserIdByEmail(String email) {
+        return userRepository.getUserByEmail(email);
     }
 
     @Override

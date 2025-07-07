@@ -26,8 +26,8 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "username", nullable = false)
-    private String username;
+    @Column(name = "email", nullable = false)
+    private String email;
 
     @Column(name = "user_status", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -35,10 +35,7 @@ public class User {
     private UserStatus userStatus;
 
     @Enumerated(EnumType.STRING)
-    @ColumnTransformer(
-            read = "role::text",
-            write = "?::user_role"
-    )
+    @ColumnTransformer(read = "role::text", write = "?::user_role")
     private UserRole role = UserRole.USER;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -47,12 +44,13 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PasswordReuseStatistic> passwordReuseStatistics = new ArrayList<>();
 
-    public User() {}
+    public User() {
+    }
 
-    public User(UUID id, String fullName, String username, UserStatus userStatus, UserRole role) {
+    public User(UUID id, String fullName, String email, UserStatus userStatus, UserRole role) {
         this.id = id;
         this.fullName = fullName;
-        this.username = username;
+        this.email = email;
         this.userStatus = userStatus;
         this.role = role;
     }

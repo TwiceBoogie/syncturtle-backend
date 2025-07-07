@@ -7,6 +7,7 @@ import { Shapes } from "lucide-react";
 import { number } from "framer-motion";
 import { Avatar } from "@heroui/avatar";
 import { Card, CardBody, CardHeader } from "@heroui/react";
+import { DateTimeDisplay } from "@/components/home/datetime-display";
 
 export default function HomeDashboardPage() {
   const pageTitle = "hello";
@@ -21,7 +22,7 @@ export default function HomeDashboardPage() {
               <h3 className="text-xl font-semibold text-center">Good afternoon, Salvador Sebastian</h3>
               <h6 className="flex items-center gap-2 font-medium text-custom-text-400">
                 <div>🌥️</div>
-                <div>Wednesday, Jun 11 19:32</div>
+                <DateTimeDisplay />
               </h6>
             </div>
             <button

@@ -7,7 +7,10 @@ import java.util.UUID;
 
 public interface UserService {
     User getAuthUser();
+
     Optional<User> getUserById(UUID userId);
-    Long getUserIdByUsername(String username);
+
+    Long getUserIdByEmail(String email);
+
     Boolean isUserExists(UUID userId);
 }

@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.List;
 
 import static dev.twiceb.common.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
-import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
+// import static dev.twiceb.common.constants.PathConstants.AUTH_USER_DEVICE_KEY;
 
 @Component
 public class JwtProvider {
@@ -87,11 +87,12 @@ public class JwtProvider {
     }
 
     public String resolveDeviceToken(ServerHttpRequest request) {
-        List<HttpCookie> cookies = request.getCookies().get("token");
+        List<HttpCookie> cookies = request.getCookies().get("deviceToken");
+        System.out.println(cookies);
         if (cookies != null && !cookies.isEmpty()) {
             return cookies.get(0).getValue();
         }
-        return "";
+        return null;
     }
 
     public boolean validateToken(String token, String type) {

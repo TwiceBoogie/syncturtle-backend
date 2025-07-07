@@ -7,6 +7,8 @@ import { PasswordSidebarHeader } from "./header";
 import { EHeaderVariant, Header } from "@/components/core/ui/header";
 import { Listbox, ListboxSection, ListboxItem } from "@heroui/listbox";
 import { ContentWrapper } from "@/components/core/ui/content-wrapper";
+import { usePassword } from "@/hooks/use-password";
+import useSWR from "swr";
 
 export enum EPasswordTab {
   ALL = "all",
@@ -27,6 +29,14 @@ export const PASSWORD_TABS = [
 export type TPassword_Tab = EPasswordTab.ALL | EPasswordTab.RECENT;
 
 export const PasswordSidebarRoot: FC = () => {
+  // hooks
+  const { data: encryptionKeys, isLoading, fetchEncryptionKeys } = usePassword();
+
+  const { isLoading: isKeysLoading } = useSWR("ENCRYPTION_KEYS", async () => await fetchEncryptionKeys(), {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+
   const [currentPasswordTab, setCurrentPasswordTab] = useState(EPasswordTab.ALL);
   const handleTabClick = useCallback(
     (tabValue: TPassword_Tab) => {

@@ -40,11 +40,15 @@ export const AuthenticationWrapper: FC<TAuthenticationWrapper> = (props) => {
   if (pageType === EPageTypes.PUBLIC) return <>{children}</>;
 
   if (pageType === EPageTypes.NON_AUTHENTICATED) {
+    console.log(currentUser);
     if (!currentUser?.id) return <>{children}</>;
+    else {
+      router.push("/home");
+      return <></>;
+    }
   }
 
   if (pageType === EPageTypes.AUTHENTICATED) {
-    console.log(currentUser);
     if (currentUser?.id) {
       return <>{children}</>;
     } else {
