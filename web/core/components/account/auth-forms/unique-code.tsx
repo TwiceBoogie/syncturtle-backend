@@ -1,5 +1,4 @@
-import { FC, FormEvent, useActionState, useEffect, useState } from "react";
-import { AuthService } from "@/services/auth.service";
+import { FC, useState } from "react";
 import { EAuthModes } from "@/helpers/authentication.helper";
 import useTimer from "@/hooks/use-timer";
 import { Form } from "@heroui/form";
@@ -7,10 +6,6 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { CircleCheck } from "lucide-react";
 import { sendMagicCode } from "@/actions/auth-send-code";
-import { useRouter } from "next/navigation";
-
-// services
-const authService = new AuthService();
 
 type TAuthUniqueCodeForm = {
   mode: EAuthModes;
@@ -33,7 +28,6 @@ const defaultValues: TUniqueCodeFormValues = {
 
 export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
   const { mode, email, handleEmailClear, generateEmailUniqueCode, isExistingEmail, nextPath } = props;
-  const router = useRouter();
   // derived values
   const defaultResetTimerValue = 5;
   // states
@@ -65,7 +59,7 @@ export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
 
   return (
     <Form action={sendMagicCode} className="mt-5 space-y-4">
-      <Input type="hidden" name="userAgent" defaultValue={navigator.userAgent} />
+      {nextPath && <Input type="hidden" name="next_agent" defaultValue={nextPath} />}
       <Input type="hidden" name="mode" defaultValue={mode} />
       <Input
         label="Email"

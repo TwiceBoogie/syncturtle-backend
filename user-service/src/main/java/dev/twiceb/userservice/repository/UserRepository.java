@@ -27,46 +27,39 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         @Query("SELECT CASE WHEN count(user) > 0 THEN true ELSE false END FROM User user WHERE user.id = :userId")
         boolean isUserExist(@Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.userStatus = :userStatus WHERE user.id = :userId")
-        void updateUserStatus(@Param("userStatus") UserStatus userStatus, @Param("userId") UUID userId);
+        @Modifying @Query("UPDATE User user SET user.userStatus = :userStatus WHERE user.id = :userId")
+        void updateUserStatus(@Param("userStatus") UserStatus userStatus,
+                        @Param("userId") UUID userId);
 
         @Query("SELECT CASE WHEN count(user) > 0 THEN true ELSE false END FROM User user WHERE user.email = :email")
         boolean isUserExistByEmail(@Param("email") String email);
 
         boolean existsByEmail(String email);
 
-        @Modifying
-        @Query("UPDATE User user SET user.verified = true WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.verified = true WHERE user.id = :userId")
         void updateActiveUserProfile(@Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.password = :password WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.password = :password WHERE user.id = :userId")
         void updatePassword(@Param("password") String password, @Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.email = :email WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.email = :email WHERE user.id = :userId")
         void updateEmail(@Param("email") String email, @Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.countryCode = :countryCode, user.phone = :phone WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.countryCode = :countryCode, user.phone = :phone WHERE user.id = :userId")
         void updatePhone(@Param("countryCode") String countryCode, @Param("phone") Long phone,
                         @Param("userId") UUID userId);
 
         @Query("SELECT user.email FROM User user WHERE user.id = :userId")
         String getUserEmail(@Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.notificationCount = user.notificationCount + 1 WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.notificationCount = user.notificationCount + 1 WHERE user.id = :userId")
         void increaseNotificationCount(@Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.notificationCount = CASE WHEN user.notificationCount > 0 " +
-                        "THEN user.notificationCount - 1 ELSE user.notificationCount END WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.notificationCount = CASE WHEN user.notificationCount > 0 "
+                        + "THEN user.notificationCount - 1 ELSE user.notificationCount END WHERE user.id = :userId")
         void decreaseNotificationCount(@Param("userId") UUID userId);
 
-        @Modifying
-        @Query("UPDATE User user SET user.notificationCount = 0 WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.notificationCount = 0 WHERE user.id = :userId")
         void resetNotificationCount(@Param("userId") UUID userId);
 
         @Query("SELECT COUNT(user) FROM User user WHERE user.createdDate > :timePeriod")
@@ -77,8 +70,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
         boolean existsUserByUsername(String username);
 
-        @Modifying
-        @Query("UPDATE User user SET user.gender = :gender WHERE user.id = :userId")
+        @Modifying @Query("UPDATE User user SET user.gender = :gender WHERE user.id = :userId")
         void updateGender(@Param("gender") String gender, @Param("userId") UUID userId);
 
         // @Query("SELECT u.id AS userId, ud.id AS userDeviceId, ud.deviceKey AS

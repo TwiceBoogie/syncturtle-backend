@@ -24,7 +24,7 @@ export async function emailCheck(payload: EmailSchema) {
     const data: IEmailCheckResponse = await res.json();
     return { ok: true, data };
   } catch (error) {
-    console.log(error);
+    console.log("inside error", error);
     return {
       ok: false,
       data: {

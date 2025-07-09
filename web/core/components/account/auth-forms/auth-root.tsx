@@ -1,23 +1,29 @@
+import { FC, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+// components
+import {
+  AuthHeader,
+  AuthBanner,
+  AuthEmailForm,
+  TermsAndConditions,
+  AuthUniqueCodeForm,
+  AuthPassword,
+} from "@/components/account";
+// helpers
 import {
   authErrorHandler,
+  EAuthenticationErrorCodes,
   EAuthModes,
   EAuthSteps,
   EErrorAlertType,
   TAuthErrorInfo,
 } from "@/helpers/authentication.helper";
-import { AuthService } from "@/services/auth.service";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FC, useEffect, useState } from "react";
-import { AuthHeader } from "./auth-header";
-import { AuthBanner } from "./auth-banner";
-import { AuthEmailForm } from "./email";
-import { IEmailCheckData } from "@/types/authentication";
-import { OAuthOptions } from "../oauth";
-import { TermsAndConditions } from "../terms-and-conditions";
-import { AuthUniqueCodeForm } from "./unique-code";
+// server actions
 import { emailCheck } from "@/actions/auth-email-check";
 import { generateUniqueCode } from "@/actions/auth-generate-magic-code";
-import { AuthPassword } from "./password";
+// types
+import { IEmailCheckData } from "@/types/authentication";
+import { OAuthOptions } from "../oauth";
 
 type TAuthRoot = {
   authMode: EAuthModes;
@@ -42,6 +48,15 @@ export const AuthRoot: FC<TAuthRoot> = (props) => {
   useEffect(() => {
     if (!authMode && currentAuthMode) setAuthMode(currentAuthMode);
   }, [currentAuthMode, authMode]);
+
+  useEffect(() => {
+    if (error_code && authMode) {
+      const errorHandler = authErrorHandler(error_code?.toString() as EAuthenticationErrorCodes);
+      if (errorHandler) {
+      }
+      setErrorInfo(errorHandler);
+    }
+  }, [error_code, authMode]);
 
   const handleEmailVerification = async (data: IEmailCheckData) => {
     setEmail(data.email);

@@ -12,6 +12,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import dev.twiceb.common.enums.AuthErrorCodes;
+import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.userservice.repository.UserRepository;
 
@@ -33,7 +34,7 @@ public class MagicCodeProvider {
     private static final Duration MAGIC_CODE_EXPIRY = Duration.ofMinutes(10);
     private static final int MAX_ATTEMPTS = 3;
 
-    public Pair<String, String> initiate(String email) {
+    public Pair<String, String> initiate(String email, MagicCodeType type) {
         // if (smtpHost == null || smtpHost.isEmpty()) {
         // throw new AuthException(
         // "SMTP_NOT_CONFIGURED",
@@ -48,18 +49,26 @@ public class MagicCodeProvider {
         // }
 
         String token = this.generateToken();
-        String redisKey = "magic_" + email;
+        String redisKey = type.buildRedisKey(email);
 
-        Map<String, Object> existingData = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
+        Map<String, Object> existingData =
+                (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
 
         int currentAttempt = 0;
         if (existingData != null) {
             currentAttempt = (int) existingData.get("current_attempt") + 1;
             if (currentAttempt >= MAX_ATTEMPTS) {
                 boolean userExists = userRepository.existsByEmail(email);
-                throw new AuthException(
-                        userExists ? AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN
-                                : AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP);
+                switch (type) {
+                    case MAGIC_LINK:
+                        throw new AuthException(
+                                userExists ? AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN
+                                        : AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP);
+                    case DEVICE_VERIFICATION:
+                        throw new AuthException(AuthErrorCodes.EXPIRED_MAGIC_CODE_DEVICE);
+                    default:
+                        throw new IllegalStateException("Unexpected MagicCodeType: " + type);
+                }
             }
         }
 
@@ -72,46 +81,48 @@ public class MagicCodeProvider {
         return Pair.of(redisKey, token);
     }
 
-    public String validateAndGetEmail(String redisKey, String code) {
+    public String validateAndGetEmail(String input, String magicCode, MagicCodeType type) {
+        String redisKey = type.buildRedisKey(input);
         Map<String, Object> data = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
         if (data == null) {
-            return this.throwExpired(redisKey);
+            return this.throwExpired(input, type);
         }
 
         String storedToken = (String) data.get("token");
         String email = (String) data.get("email");
 
-        if (storedToken.equals(code)) {
+        if (storedToken.equals(magicCode)) {
             redisTemplate.delete(redisKey);
             return email;
         } else {
             boolean userExists = userRepository.existsByEmail(email);
-            throw new AuthException(
-                    userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
-                            : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP);
+            throw new AuthException(userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
+                    : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP);
         }
     }
 
     // if return type is null then this code 'String storedToken = (String)
     // data.get("token");'
     // says it might be a null pointer
-    private String throwExpired(String redisKey) {
-        String email = redisKey.replace("magic_", "");
+    private String throwExpired(String email, MagicCodeType type) {
         boolean userExists = userRepository.existsByEmail(email);
-        throw new AuthException(
-                userExists ? AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_IN : AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_UP);
+        switch (type) {
+            case MAGIC_LINK:
+                throw new AuthException(userExists ? AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_IN
+                        : AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_UP);
+            case DEVICE_VERIFICATION:
+                throw new AuthException(AuthErrorCodes.EXPIRED_MAGIC_CODE_DEVICE);
+            default:
+                throw new IllegalStateException("Unexpected MagicCodeType: " + type);
+        }
     }
 
     private String generateToken() {
-        return Stream.generate(() -> this.randomAlpha(4))
-                .limit(3)
-                .collect(Collectors.joining("-"));
+        return Stream.generate(() -> this.randomAlpha(4)).limit(3).collect(Collectors.joining("-"));
     }
 
     private String randomAlpha(int count) {
-        return new Random().ints('a', 'z' + 1)
-                .limit(count)
-                .mapToObj(i -> String.valueOf((char) i))
+        return new Random().ints('a', 'z' + 1).limit(count).mapToObj(i -> String.valueOf((char) i))
                 .collect(Collectors.joining());
     }
 }

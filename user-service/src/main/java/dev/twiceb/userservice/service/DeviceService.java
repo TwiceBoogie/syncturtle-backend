@@ -1,23 +1,22 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.records.DeviceRequestMetadata;
 import dev.twiceb.userservice.model.User;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * DeviceService provides operations for device management, including
- * verification and email notifications.
+ * DeviceService provides operations for device management, including verification and email
+ * notifications.
  */
 public interface DeviceService {
 
     /**
-     * Verifies if the device key provided matches the stored device key for the
-     * user.
+     * Verifies if the device key provided matches the stored device key for the user.
      *
-     * @param userId          The ID of the user.
+     * @param userId The ID of the user.
      * @param hashedDeviceKey The hashed device key to be verified.
      * @return true if the device key matches; false otherwise.
      */
@@ -32,11 +31,11 @@ public interface DeviceService {
     Optional<User> retrieveAndValidateDeviceVerificationCode(String deviceVerificationCode);
 
     /**
-     * Verifies a new device for the user using the provided device key. Also
-     * updates the user status to active
+     * Verifies a new device for the user using the provided device key. Also updates the user
+     * status to active
      *
      *
-     * @param user      The user to verify the new device for.
+     * @param user The user to verify the new device for.
      * @param deviceKey The new deviceKey
      * @return The updated user with the new device verified.
      */
@@ -45,23 +44,21 @@ public interface DeviceService {
     /**
      * Sends a device verification email to the user with the provided details.
      *
-     * @param user          The user to send the verification email to.
-     * @param customHeaders Custom headers containing additional information such
-     *                      as the user's IP address.
+     * @param user The user to send the verification email to.
+     * @param metadata Custom headers containing additional information such as the user's IP
+     *        address.
      */
-    void sendDeviceVerificationEmail(User user, Map<String, String> customHeaders);
+    void sendDeviceVerificationEmail(User user, DeviceRequestMetadata metadata);
 
     /**
-     * Verifies if a device verification code has been sent to the user.
-     * - If the hashed code is an empty string, it indicates that the code has
-     * already been used, and the method returns false.
-     * - If the code has expired, the expiration time is extended, and the method
-     * returns true.
+     * Verifies if a device verification code has been sent to the user. - If the hashed code is an
+     * empty string, it indicates that the code has already been used, and the method returns false.
+     * - If the code has expired, the expiration time is extended, and the method returns true.
      *
-     * @param userId      The ID of the authenticated user.
+     * @param userId The ID of the authenticated user.
      * @param currentTime The current time for validation purposes.
-     * @return true if the device verification code is valid or has been reissued;
-     *         false if the code has already been used or null.
+     * @return true if the device verification code is valid or has been reissued; false if the code
+     *         has already been used or null.
      */
     boolean isDeviceVerificationCodeSent(UUID userId, LocalDateTime currentTime);
 }

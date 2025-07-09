@@ -16,70 +16,74 @@ import org.springframework.validation.BindingResult;
 
 import java.util.Map;
 
-@Component @RequiredArgsConstructor
+@Component
+@RequiredArgsConstructor
 public class AuthenticationMapper {
 
     private final AuthenticationService authenticationService;
     private final BasicMapper mapper;
 
-    public MagicCodeResponse checkEmail(MagicCodeRequest request, BindingResult bindingResult){
+    public MagicCodeResponse checkEmail(MagicCodeRequest request, BindingResult bindingResult) {
         return mapper.convertToResponse(
-                authenticationService.checkEmail(request.getEmail(),bindingResult),
+                authenticationService.checkEmail(request.getEmail(), bindingResult),
                 MagicCodeResponse.class);
     }
 
     public MagicKeyResponse generateMagicCode(MagicCodeRequest request,
-            BindingResult bindingResult){
+            BindingResult bindingResult) {
         return mapper.convertToResponse(
                 Map.of("key",
-                        authenticationService.generateMagicCode(request.getEmail(),bindingResult)),
+                        authenticationService.generateMagicCode(request.getEmail(), bindingResult)),
                 MagicKeyResponse.class);
     }
 
-    public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult){
-        return mapper.convertToResponse(authenticationService.login(request,bindingResult),
+    public AuthenticationResponse login(AuthenticationRequest request,
+            BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.login(request, bindingResult),
                 AuthenticationResponse.class);
     }
 
-    public AuthenticationResponse magicLogin(MagicCodeRequest request, BindingResult bindingResult){
-        return mapper.convertToResponse(authenticationService.magicLogin(request,bindingResult),
+    public AuthenticationResponse magicLogin(MagicCodeRequest request,
+            BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.magicLogin(request, bindingResult),
                 AuthenticationResponse.class);
     }
 
-    public AuthenticationResponse getUserByToken(){
-        return getAuthenticationResponse(authenticationService.getUserByToken());
+    public AuthenticationResponse getUserByToken() {
+        return mapper.convertToResponse(authenticationService.getUserByToken(),
+                AuthenticationResponse.class);
     }
 
-    public GenericResponse forgotUsername(String email, BindingResult bindingResult){
-        return mapper.convertToResponse(authenticationService.forgotUsername(email,bindingResult),
+    public GenericResponse forgotUsername(String email, BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.forgotUsername(email, bindingResult),
                 GenericResponse.class);
     }
 
-    public GenericResponse forgotPassword(String email, BindingResult bindingResult){
-        return mapper.convertToResponse(authenticationService.forgotPassword(email,bindingResult),
+    public GenericResponse forgotPassword(String email, BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.forgotPassword(email, bindingResult),
                 GenericResponse.class);
     }
 
-    public GenericResponse verifyOtp(String otp, BindingResult bindingResult){
-        return mapper.convertToResponse(authenticationService.verifyOtp(otp,bindingResult),
+    public GenericResponse verifyOtp(String otp, BindingResult bindingResult) {
+        return mapper.convertToResponse(authenticationService.verifyOtp(otp, bindingResult),
                 GenericResponse.class);
     }
 
     public GenericResponse resetPassword(PasswordResetRequest request, String token,
-            BindingResult bindingResult){
+            BindingResult bindingResult) {
         return mapper.convertToResponse(
-                authenticationService.resetPassword(request,token,bindingResult),
+                authenticationService.resetPassword(request, token, bindingResult),
                 GenericResponse.class);
     }
 
-    public AuthenticationResponse verifyDeviceVerification(String token, boolean trust){
-        return mapper.convertToResponse(authenticationService.newDeviceVerification(token,trust),
+    public AuthenticationResponse verifyDeviceVerification(String token, boolean trust) {
+        return mapper.convertToResponse(authenticationService.newDeviceVerification(token, trust),
                 AuthenticationResponse.class);
     }
 
-    AuthenticationResponse getAuthenticationResponse(Map<String, Object> credentials){
+    AuthenticationResponse getAuthenticationResponse(Map<String, Object> credentials) {
         AuthenticationResponse response = new AuthenticationResponse();
-        response.setUser(mapper.convertToResponse(credentials.get("user"),AuthUserResponse.class));
+        response.setUser(mapper.convertToResponse(credentials.get("user"), AuthUserResponse.class));
         response.setToken((String) credentials.get("token"));
         return response;
     }

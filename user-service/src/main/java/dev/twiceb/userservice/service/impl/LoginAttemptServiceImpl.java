@@ -2,6 +2,7 @@ package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
+import dev.twiceb.common.records.DeviceRequestMetadata;
 import dev.twiceb.userservice.model.LockedUser;
 import dev.twiceb.userservice.model.LoginAttempt;
 import dev.twiceb.userservice.model.LoginAttemptPolicy;
@@ -17,12 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 import static dev.twiceb.common.constants.ErrorMessage.INCORRECT_PASSWORD;
 import static dev.twiceb.common.constants.ErrorMessage.LOCKED_ACCOUNT_AFTER_N_ATTEMPTS;
-import static dev.twiceb.common.constants.PathConstants.AUTH_USER_IP_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +32,8 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
 
     @Override
     @Transactional
-    public void generateLoginAttempt(boolean success, boolean newDevice, User user, String ipAddress) {
+    public void generateLoginAttempt(boolean success, boolean newDevice, User user,
+            String ipAddress) {
         generateLoginAttemptInternal(success, newDevice, user, ipAddress);
     }
 
@@ -42,7 +42,8 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
      */
     @Override
     @Transactional(noRollbackFor = NoRollbackApiRequestException.class)
-    public void handleLoginAttempt(boolean isPasswordMatch, User user, Map<String, String> customHeaders) {
+    public void handleLoginAttempt(boolean isPasswordMatch, User user,
+            DeviceRequestMetadata metadata) {
         LoginAttemptPolicy policy = user.getLoginAttemptPolicy();
         // The start date from which login attempts should be considered for
         // verification.
@@ -56,16 +57,16 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
                 if (failedAttempts >= user.getLoginAttemptPolicy().getMaxAttempts()) {
                     user = lockUserInternal(user, "Too many failed login attempts");
                 }
-                generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+                generateLoginAttemptInternal(false, false, user, metadata.ipAddress());
             }
             throw new NoRollbackApiRequestException(INCORRECT_PASSWORD, HttpStatus.BAD_REQUEST);
         }
 
-        generateLoginAttemptInternal(true, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+        generateLoginAttemptInternal(true, false, user, metadata.ipAddress());
     }
 
     @Override
-    public void handleLoginAttempt(User user, Map<String, String> customHeaders) {
+    public void handleLoginAttempt(User user, DeviceRequestMetadata metadata) {
         LoginAttemptPolicy policy = user.getLoginAttemptPolicy();
         // The start date from which login attempts should be considered for
         // verification.
@@ -78,16 +79,17 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
             if (failedAttempts >= user.getLoginAttemptPolicy().getMaxAttempts()) {
                 user = lockUserInternal(user, "Too many failed login attempts");
             }
-            generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+            generateLoginAttemptInternal(false, false, user, metadata.ipAddress());
             return;
         }
-        generateLoginAttemptInternal(true, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+        generateLoginAttemptInternal(true, false, user, metadata.ipAddress());
     }
 
     @Override
     @Transactional
     public void updateLoginAttempt(UUID userId) {
-        LoginAttempt loginAttempt = loginAttemptRepository.findFirstByUserIdOrderByAttemptTimestampDesc(userId);
+        LoginAttempt loginAttempt =
+                loginAttemptRepository.findFirstByUserIdOrderByAttemptTimestampDesc(userId);
         // TODO: if login attempt is null then throw error
         loginAttempt.setSuccess(true);
         loginAttemptRepository.save(loginAttempt);
@@ -104,12 +106,13 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
      */
     @Override
     @Transactional(noRollbackFor = NoRollbackApiRequestException.class)
-    public void handleLockedUser(User user, Map<String, String> customHeaders, LocalDateTime currentTime) {
+    public void handleLockedUser(User user, DeviceRequestMetadata metadata,
+            LocalDateTime currentTime) {
         LockedUser userLock = user.getLockoutHistory().getLast();
         Duration duration = Duration.between(currentTime, userLock.getLockoutEnd());
 
         if (currentTime.isBefore(userLock.getLockoutEnd())) {
-            generateLoginAttemptInternal(false, false, user, customHeaders.get(AUTH_USER_IP_HEADER));
+            generateLoginAttemptInternal(false, false, user, metadata.ipAddress());
             throw new NoRollbackApiRequestException(LOCKED_ACCOUNT_AFTER_N_ATTEMPTS + duration,
                     HttpStatus.TOO_MANY_REQUESTS);
         }
@@ -120,8 +123,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
     @Override
     @Transactional
     public LoginAttemptProjection getRecentLoginAttempt(UUID userId) {
-        return loginAttemptRepository.findRecentLoginAttempt(userId)
-                .orElse(null);
+        return loginAttemptRepository.findRecentLoginAttempt(userId).orElse(null);
     }
 
     private User lockUserInternal(User user, String reason) {
@@ -133,7 +135,8 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
         return userRepository.save(user);
     }
 
-    private void generateLoginAttemptInternal(boolean success, boolean newDevice, User user, String ipAddress) {
+    private void generateLoginAttemptInternal(boolean success, boolean newDevice, User user,
+            String ipAddress) {
         LoginAttempt loginAttempt = new LoginAttempt();
         loginAttempt.setUser(user);
         loginAttempt.setSuccess(success);

@@ -2,6 +2,7 @@ package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.records.DeviceRequestMetadata;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.ActivationCode;
 import dev.twiceb.userservice.model.User;
@@ -20,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static dev.twiceb.common.constants.ErrorMessage.DEVICE_VERIFICATION_EXPIRED;
-import static dev.twiceb.common.constants.PathConstants.*;
 
 @Service
 @RequiredArgsConstructor
@@ -47,10 +47,11 @@ public class DeviceServiceImpl implements DeviceService {
      */
     @Override
     @Transactional
-    public Optional<User> retrieveAndValidateDeviceVerificationCode(String deviceVerificationToken) {
-        String hashedDeviceToken = helper.decodeAndHashDeviceVerificationCode(deviceVerificationToken);
-        return retrieveActivationCode(hashedDeviceToken)
-                .filter(this::validateActivationCode)
+    public Optional<User> retrieveAndValidateDeviceVerificationCode(
+            String deviceVerificationToken) {
+        String hashedDeviceToken =
+                helper.decodeAndHashDeviceVerificationCode(deviceVerificationToken);
+        return retrieveActivationCode(hashedDeviceToken).filter(this::validateActivationCode)
                 .map(this::invalidateActivationCode);
     }
 
@@ -69,14 +70,15 @@ public class DeviceServiceImpl implements DeviceService {
      */
     @Override
     @Transactional
-    public void sendDeviceVerificationEmail(User user, Map<String, String> customHeaders) {
+    public void sendDeviceVerificationEmail(User user, DeviceRequestMetadata metadata) {
         String randomCode = helper.generateRandomCode();
         String hashedRandomCode = helper.decodeAndHashDeviceVerificationCode(randomCode);
-        ActivationCode code = new ActivationCode(hashedRandomCode, ActivationCodeType.DEVICE_VERIFICATION, user);
+        ActivationCode code =
+                new ActivationCode(hashedRandomCode, ActivationCodeType.DEVICE_VERIFICATION, user);
         activationCodeRepository.save(code);
 
-        emailService.sendDeviceVerificationEmail(user, randomCode,
-                customHeaders.get(AUTH_USER_IP_HEADER), customHeaders.get(AUTH_USER_AGENT_HEADER));
+        emailService.sendDeviceVerificationEmail(user, randomCode, metadata.ipAddress(),
+                metadata.userAgent());
     }
 
     /**
@@ -122,9 +124,8 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     private ActivationCode getLatestDeviceVerificationCode(UUID userId) {
-        return activationCodeRepository
-                .findFirstByUser_IdAndCodeTypeOrderByExpirationTimeAsc(userId, ActivationCodeType.DEVICE_VERIFICATION)
-                .orElse(null);
+        return activationCodeRepository.findFirstByUser_IdAndCodeTypeOrderByExpirationTimeAsc(
+                userId, ActivationCodeType.DEVICE_VERIFICATION).orElse(null);
     }
 
     private boolean isCodeUsed(ActivationCode activationCode) {
@@ -135,13 +136,15 @@ public class DeviceServiceImpl implements DeviceService {
         return currentTime.isAfter(activationCode.getExpirationTime());
     }
 
-    private void extendCodeExpiration(ActivationCode activationCode, LocalDateTime newExpirationTime) {
+    private void extendCodeExpiration(ActivationCode activationCode,
+            LocalDateTime newExpirationTime) {
         activationCode.setExpirationTime(newExpirationTime);
         activationCodeRepository.save(activationCode);
     }
 
     private Optional<ActivationCode> retrieveActivationCode(String hashedDeviceCode) {
-        return activationCodeRepository.getActivationCodeByHashedCode(hashedDeviceCode, ActivationCode.class);
+        return activationCodeRepository.getActivationCodeByHashedCode(hashedDeviceCode,
+                ActivationCode.class);
     }
 
     private User updateUserDevices(User user, String deviceKey) {

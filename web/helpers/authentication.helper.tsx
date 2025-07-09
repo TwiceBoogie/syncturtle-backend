@@ -50,6 +50,7 @@ export enum EAuthenticationErrorCodes {
   MAGIC_SIGN_UP_EMAIL_CODE_REQUIRED = "5055",
   // Sign In
   USER_DOES_NOT_EXIST = "5060",
+  DEVICE_NOT_RECOGNIZE = "5061",
   AUTHENTICATION_FAILED_SIGN_IN = "5065",
   REQUIRED_EMAIL_PASSWORD_SIGN_IN = "5070",
   INVALID_EMAIL_SIGN_IN = "5075",
@@ -156,6 +157,10 @@ const errorCodeMessages: {
         &nbsp;now.
       </div>
     ),
+  },
+  [EAuthenticationErrorCodes.DEVICE_NOT_RECOGNIZE]: {
+    title: `New device detected`,
+    message: () => `New device detected, please check your email to continue.`,
   },
   [EAuthenticationErrorCodes.REQUIRED_EMAIL_PASSWORD_SIGN_UP]: {
     title: `Email and password required`,
@@ -366,6 +371,7 @@ export const authErrorHandler = (
   const bannerAlertErrorCodes = [
     EAuthenticationErrorCodes.INSTANCE_NOT_CONFIGURED,
     EAuthenticationErrorCodes.INVALID_EMAIL,
+    EAuthenticationErrorCodes.DEVICE_NOT_RECOGNIZE,
     EAuthenticationErrorCodes.EMAIL_REQUIRED,
     EAuthenticationErrorCodes.SIGNUP_DISABLED,
     EAuthenticationErrorCodes.MAGIC_LINK_LOGIN_DISABLED,

@@ -18,9 +18,8 @@ export async function generateUniqueCode(payload: EmailSchema) {
         "Content-Type": "application/json",
       },
     });
-    console.log(res);
     const data = await res.json();
-    console.log(data);
+
     if (!res.ok) {
       return { ok: false, data: data, errors: {} };
     }
