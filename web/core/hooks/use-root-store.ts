@@ -9,7 +9,7 @@ export function useRootStore() {
 
   const resetAll = useCallback(async (): Promise<void> => {
     await logout();
-    userStore.dispatch({ type: "LOGOUT" });
+    userStore.signOut();
     passwordStore.dispatch({ type: "RESET" });
   }, [userStore, passwordStore]);
 

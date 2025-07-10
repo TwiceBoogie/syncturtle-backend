@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
+      {/* <link rel="preload" href={`http://localhost:8000/ui/v1/user/token `} as="fetch" crossOrigin="use-credentials" /> */}
       <body>
         <AppProvider>
           <div className={cn("h-screen w-full overflow-hidden relative flex flex-col")}>

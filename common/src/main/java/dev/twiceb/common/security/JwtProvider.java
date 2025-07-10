@@ -53,24 +53,16 @@ public class JwtProvider {
     public String createToken(String email, String role) {
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + validityInMilliseconds);
-        return Jwts.builder()
-                .claim("ROLE", role)
-                .issuer("localhost")
-                .subject(email)
-                .expiration(expiresAt)
-                .signWith(secretKey)
-                .compact();
+        return Jwts.builder().claim("ROLE", role).issuer("localhost").subject(email)
+                .expiration(expiresAt).signWith(secretKey).compact();
     }
 
     public String createDeviceToken(String deviceKey) {
         LocalDateTime expirationDateTime = LocalDateTime.now().plusMonths(3);
-        Date expirationDate = Date.from(expirationDateTime.atZone(ZoneId.systemDefault()).toInstant());
-        return Jwts.builder()
-                .claim("deviceKey", deviceKey)
-                .issuer("localhost")
-                .expiration(expirationDate)
-                .signWith(deviceSecretKey)
-                .compact();
+        Date expirationDate =
+                Date.from(expirationDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        return Jwts.builder().claim("deviceKey", deviceKey).issuer("localhost")
+                .expiration(expirationDate).signWith(deviceSecretKey).compact();
     }
 
     public String resolveToken(ServerHttpRequest request) {
@@ -98,12 +90,15 @@ public class JwtProvider {
     public boolean validateToken(String token, String type) {
         try {
             if (type.equals("deviceKey")) {
-                Jws<Claims> claimsJws = Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
+                Jws<Claims> claimsJws =
+                        Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
                 return !claimsJws.getPayload().getExpiration().before(new Date());
             }
-            Jws<Claims> claimsJws = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            Jws<Claims> claimsJws =
+                    Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
             return !claimsJws.getPayload().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException exception) {
+            System.out.println("Error has occured");
             throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
         }
     }
@@ -115,7 +110,8 @@ public class JwtProvider {
     }
 
     public String parseDeviceToken(String token) {
-        Jws<Claims> body = Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
+        Jws<Claims> body =
+                Jwts.parser().verifyWith(deviceSecretKey).build().parseSignedClaims(token);
         return (String) body.getPayload().get("deviceKey");
     }
 }

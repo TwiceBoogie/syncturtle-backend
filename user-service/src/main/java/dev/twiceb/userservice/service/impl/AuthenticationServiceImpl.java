@@ -9,6 +9,7 @@ import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.common.records.AuthUserRecord;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
 import dev.twiceb.common.records.DeviceRequestMetadata;
+import dev.twiceb.common.records.MagicCodeRecord;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
@@ -81,7 +82,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Map<String, Object> checkEmail(String email, BindingResult bindingResult) {
+    @Transactional(readOnly = true)
+    public MagicCodeRecord checkEmail(String email, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
         boolean existing = false;
         String status = "MAGIC_CODE";
@@ -91,13 +93,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (optionalUser.isPresent()) {
             existing = true;
             User user = optionalUser.get();
+            if (user.getUserStatus().equals(UserStatus.PENDING_USER_CONFIRMATION)) {
+                throw new AuthException(AuthErrorCodes.DEVICE_NOT_RECOGNIZE);
+            }
             if (!user.isPasswordAutoSet()) {
                 status = "CREDENTIAL";
                 isPasswordAutoSet = true;
             }
         }
 
-        return Map.of("existing", existing, "status", status, "passwordAutoSet", isPasswordAutoSet);
+        return new MagicCodeRecord(existing, status, isPasswordAutoSet);
     }
 
     @Override
@@ -321,8 +326,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         loginAttemptService.generateLoginAttempt(false, true, user, metadata.ipAddress());
         deviceService.sendDeviceVerificationEmail(user, metadata);
 
-        throw new NoRollbackApiRequestException(DEVICE_KEY_NOT_FOUND_OR_MATCH,
-                HttpStatus.FORBIDDEN);
+        throw new AuthException(AuthErrorCodes.DEVICE_NOT_RECOGNIZE);
     }
 
     private void handleLockedUser(User user, DeviceRequestMetadata metadata,

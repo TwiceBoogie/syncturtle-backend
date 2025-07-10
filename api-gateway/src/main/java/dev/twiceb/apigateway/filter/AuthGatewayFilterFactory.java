@@ -18,7 +18,8 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthGatewayFilterFactory.Config> {
+public class AuthGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<AuthGatewayFilterFactory.Config> {
 
     private final JwtProvider jwtProvider;
     private final UserService userService;
@@ -35,6 +36,7 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
             log.info("==> Inside Auth filter");
             String token = jwtProvider.resolveToken(exchange.getRequest());
             boolean isTokenValid = jwtProvider.validateToken(token, "main");
+            log.info("===> My token: " + token);
             if (token != null && isTokenValid) {
                 String email = jwtProvider.parseToken(token);
                 // store email in exchange which is only available to downstream filters.
@@ -56,7 +58,8 @@ public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthG
                     }
                     String csrfHeader = exchange.getRequest().getHeaders().getFirst("X-XSRF-TOKEN");
 
-                    if (csrfCookie == null || csrfHeader == null || !csrfCookie.equals(csrfHeader)) {
+                    if (csrfCookie == null || csrfHeader == null
+                            || !csrfCookie.equals(csrfHeader)) {
                         throw new JwtAuthenticationException("CSRF token mismatch or missing");
                     }
                 }

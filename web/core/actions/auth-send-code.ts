@@ -2,11 +2,11 @@
 
 import { API_AUTH_MAGIC_LOGIN, API_AUTH_MAGIC_REGISTER } from "@/constants";
 import { EAuthModes } from "@/helpers/authentication.helper";
-import { TApiErrorResponse, TMagicCodeResponse, TRegistrationResponse } from "@/types/authentication";
-import { randomUUID } from "crypto";
-import { cookies, headers } from "next/headers";
+import { isApiErrorResponse, setCookies } from "@/helpers/server.helper";
+import { TMagicCodeResponse, TRegistrationResponse } from "@/types/authentication";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import z, { ZodError } from "zod/v4";
+import z from "zod/v4";
 
 const MagicCodeRequest = z.object({
   email: z.email(),
@@ -47,55 +47,4 @@ export async function sendMagicCode(formData: FormData) {
 
   await setCookies(successData.deviceToken, successData.token);
   redirect("/home");
-}
-
-function transform(error: ZodError) {
-  return error.issues.reduce((acc, issue) => {
-    const path = issue.path.join(".");
-    acc[path] = issue.message;
-    return acc;
-  }, {} as Record<string, string>);
-}
-
-function transformZodErrors(error: ZodError): TApiErrorResponse {
-  return {
-    errorCode: 4001,
-    errorMessage: "VALIDATION_FAILED",
-    payload: error.issues.reduce((acc, issue) => {
-      const key = issue.path.join(".");
-      acc[key] = issue.message;
-      return acc;
-    }, {} as Record<string, string>),
-  };
-}
-
-async function setCookies(deviceToken: string, jwt: string) {
-  const cookieStore = await cookies();
-
-  // set short-lived JWT (4hours);
-  cookieStore.set("deviceToken", deviceToken, {
-    httpOnly: true,
-    path: "/",
-    sameSite: "strict",
-    maxAge: 60 * 60 * 4, // hours
-  });
-
-  cookieStore.set("token", jwt, {
-    httpOnly: true,
-    path: "/",
-    sameSite: "strict",
-    maxAge: 60 * 60 * 24 * 90, // 90 days
-  });
-  // csrf token (4 hours)
-  const csrfToken = randomUUID();
-  cookieStore.set("XSRF-TOKEN", csrfToken, {
-    httpOnly: false,
-    path: "/",
-    sameSite: "strict",
-    maxAge: 60 * 60 * 4,
-  });
-}
-
-function isApiErrorResponse(obj: unknown): obj is TApiErrorResponse {
-  return typeof obj === "object" && obj !== null && "errorCode" in obj;
 }

@@ -16,9 +16,6 @@ export default function Home() {
       <AuthenticationWrapper pageType={EPageTypes.NON_AUTHENTICATED}>
         <>
           <div className="relative w-screen h-screen overflow-hidden">
-            <p>
-              Log in - Sync<span className="text-green-400">Turtle</span>
-            </p>
             <div className="absolute inset-0 z-0">
               <Image src={PlaneBackgroundPatternDark} className="w-full h-full object-cover" alt="background" />
             </div>

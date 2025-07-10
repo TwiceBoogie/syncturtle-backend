@@ -75,7 +75,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: "FETCH_START" });
     try {
       const data = await userService.getCurrentUser();
-      console.log("should be my user data", data);
       dispatch({ type: "FETCH_SUCCESS", payload: data.user });
       return data.user;
     } catch (error) {

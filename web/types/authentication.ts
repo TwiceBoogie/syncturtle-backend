@@ -18,6 +18,11 @@ export interface IEmailCheckResponse {
   existing: boolean;
   passwordAutoSet: boolean;
 }
+export type TEmailCheckResponse1 = {
+  status: "MAGIC_CODE" | "CREDENTIAL";
+  existing: boolean;
+  passwordAutoSet: boolean;
+};
 
 export interface IRegistrationResponse {
   message: string;
@@ -38,3 +43,4 @@ export type TApiErrorResponse = {
 };
 
 export type TMagicCodeResponse = TRegistrationResponse | TApiErrorResponse;
+export type TEmailCheckResponse = TEmailCheckResponse1 | TApiErrorResponse;

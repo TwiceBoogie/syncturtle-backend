@@ -3,6 +3,7 @@ package dev.twiceb.userservice.service;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
+import dev.twiceb.common.records.MagicCodeRecord;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.PasswordResetRequest;
@@ -39,7 +40,7 @@ public interface AuthenticationService {
      */
     UserPrincipalProjection getUserPrincipleByEmail(String email);
 
-    Map<String, Object> checkEmail(String email, BindingResult bindingResult);
+    MagicCodeRecord checkEmail(String email, BindingResult bindingResult);
 
     String generateMagicCode(String email, BindingResult bindingResult);
 
