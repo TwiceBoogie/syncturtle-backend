@@ -34,7 +34,8 @@ public class AuthenticationController implements AuthenticationControllerSwagger
     @PostMapping(GENERATE_MAGIC_CODE)
     public ResponseEntity<MagicKeyResponse> generateMagicCode(@RequestBody MagicCodeRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationMapper.generateMagicCode(request, bindingResult));
+        return ResponseEntity
+                .ok(authenticationMapper.generateMagicCodeAuth(request, bindingResult));
     }
 
     @PostMapping(MAGIC_LOGIN)

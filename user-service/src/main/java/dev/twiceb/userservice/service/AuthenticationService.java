@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.NoRollbackApiRequestException;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
@@ -42,7 +43,7 @@ public interface AuthenticationService {
 
     MagicCodeRecord checkEmail(String email, BindingResult bindingResult);
 
-    String generateMagicCode(String email, BindingResult bindingResult);
+    String generateMagicCode(String email, MagicCodeType type, BindingResult bindingResult);
 
     AuthenticatedUserRecord magicLogin(MagicCodeRequest request, BindingResult bindingResult);
 

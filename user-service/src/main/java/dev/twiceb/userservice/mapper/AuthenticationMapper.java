@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.mapper;
 
 import dev.twiceb.common.dto.response.GenericResponse;
+import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
@@ -25,15 +26,27 @@ public class AuthenticationMapper {
 
     public MagicCodeResponse checkEmail(MagicCodeRequest request, BindingResult bindingResult) {
         return mapper.convertToResponse(
+
                 authenticationService.checkEmail(request.getEmail(), bindingResult),
                 MagicCodeResponse.class);
     }
 
-    public MagicKeyResponse generateMagicCode(MagicCodeRequest request,
+    public MagicKeyResponse generateMagicCodeAuth(MagicCodeRequest request,
+            BindingResult bindingResult) {
+        return mapper
+                .convertToResponse(
+                        Map.of("key",
+                                authenticationService.generateMagicCode(request.getEmail(),
+                                        MagicCodeType.MAGIC_LINK, bindingResult)),
+                        MagicKeyResponse.class);
+    }
+
+    public MagicKeyResponse generateMagicCodeDevice(MagicCodeRequest request,
             BindingResult bindingResult) {
         return mapper.convertToResponse(
                 Map.of("key",
-                        authenticationService.generateMagicCode(request.getEmail(), bindingResult)),
+                        authenticationService.generateMagicCode(request.getEmail(),
+                                MagicCodeType.DEVICE_VERIFICATION, bindingResult)),
                 MagicKeyResponse.class);
     }
 

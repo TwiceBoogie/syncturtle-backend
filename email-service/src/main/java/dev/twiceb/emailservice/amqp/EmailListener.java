@@ -1,6 +1,7 @@
 package dev.twiceb.emailservice.amqp;
 
 import dev.twiceb.common.dto.request.EmailRequest;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -31,10 +32,11 @@ public class EmailListener {
         logger.info("SENDMESSAGEHTML() is invoked");
         Context thymeleafContext = new Context();
         thymeleafContext.setVariables(emailRequest.getAttributes());
-        String htmlBody = thymeleafTemplateEngine.process(emailRequest.getTemplate(), thymeleafContext);
+        String htmlBody =
+                thymeleafTemplateEngine.process(emailRequest.getTemplate(), thymeleafContext);
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setFrom(username);
+        helper.setFrom(new InternetAddress(username, "Team SyncTurtle"));
         helper.setTo(emailRequest.getTo());
         helper.setSubject(emailRequest.getSubject());
         helper.setText(htmlBody, true);

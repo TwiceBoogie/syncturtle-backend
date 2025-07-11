@@ -106,10 +106,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public String generateMagicCode(String email, BindingResult bindingResult) {
+    public String generateMagicCode(String email, MagicCodeType type, BindingResult bindingResult) {
         userServiceHelper.processBindingResults(bindingResult);
-        Pair<String, String> keyAndToken =
-                magicCodeProvider.initiate(email, MagicCodeType.MAGIC_LINK);
+        Pair<String, String> keyAndToken = magicCodeProvider.initiate(email, type);
         emailService.sendMagicCodeEmail(email, keyAndToken.getSecond());
         return keyAndToken.getFirst();
     }
@@ -305,13 +304,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private void handlePendingUser(User user, DeviceRequestMetadata metadata,
             LocalDateTime currentTime) {
-        if (deviceService.isDeviceVerificationCodeSent(user.getId(), currentTime)) {
-            // TODO: should I create a login attempt on these?
-            throw new NoRollbackApiRequestException(DEVICE_KEY_NOT_FOUND_OR_MATCH,
-                    HttpStatus.FORBIDDEN);
-        } else {
-            handleUnverifiedDevice(user, metadata);
-        }
+        // if (deviceService.isDeviceVerificationCodeSent(user.getId(), currentTime)) {
+        // // TODO: should I create a login attempt on these?
+        // throw new NoRollbackApiRequestException(DEVICE_KEY_NOT_FOUND_OR_MATCH,
+        // HttpStatus.FORBIDDEN);
+        // } else {
+        // handleUnverifiedDevice(user, metadata);
+        // }
+        loginAttemptService.generateLoginAttempt(false, true, user, metadata.ipAddress());
+        throw new AuthException(AuthErrorCodes.DEVICE_NOT_RECOGNIZE);
     }
 
     private void checkDeviceKeyAndHandleStatus(User user, DeviceRequestMetadata metadata) {
@@ -324,7 +325,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setUserStatus(UserStatus.PENDING_USER_CONFIRMATION);
         user = userRepository.save(user);
         loginAttemptService.generateLoginAttempt(false, true, user, metadata.ipAddress());
-        deviceService.sendDeviceVerificationEmail(user, metadata);
+        Pair<String, String> keyAndToken =
+                magicCodeProvider.initiate(user.getEmail(), MagicCodeType.DEVICE_VERIFICATION);
+        emailService.sendDeviceVerificationEmail(user, keyAndToken.getSecond(),
+                metadata.ipAddress(), metadata.userAgent());
+        // deviceService.sendDeviceVerificationEmail(user, metadata);
 
         throw new AuthException(AuthErrorCodes.DEVICE_NOT_RECOGNIZE);
     }

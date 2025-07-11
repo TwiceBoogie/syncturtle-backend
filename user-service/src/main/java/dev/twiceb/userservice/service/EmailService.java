@@ -14,7 +14,8 @@ public interface EmailService {
 
     void sendUsernameToUsersEmail(String username, String email);
 
-    void sendDeviceVerificationEmail(User user, String verificationCode, String ipAddress, String userAgent);
+    void sendDeviceVerificationEmail(User user, String verificationCode, String ipAddress,
+            String userAgent);
 
     void sendPasswordChangeNotificationEmail(UserDevice device, String verificationCode,
             LocalDateTime expDateTime, String ipAddress);

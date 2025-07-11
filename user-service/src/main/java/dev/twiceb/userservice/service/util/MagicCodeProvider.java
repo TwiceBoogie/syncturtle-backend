@@ -65,7 +65,8 @@ public class MagicCodeProvider {
                                 userExists ? AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN
                                         : AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP);
                     case DEVICE_VERIFICATION:
-                        throw new AuthException(AuthErrorCodes.EXPIRED_MAGIC_CODE_DEVICE);
+                        throw new AuthException(
+                                AuthErrorCodes.DEVICE_CODE_ATTEMPT_EXHAUSTED_VERIFICATION);
                     default:
                         throw new IllegalStateException("Unexpected MagicCodeType: " + type);
                 }
@@ -96,8 +97,15 @@ public class MagicCodeProvider {
             return email;
         } else {
             boolean userExists = userRepository.existsByEmail(email);
-            throw new AuthException(userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
-                    : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP);
+            switch (type) {
+                case MAGIC_LINK:
+                    throw new AuthException(userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
+                            : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP);
+                case DEVICE_VERIFICATION:
+                    throw new AuthException(AuthErrorCodes.INVALID_MAGIC_CODE_DEVICE_VERIFICATION);
+                default:
+                    throw new IllegalStateException("Unexpected MagicCodeType: " + type);
+            }
         }
     }
 
