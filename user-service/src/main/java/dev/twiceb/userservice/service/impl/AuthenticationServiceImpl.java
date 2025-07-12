@@ -119,9 +119,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userServiceHelper.processBindingResults(bindingResult);
         User user = findUserByEmail(request.getEmail())
                 .orElseThrow(() -> new AuthException(AuthErrorCodes.USER_DOES_NOT_EXIST));
-
+        DeviceRequestMetadata metadata = getDeviceKeyAndIp();
         magicCodeProvider.validateAndGetEmail(request.getEmail(), request.getMagicCode(),
-                MagicCodeType.MAGIC_LINK);
+                MagicCodeType.MAGIC_LINK, metadata.ipAddress());
         return validateAndAuthenticateUser(user, "");
     }
 

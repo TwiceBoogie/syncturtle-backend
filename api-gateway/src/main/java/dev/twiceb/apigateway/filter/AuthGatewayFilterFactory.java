@@ -48,21 +48,21 @@ public class AuthGatewayFilterFactory
                 builder.header(AUTH_USER_ID_HEADER, String.valueOf(user.getId()));
 
                 // CSRF check (for non-GET request)
-                String method = exchange.getRequest().getMethod().name();
-                if (!method.equalsIgnoreCase("GET") && !method.equalsIgnoreCase("HEAD")
-                        && !method.equalsIgnoreCase("OPTIONS")) {
-                    String csrfCookie = null;
-                    List<HttpCookie> cookies = exchange.getRequest().getCookies().get("token");
-                    if (cookies != null && !cookies.isEmpty()) {
-                        csrfCookie = cookies.get(0).getValue();
-                    }
-                    String csrfHeader = exchange.getRequest().getHeaders().getFirst("X-XSRF-TOKEN");
+                // String method = exchange.getRequest().getMethod().name();
+                // if (!method.equalsIgnoreCase("GET") && !method.equalsIgnoreCase("HEAD")
+                // && !method.equalsIgnoreCase("OPTIONS")) {
+                // String csrfCookie = null;
+                // List<HttpCookie> cookies = exchange.getRequest().getCookies().get("token");
+                // if (cookies != null && !cookies.isEmpty()) {
+                // csrfCookie = cookies.get(0).getValue();
+                // }
+                // String csrfHeader = exchange.getRequest().getHeaders().getFirst("X-XSRF-TOKEN");
 
-                    if (csrfCookie == null || csrfHeader == null
-                            || !csrfCookie.equals(csrfHeader)) {
-                        throw new JwtAuthenticationException("CSRF token mismatch or missing");
-                    }
-                }
+                // if (csrfCookie == null || csrfHeader == null
+                // || !csrfCookie.equals(csrfHeader)) {
+                // throw new JwtAuthenticationException("CSRF token mismatch or missing");
+                // }
+                // }
 
                 return chain.filter(exchange.mutate().request(builder.build()).build());
             } else {

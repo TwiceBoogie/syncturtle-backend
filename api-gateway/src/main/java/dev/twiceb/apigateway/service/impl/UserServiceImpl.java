@@ -32,20 +32,23 @@ public class UserServiceImpl implements UserService {
      * {@inheritDoc}
      */
     @Override
-    @Cacheable(value = "users", key = "#email", cacheManager = "cacheManager", unless = "#result == null")
+    @Cacheable(value = "users", key = "#email", cacheManager = "cacheManager",
+            unless = "#result == null")
     public UserPrincipleResponse getCachedUserDetails(String email) {
         log.info(">>> SHOULD NOT REACH HERE IF CACHED <<<");
         try {
-
-            return Optional.ofNullable(
-                    restTemplate.getForObject(
-                            String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
-                            UserPrincipleResponse.class,
-                            email))
+            return Optional
+                    .ofNullable(
+                            restTemplate.getForObject(
+                                    String.format("http://%s:8001%s", USER_SERVICE,
+                                            API_V1_AUTH + USER_EMAIL),
+                                    UserPrincipleResponse.class, email))
                     .filter(UserPrincipleResponse::isVerified)
-                    .orElseThrow(() -> new ApiRequestException("Email not activated", HttpStatus.BAD_REQUEST));
+                    .orElseThrow(() -> new ApiRequestException("Email not activated",
+                            HttpStatus.BAD_REQUEST));
         } catch (RestClientException e) {
-            throw new ApiRequestException("User service is currently unavailable", HttpStatus.SERVICE_UNAVAILABLE);
+            throw new ApiRequestException("User service is currently unavailable",
+                    HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

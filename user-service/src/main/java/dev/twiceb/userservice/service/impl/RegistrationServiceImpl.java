@@ -5,6 +5,9 @@ import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.common.mapper.FieldErrorMapper.ValidationContext;
+import dev.twiceb.common.records.AuthUserRecord;
+import dev.twiceb.common.records.AuthenticatedUserRecord;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.amqp.AmqpPublisher;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
@@ -30,7 +33,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
-
+import java.util.UUID;
 import static dev.twiceb.common.constants.ErrorMessage.*;
 
 @Service
@@ -50,21 +53,22 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional
     public Map<String, String> registration(RegistrationRequest request,
             BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult);
+        userServiceHelper.processInputErrors(bindingResult, ValidationContext.SIGN_UP);
         userServiceHelper.processPassword(request.getPassword(), request.getPasswordConfirm());
+
         if (!userRepository.isUserExistByEmail(request.getEmail())) {
             User user = createUserAndSave(request.getEmail(), request.getPassword(), true);
             return Map.of("message",
                     "User created successfully. You're username is " + user.getUsername()
                             + " Once logged in, you will be able to change your username.");
         }
-        throw new ApiRequestException(EMAIL_ALREADY_TAKEN, HttpStatus.CONFLICT);
+        throw new AuthException(AuthErrorCodes.USER_ALREADY_EXIST);
     }
 
     @Override
-    public Map<String, Object> magicRegistration(MagicCodeRequest request,
+    public AuthenticatedUserRecord magicRegistration(MagicCodeRequest request,
             BindingResult bindingResult) {
-        userServiceHelper.processBindingResults(bindingResult);
+        userServiceHelper.processInputErrors(bindingResult, ValidationContext.MAGIC_SIGN_UP);
         // throw error if user already exist
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AuthException(AuthErrorCodes.USER_ALREADY_EXIST);
@@ -99,10 +103,12 @@ public class RegistrationServiceImpl implements RegistrationService {
                 "You've activated your user and you're now ready to use it! Try and login to access your user.");
     }
 
-    private Map<String, Object> validateMagicUser(String email, String magicCode) {
+    private AuthenticatedUserRecord validateMagicUser(String email, String magicCode) {
         MagicCodeType type = MagicCodeType.MAGIC_LINK;
-        email = magicCodeProvider.validateAndGetEmail(email, magicCode, type);
-        User user = createUserAndSave(email, type.buildRedisKey(email), false);
+        String ipAddress = getIpAddress();
+        email = magicCodeProvider.validateAndGetEmail(email, magicCode, type, ipAddress);
+        // we won't even use the password for auth
+        User user = createUserAndSave(email, UUID.randomUUID().toString(), false);
         user.setVerified(true);
         user.setPasswordAutoSet(true);
         String randomCode = userServiceHelper.generateRandomCode();
@@ -112,9 +118,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         String jwt = jwtProvider.createToken(email, user.getRole().toString());
 
         loginAttemptService.generateLoginAttempt(true, true, user, getIpAddress());
-        return Map.of("message",
-                "You've activated your user and you're now ready to use it! Try and login to access your user.",
-                "deviceToken", deviceToken, "token", jwt);
+
+        AuthUserRecord authUser = new AuthUserRecord(user.getId(), user.getEmail(), null, null);
+        return new AuthenticatedUserRecord(authUser, jwt, deviceToken);
     }
 
     private User createUserAndSave(String email, String password, boolean save) {
@@ -130,17 +136,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         return user;
     }
-
-    // private String generateUniqueUsername(String lastName, String firstName) {
-    // boolean usernameTaken = true;
-    // String username = "";
-    // while (usernameTaken) {
-    // username = lastName + "_" + firstName +
-    // userServiceHelper.generateRandomSuffix();
-    // usernameTaken = userRepository.existsUserByUsername(username);
-    // }
-    // return username;
-    // }
 
     private <T> T getUserByEmail(String email, Class<T> clazz) {
         return userRepository.getUserByEmail(email, clazz)

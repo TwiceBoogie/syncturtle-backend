@@ -37,9 +37,9 @@ import dev.twiceb.userservice.dto.request.RegistrationRequest;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Sql(value = { "/sql-test/clear-user-db.sql",
-        "/sql-test/populate-user-db.sql" }, executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
-@Sql(value = { "/sql-test/clear-user-db.sql" }, executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
+@Sql(value = {"/sql-test/clear-user-db.sql", "/sql-test/populate-user-db.sql"},
+        executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(value = {"/sql-test/clear-user-db.sql"}, executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
 public class RegistrationControllerTest {
 
     @Autowired
@@ -54,8 +54,6 @@ public class RegistrationControllerTest {
     public void init() {
         registrationRequest = new RegistrationRequest();
         registrationRequest.setEmail(TestConstants.USER_EMAIL);
-        registrationRequest.setFirstName(TestConstants.USER_FIRST_NAME);
-        registrationRequest.setLastName(TestConstants.USER_LAST_NAME);
         registrationRequest.setPassword(TestConstants.USER_PASSWORD);
         registrationRequest.setPasswordConfirm(TestConstants.USER_PASSWORD);
     }
@@ -63,13 +61,11 @@ public class RegistrationControllerTest {
     @Test
     @DisplayName("[201] POST /ui/v1/auth/registration/check - Check email")
     public void checkEmail() throws Exception {
-        String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CHECK)
-                .content(mapper.writeValueAsString(registrationRequest))
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        String jsonResponse = mockMvc
+                .perform(post(UI_V1_AUTH + REGISTRATION_CHECK)
+                        .content(mapper.writeValueAsString(registrationRequest))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 
         GenericResponse response = mapper.readValue(jsonResponse, GenericResponse.class);
 
@@ -82,13 +78,11 @@ public class RegistrationControllerTest {
     @DisplayName("[403] POST /ui/v1/auth/registration/check - Should user email is exist")
     public void checkEmail_ShouldUserEmailIsExist() throws Exception {
         registrationRequest.setEmail(TestConstants.SAME_USER_EMAIL);
-        String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CHECK)
-                .content(mapper.writeValueAsString(registrationRequest))
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isConflict())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        String jsonResponse = mockMvc
+                .perform(post(UI_V1_AUTH + REGISTRATION_CHECK)
+                        .content(mapper.writeValueAsString(registrationRequest))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString();
 
         GenericResponse response = mapper.readValue(jsonResponse, GenericResponse.class);
 
@@ -101,13 +95,11 @@ public class RegistrationControllerTest {
     public void sendRegistrationCode() throws Exception {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail(TestConstants.SAME_USER_EMAIL);
-        String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CODE)
-                .content(mapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        String jsonResponse = mockMvc
+                .perform(post(UI_V1_AUTH + REGISTRATION_CODE)
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         GenericResponse response = mapper.readValue(jsonResponse, GenericResponse.class);
 
         assertThat(response).isInstanceOf(GenericResponse.class);
@@ -119,13 +111,11 @@ public class RegistrationControllerTest {
     public void sendRegistrationCode_ShouldUserIsVerified() throws Exception {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail("jane.smith@example.com");
-        String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CODE)
-                .content(mapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isConflict())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        String jsonResponse = mockMvc
+                .perform(post(UI_V1_AUTH + REGISTRATION_CODE)
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString();
         ApiErrorResponse response = mapper.readValue(jsonResponse, ApiErrorResponse.class);
 
         assertThat(response).isInstanceOf(ApiErrorResponse.class);
@@ -137,13 +127,11 @@ public class RegistrationControllerTest {
     public void sendRegistrationCode_ShouldUserNotFound() throws Exception {
         ProcessEmailRequest request = new ProcessEmailRequest();
         request.setEmail(TestConstants.NOT_VALID_EMAIL);
-        String jsonResponse = mockMvc.perform(post(UI_V1_AUTH + REGISTRATION_CODE)
-                .content(mapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isNotFound())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        String jsonResponse = mockMvc
+                .perform(post(UI_V1_AUTH + REGISTRATION_CODE)
+                        .content(mapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
         ApiErrorResponse response = mapper.readValue(jsonResponse, ApiErrorResponse.class);
 
         assertThat(response).isInstanceOf(ApiErrorResponse.class);
@@ -155,8 +143,7 @@ public class RegistrationControllerTest {
     public void checkRegistrationCode() throws Exception {
         String code = "dGhpcyBpcyBhIHRlc3Qgc3RyaW5n";
         mockMvc.perform(get(UI_V1_AUTH + REGISTRATION_ACTIVATE_CODE, code))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deviceToken", isA(String.class)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.deviceToken", isA(String.class)))
                 .andExpect(jsonPath("$.message", is(
                         "You've activated your user and you're now ready to use it! Try and login to access your user.")));
     }

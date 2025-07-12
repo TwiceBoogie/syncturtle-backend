@@ -1,11 +1,12 @@
 package dev.twiceb.userservice.service.util;
 
+import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.exception.InputFieldException;
-import dev.twiceb.common.util.ServiceHelper;
+import dev.twiceb.common.mapper.FieldErrorMapper;
+import dev.twiceb.common.mapper.FieldErrorMapper.ValidationContext;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,14 +26,12 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserServiceHelper extends ServiceHelper {
+public class UserServiceHelper {
 
     private static final int RANDOM_STRING_LENGTH = 6;
     private static final int RANDOM_STRING_LENGTH_CODE = 16;
     private static final int OTP_LENGTH = 6;
 
-    @PersistenceContext
-    private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
 
     public void processBindingResults(BindingResult bindingResult) {
@@ -41,20 +40,16 @@ public class UserServiceHelper extends ServiceHelper {
         }
     }
 
-    public void processPassword(String password1, String password2) {
-        if (!password1.equals(password2)) {
-            throw new ApiRequestException(PASSWORDS_NOT_MATCH, HttpStatus.BAD_REQUEST);
-        }
-
-        if (password1.length() < 9) {
-            throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
+    public void processInputErrors(BindingResult result, ValidationContext ctx) {
+        if (result.hasErrors()) {
+            throw FieldErrorMapper.mapToAuthException(result, ctx);
         }
     }
 
-    private String generateRandomString(byte[] randomBytes) {
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(randomBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    public void processPassword(String password1, String password2) {
+        if (!password1.equals(password2)) {
+            throw new AuthException(AuthErrorCodes.INVALID_PASSWORD_CONFIRM);
+        }
     }
 
     public String generateRandomCode() {
@@ -96,6 +91,12 @@ public class UserServiceHelper extends ServiceHelper {
         }
     }
 
+    private String generateRandomString(byte[] randomBytes) {
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
     private String hashCodeString(byte[] data) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedHash = digest.digest(data);
@@ -120,12 +121,10 @@ public class UserServiceHelper extends ServiceHelper {
     }
 
     public String decodeAndHashDeviceVerificationCode(String deviceVerificationCode) {
-        return decodeBase64(deviceVerificationCode)
-                .map(this::hash)
-                .orElseThrow(() -> {
-                    log.error("Invalid device verification code: {}", deviceVerificationCode);
-                    return new ApiRequestException("Device verification invalid", HttpStatus.BAD_REQUEST);
-                });
+        return decodeBase64(deviceVerificationCode).map(this::hash).orElseThrow(() -> {
+            log.error("Invalid device verification code: {}", deviceVerificationCode);
+            return new ApiRequestException("Device verification invalid", HttpStatus.BAD_REQUEST);
+        });
     }
 
     private Optional<byte[]> decodeBase64(String input) {
@@ -136,8 +135,8 @@ public class UserServiceHelper extends ServiceHelper {
         }
     }
 
-    @Override
-    protected EntityManager getEntityManager() {
-        return entityManager;
-    }
+    // @Override
+    // protected EntityManager getEntityManager() {
+    // return entityManager;
+    // }
 }

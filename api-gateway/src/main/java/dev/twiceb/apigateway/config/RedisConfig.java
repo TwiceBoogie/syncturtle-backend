@@ -21,39 +21,49 @@ import dev.twiceb.common.dto.response.UserPrincipleResponse;
 @Configuration
 public class RedisConfig {
 
-        @Bean
-        LettuceConnectionFactory redisConnectionFactory() {
-                return new LettuceConnectionFactory();
-        }
+    @Bean
+    LettuceConnectionFactory redisConnectionFactory() {
+        return new LettuceConnectionFactory();
+    }
 
-        @Bean
-        RedisCacheManager cacheManager(LettuceConnectionFactory redisConnectionFactory) {
-                ObjectMapper myMapper = new ObjectMapper();
-                myMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                myMapper.registerModule(new Hibernate6Module()
-                                .enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
-                                .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
-                myMapper.activateDefaultTyping(
-                                myMapper.getPolymorphicTypeValidator(),
-                                ObjectMapper.DefaultTyping.NON_FINAL_AND_ENUMS,
-                                JsonTypeInfo.As.PROPERTY);
-                Jackson2JsonRedisSerializer<UserPrincipleResponse> serializer = new Jackson2JsonRedisSerializer<>(
-                                myMapper,
-                                UserPrincipleResponse.class);
+    @Bean
+    RedisCacheManager cacheManager(LettuceConnectionFactory redisConnectionFactory) {
+        // create and config custom ObjectMapper
+        ObjectMapper myMapper = new ObjectMapper(); // serialize java objects to JSON and vice-versa
 
-                RedisSerializationContext.SerializationPair<UserPrincipleResponse> serializationPair = RedisSerializationContext.SerializationPair
-                                .fromSerializer(serializer);
-                RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                                .serializeValuesWith(serializationPair)
-                                .entryTtl(Duration.ofHours(1)); // Set time-to-live for cache entries to 1 hr
-                return RedisCacheManager.builder(redisConnectionFactory)
-                                .cacheDefaults(cacheConfig)
-                                .build();
-        }
+        // Don't fail if unknown props exist during deserialization
+        myMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        @Bean
-        KeyGenerator customKeyGenerator() {
-                return (target, method, params) -> params[0];
-        }
+        // Register Hibernate module to handle lazy-loaded proxies
+        myMapper.registerModule(
+                new Hibernate6Module().enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
+                        .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
+
+        // enable type info in JSON to support polymorphic deserialization
+        myMapper.activateDefaultTyping(myMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL_AND_ENUMS, // includes most types except final
+                                                                // classes
+                JsonTypeInfo.As.PROPERTY // add @class property in the JSON
+        );
+
+        // create cust om serializer using the configured ObjectMapper
+        Jackson2JsonRedisSerializer<UserPrincipleResponse> serializer =
+                new Jackson2JsonRedisSerializer<>(myMapper, UserPrincipleResponse.class);
+
+        // create a redis serialization pair for chache values
+        RedisSerializationContext.SerializationPair<UserPrincipleResponse> serializationPair =
+                RedisSerializationContext.SerializationPair.fromSerializer(serializer);
+
+        // build cache config with: custom serializer, 1 hour expiration (TTL)
+        RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .serializeValuesWith(serializationPair).entryTtl(Duration.ofHours(1));
+
+        return RedisCacheManager.builder(redisConnectionFactory).cacheDefaults(cacheConfig).build();
+    }
+
+    @Bean
+    KeyGenerator customKeyGenerator() {
+        return (target, method, params) -> params[0];
+    }
 
 }

@@ -14,8 +14,9 @@ import org.springframework.stereotype.Service;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.userservice.model.User;
 import dev.twiceb.userservice.repository.UserRepository;
-
+import dev.twiceb.userservice.service.LoginAttemptService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,6 +25,7 @@ public class MagicCodeProvider {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserRepository userRepository;
+    private final LoginAttemptService loginAttemptService;
 
     // @Value("${auth.magic-link.enabled:true}")
     // private boolean magicLinkEnabled;
@@ -82,10 +84,12 @@ public class MagicCodeProvider {
         return Pair.of(redisKey, token);
     }
 
-    public String validateAndGetEmail(String input, String magicCode, MagicCodeType type) {
+    public String validateAndGetEmail(String input, String magicCode, MagicCodeType type,
+            String ipAdress) {
         String redisKey = type.buildRedisKey(input);
         Map<String, Object> data = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
         if (data == null) {
+            // should I log login attempts?
             return this.throwExpired(input, type);
         }
 
@@ -97,6 +101,12 @@ public class MagicCodeProvider {
             return email;
         } else {
             boolean userExists = userRepository.existsByEmail(email);
+            if (userExists && type == MagicCodeType.MAGIC_LINK) {
+                User user = userRepository.getUserByEmail(email, User.class).orElse(null);
+                if (user != null) {
+                    loginAttemptService.generateLoginAttempt(false, false, user, ipAdress);
+                }
+            }
             switch (type) {
                 case MAGIC_LINK:
                     throw new AuthException(userExists ? AuthErrorCodes.INVALID_MAGIC_CODE_SIGN_IN
@@ -126,11 +136,23 @@ public class MagicCodeProvider {
     }
 
     private String generateToken() {
-        return Stream.generate(() -> this.randomAlpha(4)).limit(3).collect(Collectors.joining("-"));
+        StringBuilder token = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            if (i > 0)
+                token.append("-");
+            token.append(randomAlpha(4));
+        }
+        return token.toString();
     }
 
     private String randomAlpha(int count) {
-        return new Random().ints('a', 'z' + 1).limit(count).mapToObj(i -> String.valueOf((char) i))
-                .collect(Collectors.joining());
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < count; i++) {
+            char c = (char) ('a' + random.nextInt(26));
+            result.append(c);
+        }
+        return result.toString();
     }
 }

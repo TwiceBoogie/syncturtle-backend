@@ -5,6 +5,7 @@ import dev.twiceb.userservice.controller.RegistrationControllerSwagger;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
+import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.mapper.RegistrationMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,15 +33,18 @@ public class RegistrationController implements RegistrationControllerSwagger {
 
     @Override
     @PostMapping(REGISTRATION_CHECK)
-    public ResponseEntity<GenericResponse> registration(RegistrationRequest request, BindingResult bindingResult) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(registrationMapper.registration(request, bindingResult));
+    public ResponseEntity<GenericResponse> registration(RegistrationRequest request,
+            BindingResult bindingResult) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(registrationMapper.registration(request, bindingResult));
     }
 
     @Override
     @PostMapping(REGISTRATION_CODE)
     public ResponseEntity<GenericResponse> sendRegistrationCode(ProcessEmailRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.sendRegistrationCode(request.getEmail(), bindingResult));
+        return ResponseEntity
+                .ok(registrationMapper.sendRegistrationCode(request.getEmail(), bindingResult));
     }
 
     @Override
@@ -50,22 +54,18 @@ public class RegistrationController implements RegistrationControllerSwagger {
         RegistrationEndResponse regResponse = registrationMapper.checkRegistrationCode(code);
 
         // Set the deviceToken cookie
-        ResponseCookie cookie = ResponseCookie.from(AUTH_USER_DEVICE_KEY, regResponse.getDeviceToken())
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(Duration.ofDays(90))
-                .sameSite("Lax")
-                .build();
+        ResponseCookie cookie = ResponseCookie
+                .from(AUTH_USER_DEVICE_KEY, regResponse.getDeviceToken()).httpOnly(true)
+                .secure(false).path("/").maxAge(Duration.ofDays(90)).sameSite("Lax").build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         GenericResponse responseToClient = new GenericResponse();
         responseToClient.setMessage(regResponse.getMessage());
         return ResponseEntity.ok(responseToClient);
     }
 
-    @PostMapping("/magic-sign-up")
-    public ResponseEntity<RegistrationEndResponse> magicRegistration(@RequestBody MagicCodeRequest request,
-            BindingResult bindingResult) {
+    @PostMapping(MAGIC_SIGN_UP)
+    public ResponseEntity<AuthenticationResponse> magicRegistration(
+            @RequestBody MagicCodeRequest request, BindingResult bindingResult) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(registrationMapper.magicRegistration(request, bindingResult));
     }

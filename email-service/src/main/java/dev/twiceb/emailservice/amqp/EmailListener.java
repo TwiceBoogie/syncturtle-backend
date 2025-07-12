@@ -23,7 +23,7 @@ public class EmailListener {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine thymeleafTemplateEngine; //
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String username;
 
     @SneakyThrows

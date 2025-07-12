@@ -4,6 +4,7 @@ import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
+import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
@@ -23,16 +24,20 @@ public class RegistrationMapper {
     }
 
     public GenericResponse sendRegistrationCode(String email, BindingResult bindingResult) {
-        return mapper.convertToResponse(registrationService.sendRegistrationCode(email, bindingResult),
+        return mapper.convertToResponse(
+                registrationService.sendRegistrationCode(email, bindingResult),
                 GenericResponse.class);
     }
 
-    public RegistrationEndResponse magicRegistration(MagicCodeRequest request, BindingResult bindingResult) {
-        return mapper.convertToResponse(registrationService.magicRegistration(request, bindingResult),
-                RegistrationEndResponse.class);
+    public AuthenticationResponse magicRegistration(MagicCodeRequest request,
+            BindingResult bindingResult) {
+        return mapper.convertToResponse(
+                registrationService.magicRegistration(request, bindingResult),
+                AuthenticationResponse.class);
     }
 
     public RegistrationEndResponse checkRegistrationCode(String code) {
-        return mapper.convertToResponse(registrationService.checkRegistrationCode(code), RegistrationEndResponse.class);
+        return mapper.convertToResponse(registrationService.checkRegistrationCode(code),
+                RegistrationEndResponse.class);
     }
 }

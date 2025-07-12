@@ -19,6 +19,7 @@ public class PathConstants {
     public static final String GENERATE_MAGIC_CODE_DEVICE = "/generate-magic-code-device";
     public static final String MAGIC_LOGIN = "/magic-sign-in";
     public static final String LOGIN = "/login";
+    public static final String MAGIC_SIGN_UP = "/magic-sign-up";
     public static final String REGISTRATION_CHECK = "/registration/check";
     public static final String REGISTRATION_CODE = "/registration/code";
     public static final String REGISTRATION_ACTIVATE_CODE = "/registration/activate/{code}";

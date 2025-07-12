@@ -38,6 +38,14 @@ public class AuthenticationController implements AuthenticationControllerSwagger
                 .ok(authenticationMapper.generateMagicCodeAuth(request, bindingResult));
     }
 
+    @PostMapping(GENERATE_MAGIC_CODE_DEVICE)
+    public ResponseEntity<MagicKeyResponse> generateMagicCodeDevice(
+            @RequestBody MagicCodeRequest request, BindingResult bindingResult) {
+        return ResponseEntity
+                .ok(authenticationMapper.generateMagicCodeDevice(request, bindingResult));
+    }
+
+
     @PostMapping(MAGIC_LOGIN)
     public ResponseEntity<AuthenticationResponse> magicLogin(@RequestBody MagicCodeRequest request,
             BindingResult bindingResult) {

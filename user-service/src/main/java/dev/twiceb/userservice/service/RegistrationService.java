@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.records.AuthenticatedUserRecord;
 import dev.twiceb.userservice.dto.request.*;
 import org.springframework.validation.BindingResult;
 
@@ -12,7 +13,8 @@ public interface RegistrationService {
 
     Map<String, Object> checkRegistrationCode(String code);
 
-    Map<String, Object> magicRegistration(MagicCodeRequest request, BindingResult bindingResult);
+    AuthenticatedUserRecord magicRegistration(MagicCodeRequest request,
+            BindingResult bindingResult);
 
     // /**
     // * Sends an email containing the username associated with the specified email
