@@ -22,8 +22,10 @@ export async function emailCheck(payload: EmailSchema) {
       },
     });
 
-    const data: TEmailCheckResponse = await res.json();
+    console.log(res);
 
+    const data: TEmailCheckResponse = await res.json();
+    console.log(data);
     if (!res.ok) {
       if (isApiErrorResponse(data)) {
         redirect(`/accounts/new-device?error_code=${data.errorCode}&email=${result.data.email}`);

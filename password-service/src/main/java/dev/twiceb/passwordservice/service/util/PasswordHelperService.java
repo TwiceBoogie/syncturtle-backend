@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
 import dev.twiceb.common.exception.ApiRequestException;
-import dev.twiceb.common.util.ServiceHelper;
+import dev.twiceb.common.mapper.FieldErrorMapper;
+import dev.twiceb.common.mapper.FieldErrorMapper.ValidationContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -30,10 +31,8 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PasswordHelperService extends ServiceHelper {
+public class PasswordHelperService {
 
-    @PersistenceContext
-    private final EntityManager entityManager;
     // private final EncryptionKeyRepository encryptionKeyRepository;
     private final PasswordReuseStatisticRepository passwordReuseStatisticRepository;
     private final CategoryRepository categoryRepository;
@@ -41,9 +40,10 @@ public class PasswordHelperService extends ServiceHelper {
     private final RotationPolicyRepository rotationPolicyRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public PasswordHelperService processBindingResults(BindingResult bindingResult) {
-        this.processInputErrors(bindingResult);
-        return this;
+    public void processInputErrors(BindingResult result, ValidationContext ctx) {
+        if (result.hasErrors()) {
+            throw FieldErrorMapper.mapToAuthException(result, ctx);
+        }
     }
 
     public void processPassword(String password1, String password2) {
@@ -75,9 +75,8 @@ public class PasswordHelperService extends ServiceHelper {
     }
 
     public RotationPolicy selectRotationPolicy(Long id) {
-        return rotationPolicyRepository.findById(id)
-                .orElseThrow(() -> new ApiRequestException(
-                        "Please choose 1 of the following policies.", HttpStatus.BAD_REQUEST));
+        return rotationPolicyRepository.findById(id).orElseThrow(() -> new ApiRequestException(
+                "Please choose 1 of the following policies.", HttpStatus.BAD_REQUEST));
     }
 
     public List<Category> findAllCategories(Set<Long> tags) {
@@ -92,8 +91,7 @@ public class PasswordHelperService extends ServiceHelper {
     // 'ConcurrentModificationException'
     // removing an element from list disrupts the iterator used by the loop.
     public boolean searchAndUpdatePasswordReuseStatistic(
-            List<PasswordReuseStatistic> passwordReuseStatistics,
-            String decryptedPassword,
+            List<PasswordReuseStatistic> passwordReuseStatistics, String decryptedPassword,
             String password) {
         boolean foundMatchingNewPassword = false;
         Iterator<PasswordReuseStatistic> iterator = passwordReuseStatistics.iterator();
@@ -101,7 +99,8 @@ public class PasswordHelperService extends ServiceHelper {
         while (iterator.hasNext()) {
             PasswordReuseStatistic entity = iterator.next();
             // search for the reuse statistic entity that is tied to the old one.
-            if (decryptedPassword != null && passwordEncoder.matches(decryptedPassword, entity.getPasswordHash())) {
+            if (decryptedPassword != null
+                    && passwordEncoder.matches(decryptedPassword, entity.getPasswordHash())) {
                 if (entity.getReuseCount() >= 1) {
                     entity.setReuseCount(entity.getReuseCount() - 1);
                 } else { // if it exists and the only one, then remove.
@@ -121,7 +120,8 @@ public class PasswordHelperService extends ServiceHelper {
         byte[] decodedSecretKeyBytes = Base64.getDecoder().decode(dek);
         if (!(decodedSecretKeyBytes.length == 16 || decodedSecretKeyBytes.length == 24
                 || decodedSecretKeyBytes.length == 32)) {
-            throw new IllegalArgumentException("Invalid key length: " + decodedSecretKeyBytes.length);
+            throw new IllegalArgumentException(
+                    "Invalid key length: " + decodedSecretKeyBytes.length);
         }
         return new SecretKeySpec(decodedSecretKeyBytes, algorithm);
     }
@@ -235,19 +235,16 @@ public class PasswordHelperService extends ServiceHelper {
 
     public String decryptPassword(DecryptedPasswordProjection userPassword) {
         try {
-            byte[] decodedBytes = Base64.getDecoder().decode(userPassword.getEncryptionKey().getDek());
+            byte[] decodedBytes =
+                    Base64.getDecoder().decode(userPassword.getEncryptionKey().getDek());
             SecretKey secretKey = new SecretKeySpec(decodedBytes, "AES");
-            IvParameterSpec vector = envelopeEncryption.regenerateIvFromBytes(userPassword.getVector());
+            IvParameterSpec vector =
+                    envelopeEncryption.regenerateIvFromBytes(userPassword.getVector());
 
             return envelopeEncryption.decrypt(userPassword.getPassword(), secretKey, vector);
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new ApiRequestException(INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @Override
-    protected EntityManager getEntityManager() {
-        return entityManager;
     }
 }

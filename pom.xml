@@ -27,6 +27,7 @@
 		<module>email-service</module>
 		<module>notification-service</module>
 		<module>file-service</module>
+		<module>instance-service</module>
 	</modules>
 	<properties>
 		<java.version>21</java.version>

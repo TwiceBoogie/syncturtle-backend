@@ -1,6 +1,5 @@
 package dev.twiceb.userservice.model;
 
-import dev.twiceb.common.model.AuditableEntity;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -34,8 +33,7 @@ public class ActivationCode extends AuditableEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public ActivationCode() {
-    }
+    public ActivationCode() {}
 
     public ActivationCode(String hashedCode, ActivationCodeType codeType, User user) {
         this.hashedCode = hashedCode;

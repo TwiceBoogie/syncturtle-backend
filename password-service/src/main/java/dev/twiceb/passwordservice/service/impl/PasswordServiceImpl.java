@@ -52,7 +52,7 @@ public class PasswordServiceImpl implements PasswordService {
     @Override
     @Transactional
     public void updateTagsOnPassword(UUID passwordId, Set<Long> tags, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+        // passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         List<Category> categories = passwordHelperService.findAllCategories(tags);
         if (categories.isEmpty()) {
@@ -65,7 +65,7 @@ public class PasswordServiceImpl implements PasswordService {
     @Override
     @Transactional
     public void favoritePassword(UUID passwordId, boolean isFavorite, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+        // passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         keychain.setFavorite(isFavorite);
         keychainRepository.save(keychain);
@@ -73,8 +73,9 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public Map<String, String> updateUsername(UUID passwordId, String username, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+    public Map<String, String> updateUsername(UUID passwordId, String username,
+            BindingResult bindingResult) {
+        // passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         keychain.setUsername(username);
         UUID deviceKeyId = getUserDeviceId();
@@ -84,8 +85,9 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public Map<String, String> createNewPassword(CreatePasswordRequest request, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+    public Map<String, String> createNewPassword(CreatePasswordRequest request,
+            BindingResult bindingResult) {
+        // passwordHelperService.processBindingResults(bindingResult);
         UUID authUserId = AuthUtil.getAuthenticatedUserId();
         EncryptionKey key = selectAndValidateEncryptionKey(request.getEncryptionId(), authUserId);
         checkDomainAvailability(authUserId, request.getDomain());
@@ -103,8 +105,9 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public Map<String, String> updatePasswordNotes(UUID passwordId, String notes, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+    public Map<String, String> updatePasswordNotes(UUID passwordId, String notes,
+            BindingResult bindingResult) {
+        // passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         keychain.setNotes(notes);
         keychainRepository.save(keychain);
@@ -121,7 +124,8 @@ public class PasswordServiceImpl implements PasswordService {
     @Transactional(readOnly = true)
     public KeychainProjection getPassword(UUID keychainId) {
         return keychainRepository.findKeychainById(keychainId, AuthUtil.getAuthenticatedUserId())
-                .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(
+                        () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
@@ -138,8 +142,9 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public Map<String, String> updatePasswordOnly(UUID passwordId, String password, BindingResult bindingResult) {
-        passwordHelperService.processBindingResults(bindingResult);
+    public Map<String, String> updatePasswordOnly(UUID passwordId, String password,
+            BindingResult bindingResult) {
+        // passwordHelperService.processBindingResults(bindingResult);
         Keychain keychain = getValidatedKeychain(passwordId);
         User authUser = userService.getAuthUser();
         String decryptedPassword = decryptOldPassword(keychain);
@@ -159,8 +164,8 @@ public class PasswordServiceImpl implements PasswordService {
         UUID authUserId = AuthUtil.getAuthenticatedUserId();
         return keychainRepository.getPasswordById(authUserId, passwordId)
                 .map(passwordHelperService::decryptPassword)
-                .map(password -> Map.of("message", password))
-                .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
+                .map(password -> Map.of("message", password)).orElseThrow(
+                        () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
@@ -198,7 +203,7 @@ public class PasswordServiceImpl implements PasswordService {
     @Transactional(readOnly = true)
     public Page<KeychainProjection> searchPasswordsByQuery(SearchQueryRequest request,
             BindingResult bindingResult, Pageable pageable) {
-        passwordHelperService.processBindingResults(bindingResult);
+        // passwordHelperService.processBindingResults(bindingResult);
         UUID authUserId = AuthUtil.getAuthenticatedUserId();
         return keychainRepository.searchByQuery(request.getSearchQuery(), authUserId, pageable);
     }
@@ -206,10 +211,8 @@ public class PasswordServiceImpl implements PasswordService {
     @Override
     @Transactional
     public Page<EncryptionKeyPrincipleProjection> getEncryptionKeys(Pageable pageable) {
-        return encryptionKeyRepository.getEncryptionKeyByUserId(
-                AuthUtil.getAuthenticatedUserId(),
-                pageable,
-                EncryptionKeyPrincipleProjection.class);
+        return encryptionKeyRepository.getEncryptionKeyByUserId(AuthUtil.getAuthenticatedUserId(),
+                pageable, EncryptionKeyPrincipleProjection.class);
     }
 
     @SuppressWarnings("unused")
@@ -241,8 +244,8 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private EncryptionKey selectAndValidateEncryptionKey(UUID id, UUID authUserId) {
-        EncryptionKey key = encryptionKeyRepository.findById(id)
-                .orElseThrow(() -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
+        EncryptionKey key = encryptionKeyRepository.findById(id).orElseThrow(
+                () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
         validateOwnershipOfEncryptionKey(key, authUserId);
         return key;
     }
@@ -255,8 +258,10 @@ public class PasswordServiceImpl implements PasswordService {
 
     private String decryptOldPassword(Keychain keychain) {
         EncryptionKey key = keychain.getEncryptionKey();
-        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
-        return passwordHelperService.decryptPassword(keychain.getPassword(), secretKey, keychain.getVector());
+        SecretKey secretKey =
+                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        return passwordHelperService.decryptPassword(keychain.getPassword(), secretKey,
+                keychain.getVector());
     }
 
     private Keychain getValidatedKeychain(UUID passwordId) {
@@ -266,21 +271,23 @@ public class PasswordServiceImpl implements PasswordService {
         return keychain;
     }
 
-    private void validateAndUpdatePasswordReuseStatistic(User user, String passwordFromDb, String password) {
+    private void validateAndUpdatePasswordReuseStatistic(User user, String passwordFromDb,
+            String password) {
         if (password.equals(passwordFromDb)) {
             throw new ApiRequestException(SAME_SAVED_PASSWORD, HttpStatus.CONFLICT);
         }
         List<PasswordReuseStatistic> passwordReuseStatistics = user.getPasswordReuseStatistics();
-        if (!passwordHelperService.searchAndUpdatePasswordReuseStatistic(
-                passwordReuseStatistics, passwordFromDb, password)) {
-            PasswordReuseStatistic passwordReuseStatistic = new PasswordReuseStatistic(
-                    user, passwordHelperService.encodePassword(password));
+        if (!passwordHelperService.searchAndUpdatePasswordReuseStatistic(passwordReuseStatistics,
+                passwordFromDb, password)) {
+            PasswordReuseStatistic passwordReuseStatistic = new PasswordReuseStatistic(user,
+                    passwordHelperService.encodePassword(password));
             passwordReuseStatistics.add(passwordReuseStatistic);
         }
         user.setPasswordReuseStatistics(passwordReuseStatistics); // do I need this here?
     }
 
-    private void addAndSaveNewChangeLog(Keychain keychain, String reason, String type, UUID deviceKeyId) {
+    private void addAndSaveNewChangeLog(Keychain keychain, String reason, String type,
+            UUID deviceKeyId) {
         PasswordChangeLog passwordChangeLog = new PasswordChangeLog();
         passwordChangeLog.setKeychain(keychain);
         passwordChangeLog.setChangeReason(reason);
@@ -292,7 +299,8 @@ public class PasswordServiceImpl implements PasswordService {
 
     private void encryptNewPassword(Keychain keychain, String password) {
         EncryptionKey key = keychain.getEncryptionKey();
-        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        SecretKey secretKey =
+                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         IvParameterSpec newVector = passwordHelperService.generateNewIv();
         keychain.setPassword(passwordHelperService.encryptPassword(password, secretKey, newVector));
         key.setDek(Base64.getEncoder().encodeToString(secretKey.getEncoded()));
@@ -301,9 +309,11 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private Keychain buildSecureKeychain(EncryptionKey key, CreatePasswordRequest request) {
-        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        SecretKey secretKey =
+                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         IvParameterSpec vector = passwordHelperService.generateNewIv();
-        byte[] encryptedPassword = passwordHelperService.encryptPassword(request.getPassword(), secretKey, vector);
+        byte[] encryptedPassword =
+                passwordHelperService.encryptPassword(request.getPassword(), secretKey, vector);
         // String encryptedPasswordBase64 =
         // Base64.getEncoder().encodeToString(encryptedPassword);
         // String vectorBase64 = Base64.getEncoder().encodeToString(vector.getIV());
@@ -321,7 +331,8 @@ public class PasswordServiceImpl implements PasswordService {
         if (!request.getNotes().isEmpty()) {
             keychain.setNotes(request.getNotes());
         }
-        keychain.getCategories().addAll(passwordHelperService.findAllCategories(request.getCategory()));
+        keychain.getCategories()
+                .addAll(passwordHelperService.findAllCategories(request.getCategory()));
         keychain.setComplexityMetric(generatePasswordComplexityMetric(request.getPassword()));
         keychain.getComplexityMetric().setKeychain(keychain);
         keychain.setRotationPolicy(selectRotationPolicy(request.getPasswordExpiryPolicy()));
@@ -341,9 +352,10 @@ public class PasswordServiceImpl implements PasswordService {
         User userAccount = userService.getAuthUser();
 
         return switch (grabInstance) {
-            case "Expired" -> keychainRepository.getPasswordsExpiringSoon(userAccount.getId(), pageable,
+            case "Expired" -> keychainRepository.getPasswordsExpiringSoon(userAccount.getId(),
+                    pageable, clazz);
+            case "Recent" -> keychainRepository.getRecentPasswords(userAccount.getId(), pageable,
                     clazz);
-            case "Recent" -> keychainRepository.getRecentPasswords(userAccount.getId(), pageable, clazz);
             default -> keychainRepository.findAllByAccountId(userAccount.getId(), pageable, clazz);
         };
     }

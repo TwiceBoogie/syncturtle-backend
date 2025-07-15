@@ -2,7 +2,6 @@ package dev.twiceb.userservice.model;
 
 import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.enums.UserStatus;
-import dev.twiceb.common.model.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,9 +14,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "email", "username" })
-})
+@Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = {"email", "username"})})
 public class User extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -77,29 +74,34 @@ public class User extends AuditableEntity {
     @Column(name = "notify_password_change")
     private boolean notifyPasswordChange = true;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
+            orphanRemoval = true)
     private List<PasswordResetOtp> passwordResetOtps = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
+            orphanRemoval = true)
     private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
 
     @OneToOne
     @JoinColumn(name = "login_attempt_policy")
     private LoginAttemptPolicy loginAttemptPolicy;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER,
+            orphanRemoval = true)
     private List<UserDevice> userDevices = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
+            orphanRemoval = true)
     private List<LockedUser> lockoutHistory = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
+            orphanRemoval = true)
     private List<UserProfile> userProfiles = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
+            orphanRemoval = true)
     private UserProfileLimt userProfileLimt;
 
-    public User() {
-    }
+    public User() {}
 
 }
