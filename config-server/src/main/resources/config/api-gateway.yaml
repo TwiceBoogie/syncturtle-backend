@@ -5,12 +5,11 @@ spring:
     name: api-gateway
   cloud:
     vault:
-      scheme: http
-      host: localhost
-      port: 8200
       uri: http://localhost:8200
-      authentication: TOKEN
-      token: ${VAULT_TOKEN:hvs.4N6YpNW0pl4ONeKbK99rHq0V}
+      authentication: APPROLE
+      app-role:
+        role-id: ${VAULT_API_GATEWAY_ROLE_ID:}
+        secret-id: ${VAULT_API_GATEWAY_SECRET_ID:}
       fail-fast: true
       config.lifecycle.enabled: true
     gateway:

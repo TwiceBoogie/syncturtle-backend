@@ -1,0 +1,33 @@
+spring:
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/instance
+    driver-class-name: org.postgresql.Driver
+    username: {LIQUIBASE_USER}
+    password: {LIQUIBASE_PW}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    generate-ddl: false
+  
+  main:
+    web-application-type: none
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 0
+
+logging:
+  level:
+    liquibase: DEBUG

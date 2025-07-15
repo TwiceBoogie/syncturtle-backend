@@ -5,12 +5,11 @@ spring:
     name: user-service
   cloud:
     vault:
-      scheme: http
-      host: localhost
-      port: 8200
       uri: http://localhost:8200
-      authentication: TOKEN
-      token: ${VAULT_TOKEN:hvs.4N6YpNW0pl4ONeKbK99rHq0V}
+      authentication: APPROLE
+      app-role:
+        role-id: ${VAULT_USER_SERVICE_ROLE_ID:}
+        secret-id: ${VAULT_USER_SERVICE_SECRET_ID:}
 #      ssl:
 #        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
 #        trust-store-password: changeit
@@ -45,9 +44,9 @@ spring:
         temp:
           "[use_jdbc_metadata_defaults]": false
   liquibase:
-    enabled: false
-    user: sebastian
-    password: Twice_Mina1
+    enabled: true
+    user: ${LIQUIBASE_USER:}
+    password: ${LIQUIBASE_PW:}
     change-log: classpath:db/changelog/db.changelog-master.xml
   rabbitmq:
     addresses: ${RABBITMQ_HOST:localhost}:5672
