@@ -5,7 +5,6 @@ import java.time.Duration;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,10 +33,11 @@ public class RedisConfig {
         // Don't fail if unknown props exist during deserialization
         myMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+        // *** api-gateway should never know about hibernate internals
         // Register Hibernate module to handle lazy-loaded proxies
-        myMapper.registerModule(
-                new Hibernate6Module().enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
-                        .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
+        // myMapper.registerModule(
+        // new Hibernate6Module().enable(Hibernate6Module.Feature.FORCE_LAZY_LOADING)
+        // .enable(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS));
 
         // enable type info in JSON to support polymorphic deserialization
         myMapper.activateDefaultTyping(myMapper.getPolymorphicTypeValidator(),
