@@ -38,6 +38,9 @@ export async function sendMagicCode(formData: FormData) {
   console.log(data);
   if (!res.ok) {
     if (isApiErrorResponse(data)) {
+      if (data.errorCode === 5061) {
+        redirect(`/accounts/new-device?error_code=${data.errorCode}&email=${encodeURIComponent(result.email)}`);
+      }
       redirect(`/sign-up?error_code=${data.errorCode}`);
     } else if (res.status === 403) {
       redirect(`/sign-in?error_code=5061`);

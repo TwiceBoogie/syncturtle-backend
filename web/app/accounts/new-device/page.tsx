@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import useTimer from "@/hooks/use-timer";
 import { CircleCheck } from "lucide-react";
+import { cn } from "@/helpers/common.helper";
 
 type TUniqueCodeFormValues = {
   email: string;
@@ -36,7 +37,6 @@ export default function NewDeviceDetectedPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // timer
   const { timer: resendTimerCode, setTimer: setResendCodeTimer } = useTimer(0);
-  console.log(resendTimerCode);
 
   const handleFormChange = (key: keyof TUniqueCodeFormValues, value: string) =>
     setUniqueCodeFormData((prev) => ({ ...prev, [key]: value }));
@@ -44,10 +44,18 @@ export default function NewDeviceDetectedPage() {
   const isRequestNewCodeButtonDisabled = isRequestingNewCode || resendTimerCode > 0;
   const isButtonDisabled = isRequestingNewCode || !uniqueCodeFormData.code || isSubmitting;
 
-  const generateNewCode = (email: string) => {
-    console.log("hit");
+  const generateNewCode = async (email: string) => {
     setIsRequestingNewCode(true);
     setResendCodeTimer(defaultResetTimerValue);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      console.log("Simulated request to send new magic code to:", email);
+    } catch (error) {
+      console.error("Fake call failed: ", error);
+    } finally {
+      setIsRequestingNewCode(false);
+      setResendCodeTimer(defaultResetTimerValue);
+    }
   };
 
   return (
@@ -82,7 +90,15 @@ export default function NewDeviceDetectedPage() {
             <Form className="space-y-4">
               <Input type="hidden" name="email" defaultValue={uniqueCodeFormData.email} />
               <div className="w-full">
-                <Input type="text" label="Magic Code" labelPlacement="outside" name="magicCode" isRequired />
+                <Input
+                  type="text"
+                  label="Magic Code"
+                  labelPlacement="outside"
+                  name="magicCode"
+                  placeholder="xxxx-xxxx-xxxx"
+                  onValueChange={(e) => handleFormChange("code", e)}
+                  isRequired
+                />
                 <div className="flex w-full justify-between px-1 text-xs pt-1">
                   <p className="flex items-center gap-1 font-medium text-green-700">
                     <CircleCheck height={12} width={12} />
@@ -91,16 +107,26 @@ export default function NewDeviceDetectedPage() {
                   <button
                     type="button"
                     onClick={() => generateNewCode(uniqueCodeFormData.email)}
-                    className={`${
-                      isRequestingNewCode ? "text-primary-400" : "font-medium text-primary-300 hover:text-primary-200"
-                    }`}
+                    className={cn(
+                      "text-primary-400",
+                      isRequestNewCodeButtonDisabled
+                        ? "text-primary-200 cursor-not-allowed"
+                        : "font-medium hover:text-primary-200 cursor-pointer"
+                    )}
                     disabled={isRequestNewCodeButtonDisabled}
                   >
                     {resendTimerCode > 0 ? `resend in...${resendTimerCode}` : "Resend"}
                   </button>
                 </div>
               </div>
-              <Button type="submit" color="primary" className="w-full" radius="sm" isDisabled={isButtonDisabled}>
+              <Button
+                type="submit"
+                color="primary"
+                className="w-full"
+                radius="sm"
+                isDisabled={isButtonDisabled}
+                isLoading={isSubmitting}
+              >
                 {isSubmitting ? "Submitting..." : "Submit"}
               </Button>
             </Form>
