@@ -21,6 +21,11 @@ export enum EAuthSteps {
   UNIQUE_CODE = "UNIQUE_CODE",
 }
 
+export enum EAuthMagicMode {
+  MAGIC_CODE = "MAGIC_CODE",
+  MAGIC_DEVICE_CODE = "MAGIC_DEVICE_CODE",
+}
+
 export enum EErrorAlertType {
   BANNER_ALERT = "BANNER_ALERT",
   INLINE_FIRST_NAME = "INLINE_FIRST_NAME",

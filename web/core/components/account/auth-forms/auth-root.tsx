@@ -13,6 +13,7 @@ import {
 import {
   authErrorHandler,
   EAuthenticationErrorCodes,
+  EAuthMagicMode,
   EAuthModes,
   EAuthSteps,
   EErrorAlertType,
@@ -93,7 +94,7 @@ export const AuthRoot: FC<TAuthRoot> = (props) => {
   };
 
   const generateEmailUniqueCode = async (email: string) => {
-    const payload = { email: email };
+    const payload = { email: email, mode: EAuthMagicMode.MAGIC_CODE };
     const res = await generateUniqueCode(payload);
     if (!res.ok) {
       console.log("inside generateEmailUniqueCode: ", res);

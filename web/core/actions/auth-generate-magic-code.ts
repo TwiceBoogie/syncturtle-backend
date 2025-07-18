@@ -1,17 +1,21 @@
 "use server";
 
+import { EAuthMagicMode } from "@/helpers/authentication.helper";
+import { API_BASE_URL } from "@/helpers/common.helper";
 import z, { ZodError } from "zod/v4";
 
-const Email = z.object({
+const MagicCodeResendPayload = z.object({
   email: z.email(),
+  mode: z.enum([EAuthMagicMode.MAGIC_CODE, EAuthMagicMode.MAGIC_DEVICE_CODE]),
 });
 
-type EmailSchema = z.infer<typeof Email>;
+export type TMagicCodePayload = z.infer<typeof MagicCodeResendPayload>;
 
-export async function generateUniqueCode(payload: EmailSchema) {
+export async function generateUniqueCode(payload: TMagicCodePayload) {
   try {
-    const result = await Email.parseAsync(payload);
-    const res = await fetch("http://localhost:8000/ui/v1/auth/generate-magic-code", {
+    const result = await MagicCodeResendPayload.parseAsync(payload);
+    const endpoint = result.mode === EAuthMagicMode.MAGIC_CODE ? "generate-magic-code" : "generate-magic-code-device";
+    const res = await fetch(`${API_BASE_URL}/ui/v1/auth/${endpoint}`, {
       method: "POST",
       body: JSON.stringify(result),
       headers: {

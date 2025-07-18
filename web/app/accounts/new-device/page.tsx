@@ -1,7 +1,6 @@
 "use client";
 
-import { EPageTypes } from "@/helpers/authentication.helper";
-import { AuthenticationWrapper } from "@/lib/wrappers";
+import { EAuthMagicMode, EPageTypes } from "@/helpers/authentication.helper";
 import Link from "next/link";
 import PlaneBackgroundPatternDark from "@/public/auth/background-pattern-dark.svg";
 import WhiteHorizontalLogo from "@/public/syncturtle-logos/white-horizontal-logo-with-text.png";
@@ -45,6 +44,7 @@ export default function NewDeviceDetectedPage() {
   const isButtonDisabled = isRequestingNewCode || !uniqueCodeFormData.code || isSubmitting;
 
   const generateNewCode = async (email: string) => {
+    const payload = { email: email, mode: EAuthMagicMode.MAGIC_DEVICE_CODE };
     setIsRequestingNewCode(true);
     setResendCodeTimer(defaultResetTimerValue);
     try {
@@ -74,7 +74,7 @@ export default function NewDeviceDetectedPage() {
             <p>
               New to Sync<span className="text-green-400">Turtle</span>?
             </p>
-            <Link href={`/`} className="font-semibold hover:underline">
+            <Link href={`/`} className="font-semibold hover:underline hover:text-green-500">
               Create an account
             </Link>
           </div>
