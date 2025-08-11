@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS instance_configurations (
 CREATE TABLE IF NOT EXISTS instance_admins (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL,
+    id UUID PRIMARY KEY,
     instance_id UUID NOT NULL, -- fk at app-level
-    user_id UUID NOT NULL, -- logical fk to user-service.users.id
+    user_id UUID, -- logical fk to user-service.users.id
     role integer NOT NULL,
     is_verified BOOLEAN NOT NULL,
-    PRIMARY KEY (instance_id, user_id),
     CONSTRAINT instance_admins_role_check CHECK ((role >= 0))
 );
 

@@ -20,4 +20,6 @@ public class RegistrationRequest {
 
     @NotBlank(message = PASSWORD_NOT_VALID)
     private String passwordConfirm;
+
+    private String nextPath;
 }

@@ -2,13 +2,16 @@ package dev.twiceb.userservice.controller.rest;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.userservice.controller.RegistrationControllerSwagger;
+import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
+import dev.twiceb.userservice.dto.request.MetadataDto;
 import dev.twiceb.userservice.dto.request.ProcessEmailRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.RegistrationEndResponse;
 import dev.twiceb.userservice.mapper.RegistrationMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpHeaders;
@@ -68,6 +71,19 @@ public class RegistrationController implements RegistrationControllerSwagger {
             @RequestBody MagicCodeRequest request, BindingResult bindingResult) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(registrationMapper.magicRegistration(request, bindingResult));
+    }
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<AuthenticationResponse> signUp(
+            @RequestBody @Valid RegistrationRequest payload, BindingResult bindingResult,
+            @RequestAttribute("requestMetadata") MetadataDto metadata) {
+        AuthenticationResponse res = registrationMapper
+                .signUp(new AuthContextRequest<RegistrationRequest>(metadata, payload));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Auth-Token", res.getToken());
+        headers.add("X-Auth-Device-Token", res.getDeviceToken());
+
+        return ResponseEntity.ok().headers(headers).body(res);
     }
 
 }

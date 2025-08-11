@@ -1,13 +1,13 @@
-import { TApiErrorResponse } from "@/types/authentication";
+import { IAuthErrorResponse } from "@/types/authentication";
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { ZodError } from "zod/v4";
 
-export function isApiErrorResponse(obj: unknown): obj is TApiErrorResponse {
-  return typeof obj === "object" && obj !== null && "errorCode" in obj;
+export function isApiErrorResponse(obj: unknown): obj is IAuthErrorResponse {
+  return typeof obj === "object" && obj !== null && "error_code" in obj;
 }
 
-export function transformZodErrors(error: ZodError): TApiErrorResponse {
+export function transformZodErrors(error: ZodError): IAuthErrorResponse {
   return {
     errorCode: 4001,
     errorMessage: "VALIDATION_FAILED",

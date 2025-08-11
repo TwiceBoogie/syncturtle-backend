@@ -1,12 +1,12 @@
 package dev.twiceb.userservice.model;
 
-import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang.RandomStringUtils;
 import org.hibernate.annotations.ColumnTransformer;
-
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,55 +14,46 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = {"email", "username"})})
+@Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = {"email"}),
+        @UniqueConstraint(columnNames = {"username"})})
 public class User extends AuditableEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "UUID")
-    private UUID id;
 
-    @Column(name = "email", nullable = false)
+    @Id
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID id = UUID.randomUUID();
+
+    @Column(name = "username", length = 128, nullable = false, unique = true)
+    private String username = UUID.randomUUID().toString();
+
+    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
+
+    @Column(name = "first_name", length = 255, nullable = false)
+    private String firstName;
+
+    @Column(name = "last_name", length = 255, nullable = false)
+    private String lastName;
+
+    @Column(name = "password", length = 255)
+    private String password;
+
+    @Column(name = "mobile_phone", length = 255)
+    private String mobilePhone;
+
+    @Column(name = "display_name", nullable = false)
+    private String displayName = "";
+
+    private String token;
+    private Instant tokenUpdatedAt;
 
     @Column(name = "about")
     private String about;
-
-    @Column(name = "first_name")
-    private String firstName = "";
-
-    @Column(name = "last_name")
-    private String lastName = "";
-
-    @Column(name = "username")
-    private String username = "";
-
-    @Column(name = "password")
-    private String password;
-
-    @Column(name = "is_password_autoset")
-    private boolean isPasswordAutoSet = false;
 
     @Column(name = "birthday")
     private String birthday;
 
     @Column(name = "gender")
     private String gender;
-
-    @Column(name = "country")
-    private String country;
-
-    @Column(name = "country_code")
-    private String countryCode;
-
-    @Column(name = "phone")
-    private Long phone;
-
-    @Column(name = "verified", columnDefinition = "boolean default false")
-    private boolean verified = false;
-
-    @Enumerated(EnumType.STRING)
-    @ColumnTransformer(read = "role::text", write = "?::user_role")
-    private UserRole role = UserRole.USER;
 
     @Enumerated(EnumType.STRING)
     @ColumnTransformer(read = "user_status::text", write = "?::user_status")
@@ -73,6 +64,19 @@ public class User extends AuditableEntity {
 
     @Column(name = "notify_password_change")
     private boolean notifyPasswordChange = true;
+
+    private Instant dateJoined;
+    private String createdLocation;
+    private String lastLocation;
+
+    // Flags
+    private boolean isSuperUser = false;
+    private boolean isManaged = false;
+    private boolean isPasswordExpired = false;
+    private boolean isActive = true;
+    private boolean isStaff = false;
+    private boolean isEmailVerified = false;
+    private boolean isPasswordAutoSet = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY,
             orphanRemoval = true)
@@ -103,5 +107,33 @@ public class User extends AuditableEntity {
     private UserProfileLimt userProfileLimt;
 
     public User() {}
+
+    @PrePersist
+    @PreUpdate
+    private void handleUser() {
+        // normalize email
+        if (email != null) {
+            email = email.trim().toLowerCase();
+        }
+
+        if (tokenUpdatedAt != null) {
+            token = UUID.randomUUID().toString().replace("-", "")
+                    + UUID.randomUUID().toString().replace("-", "");
+            tokenUpdatedAt = Instant.now();
+        }
+
+        // auto generate display name
+        if (displayName == null || displayName.isBlank()) {
+            if (email != null && email.contains("@")) {
+                displayName = email.split("@")[0];
+            } else {
+                displayName = RandomStringUtils.randomAlphanumeric(6);
+            }
+        }
+
+        if (isSuperUser) {
+            isStaff = true;
+        }
+    }
 
 }

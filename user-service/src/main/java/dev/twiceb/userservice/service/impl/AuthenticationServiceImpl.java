@@ -232,7 +232,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private AuthenticatedUserRecord processNewDeviceVerification(User user) {
         String deviceKey = userServiceHelper.generateRandomCode();
         user = userRepository.save(deviceService.processNewDevice(user, deviceKey));
-        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
+        // String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
+        String token = jwtProvider.createToken(user.getEmail(), "USER");
         String deviceToken = jwtProvider.createDeviceToken(deviceKey);
         AuthUserRecord userRecord = new AuthUserRecord(user.getId(), user.getEmail(),
                 user.getFirstName(), user.getLastName());
@@ -273,7 +274,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } else {
             handleLoginAttempts(password, user, metadata);
         }
-        String token = jwtProvider.createToken(user.getEmail(), user.getRole().toString());
+        String token = jwtProvider.createToken(user.getEmail(), "USER");
         AuthUserRecord userRecord = new AuthUserRecord(user.getId(), user.getEmail(),
                 user.getFirstName(), user.getLastName());
         return new AuthenticatedUserRecord(userRecord, token, null);
@@ -293,7 +294,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private void handleActiveUser(User user) {
-        if (!user.isVerified()) {
+        if (!user.isEmailVerified()) {
             throw new ApiRequestException(VERIFY_ACCOUNT_WITH_EMAIL, HttpStatus.BAD_REQUEST);
         }
     }

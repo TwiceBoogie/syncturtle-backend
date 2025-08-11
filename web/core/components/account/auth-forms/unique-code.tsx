@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { EAuthModes } from "@/helpers/authentication.helper";
 import useTimer from "@/hooks/use-timer";
 import { Form } from "@heroui/form";
@@ -6,6 +6,8 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { CircleCheck } from "lucide-react";
 import { sendMagicCode } from "@/actions/auth-send-code";
+import { AuthService } from "@/services/auth.service";
+import { API_BASE_URL } from "@/helpers/common.helper";
 
 type TAuthUniqueCodeForm = {
   mode: EAuthModes;
@@ -26,16 +28,28 @@ const defaultValues: TUniqueCodeFormValues = {
   code: "",
 };
 
+const authService = new AuthService();
+
 export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
   const { mode, email, handleEmailClear, generateEmailUniqueCode, isExistingEmail, nextPath } = props;
   // derived values
   const defaultResetTimerValue = 5;
+  // ref
+  const formRef = useRef<HTMLFormElement>(null);
   // states
   const [uniqueCodeFormData, setUniqueCodeFormData] = useState<TUniqueCodeFormValues>({ ...defaultValues, email });
   const [isRequestingNewCode, setIsRequestingNewCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [csrfPromise, setCsrfPromise] = useState<Promise<{ csrfToken: string }> | undefined>(undefined);
   // timer
   const { timer: resendTimerCode, setTimer: setResendCodeTimer } = useTimer(0);
+
+  useEffect(() => {
+    if (csrfPromise === undefined) {
+      const promise = authService.requestCsrfToken();
+      setCsrfPromise(promise);
+    }
+  }, [csrfPromise]);
 
   const handleFormChange = (key: keyof TUniqueCodeFormValues, value: string) =>
     setUniqueCodeFormData((prev) => ({ ...prev, [key]: value }));
@@ -57,10 +71,31 @@ export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
   const isRequestNewCodeButtonDisabled = isRequestingNewCode || resendTimerCode > 0;
   const isButtonDisabled = isRequestingNewCode || !uniqueCodeFormData.code || isSubmitting;
 
+  const handleCsrfToken = async () => {
+    if (!formRef || !formRef.current) return;
+    const token = await csrfPromise;
+    if (!token?.csrfToken) return;
+    const csrfElement = formRef.current.querySelector("input[name=csrftoken]");
+    csrfElement?.setAttribute("value", token.csrfToken);
+  };
+
   return (
-    <Form action={sendMagicCode} className="mt-5 space-y-4">
-      {nextPath && <Input type="hidden" name="next_agent" defaultValue={nextPath} />}
-      <Input type="hidden" name="mode" defaultValue={mode} />
+    <Form
+      action={
+        `${API_BASE_URL}/ui/v1/auth/${mode === EAuthModes.SIGN_IN ? "magic-sign-in" : "magic-sign-up"}/` +
+        (nextPath ? `?next_path=${encodeURIComponent(nextPath)}` : "")
+      }
+      onSubmit={async (event) => {
+        event.preventDefault();
+        await handleCsrfToken();
+        setIsSubmitting(true);
+        if (formRef.current) formRef.current.submit();
+      }}
+      className="mt-5 space-y-4"
+      ref={formRef}
+    >
+      <input type="hidden" name="csrftoken" />
+      {nextPath && <input type="hidden" name="next_path" value={nextPath} />}
       <Input
         label="Email"
         labelPlacement="outside"

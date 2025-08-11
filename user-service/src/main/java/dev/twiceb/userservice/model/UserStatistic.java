@@ -5,8 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnTransformer;
-
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -19,10 +18,7 @@ public class UserStatistic {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @ColumnTransformer(
-            read = "time_period::text",
-            write = "?::time_period"
-    )
+    @ColumnTransformer(read = "time_period::text", write = "?::time_period")
     private TimePeriod intervalType;
 
     @Column(name = "active_user_count", nullable = false)
@@ -34,6 +30,6 @@ public class UserStatistic {
     @Column(name = "registered_users_change", columnDefinition = "DECIMAL(5,2)")
     private double registeredUsersChange;
 
-    @Column(name = "created_date", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdDate = LocalDateTime.now();
+    @Column(name = "created_date", updatable = false)
+    private Instant createdAt;
 }

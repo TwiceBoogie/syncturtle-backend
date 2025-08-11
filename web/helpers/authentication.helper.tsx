@@ -106,7 +106,7 @@ export type TAuthErrorInfo = {
   message: ReactNode;
 };
 
-const errorCodeMessages: {
+export const errorCodeMessages: {
   [key in EAuthenticationErrorCodes]: { title: string; message: (email?: string | undefined) => ReactNode };
 } = {
   // global

@@ -49,9 +49,6 @@ export abstract class APIService {
       fullUrl,
       {
         method: "GET",
-        headers: {
-          credentials: "include",
-        },
       },
       config
     );

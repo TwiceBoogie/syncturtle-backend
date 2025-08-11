@@ -10,7 +10,10 @@ import dev.twiceb.common.records.AuthUserRecord;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
 import dev.twiceb.common.security.JwtProvider;
 import dev.twiceb.userservice.amqp.AmqpPublisher;
+import dev.twiceb.userservice.dto.request.AuthContextRequest;
+import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
+import dev.twiceb.userservice.dto.request.MetadataDto;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.enums.ActivationCodeType;
 import dev.twiceb.userservice.model.*;
@@ -46,6 +49,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final LoginAttemptPolicyRepository loginAttemptPolicyRepository;
     private final LoginAttemptService loginAttemptService;
     private final MagicCodeProvider magicCodeProvider;
+    private final EmailAuthProvider emailAuthProvider;
     private final JwtProvider jwtProvider;
     private final AmqpPublisher amqpPublisher;
 
@@ -109,13 +113,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         email = magicCodeProvider.validateAndGetEmail(email, magicCode, type, ipAddress);
         // we won't even use the password for auth
         User user = createUserAndSave(email, UUID.randomUUID().toString(), false);
-        user.setVerified(true);
+        user.setEmailVerified(true);
         user.setPasswordAutoSet(true);
         String randomCode = userServiceHelper.generateRandomCode();
         user = updateUsersDevice(user, randomCode);
         notifyUserCreation(user);
         String deviceToken = jwtProvider.createDeviceToken(randomCode);
-        String jwt = jwtProvider.createToken(email, user.getRole().toString());
+        String jwt = jwtProvider.createToken(email, "USER");
 
         loginAttemptService.generateLoginAttempt(true, true, user, getIpAddress());
 
@@ -167,12 +171,12 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private User checkIsUserVerified(User user) {
         validateUserForRegistration(user);
-        user.setVerified(true);
+        user.setEmailVerified(true);
         return user;
     }
 
     private void validateUserForRegistration(User user) {
-        if (user.isVerified()) {
+        if (user.isEmailVerified()) {
             throw new ApiRequestException(ACCOUNT_ALREADY_VERIFIED, HttpStatus.CONFLICT);
         }
     }
@@ -223,5 +227,12 @@ public class RegistrationServiceImpl implements RegistrationService {
     private HttpServletRequest getRequest() {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
         return ((ServletRequestAttributes) attributes).getRequest();
+    }
+
+    @Override
+    public AuthenticatedUserRecord signUp(AuthContextRequest<RegistrationRequest> request) {
+        RegistrationRequest payload = request.getPayload();
+
+        throw new UnsupportedOperationException("Unimplemented method 'signUp'");
     }
 }

@@ -36,13 +36,15 @@ spring:
       ddl-auto: none
     show-sql: true
     database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # database-platform: org.hibernate.dialect.PostgreSQLDialect # hibernate 6 auto-detects postgres
     open-in-view: false
     generate-ddl: false
     properties:
       hibernate:
-        temp:
-          "[use_jdbc_metadata_defaults]": false
+        jdbc:
+          time_zone: UTC
+        # temp:
+        #   "[use_jdbc_metadata_defaults]": false // hibernate 5 era settings
   liquibase:
     enabled: true
     user: ${LIQUIBASE_USER:}

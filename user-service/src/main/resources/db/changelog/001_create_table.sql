@@ -39,37 +39,71 @@ VALUES ('Default Policy', 5, '5 minutes', '24 hours'),
 -- user_status can be (Suspended, inactive, active, Archived, blocked, expired, pending_deletion, locked)
 -- serial_number UUID DEFAULT gen_random_uuid(),
 CREATE TABLE IF NOT EXISTS users (
-    id UUID DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    id UUID PRIMARY KEY,
+    username VARCHAR(128) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    about VARCHAR(255),
     first_name VARCHAR(36) NOT NULL,
     last_name VARCHAR(36) NOT NULL,
-    username VARCHAR(255) NOT NULL,
     password VARCHAR(255),
     is_password_autoset BOOLEAN NOT NULL,
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    mobile_phone INT8,
+    display_name VARCHAR(255) NOT NULL,
+    token VARCHAR(66),
+    token_updated_at TIMESTAMPTZ,
+    about VARCHAR(255),
     birthday VARCHAR(255),
-    country VARCHAR(255),
-    country_code VARCHAR(255),
-    phone INT8,
     gender VARCHAR(255),
-    verified BOOLEAN DEFAULT FALSE,
-    role user_role DEFAULT 'USER',
     user_status user_status DEFAULT 'ACTIVE',
     notification_count int8 DEFAULT 0,
     login_attempt_policy BIGINT NOT NULL,
     notify_password_change BOOLEAN DEFAULT TRUE,
     created_by VARCHAR(36),
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_by VARCHAR(36),
-    modified_date TIMESTAMP,
-    FOREIGN KEY (login_attempt_policy) REFERENCES login_attempt_policy(id),
-    PRIMARY KEY (id)
+    updated_by VARCHAR(36),
+    FOREIGN KEY (login_attempt_policy) REFERENCES login_attempt_policy(id)
 );
 ALTER TABLE users
 ADD CONSTRAINT unique_email_username UNIQUE (email, username);
 CREATE INDEX idx_username ON users (username);
 CREATE INDEX trgm_index ON users USING gin (username gin_trgm_ops);
 CREATE INDEX trgm_email ON users USING gin (email gin_trgm_ops);
+
+CREATE TABLE IF NOT EXISTS profiles (
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    id UUID PRIMARY KEY,
+    is_onboarded BOOLEAN NOT NULL,
+    onboarding_step JSONB NOT NULL,
+    billing_address_country VARCHAR(255) NOT NULL,
+    billing_address JSONB, -- full address (street, city, zip)
+    has_billing_address BOOLEAN NOT NULL, -- flag for invoice eligibility
+    company_name VARCHAR(255) NOT NULL, -- legal / invoice name
+    user_id UUID NOT NULL,
+    role VARCHAR(300),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- SELECT 
+--     i.*,
+--     p.company_name,
+--     p.billing_address
+-- FROM
+--     public.invoices AS i
+--     JOIN public.workspaces AS w ON i.workspace_id = w.id
+--     JOIN public.users AS u ON w.owner_id = u.id
+--     JOIN public.profiles AS p ON p.user_id = u.id
+-- WHERE
+--     i.id = :invoiceId;
+
+-- Historical consistency
+-- If you need to freeze the billing details at invoice time (so later edits to the profile don’t affect past invoices), you can:
+
+-- Denormalize: copy p.company_name + p.billing_address into new columns on invoices when you generate them.
+
+-- Or, snapshot the profile JSON into an invoice_metadata JSONB column.
+
 CREATE TABLE IF NOT EXISTS user_profiles (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     user_id uuid NOT NULL,
@@ -206,11 +240,12 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 --    Track the number of active users and registered users on a daily basis.
 --    Calculate the percentage increase or decrease in registered users compared to the previous day.
 CREATE TABLE IF NOT EXISTS user_statistics (
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     interval_type time_period NOT NULL,
     active_user_count INT NOT NULL,
     registered_users INT NOT NULL,
     registered_users_change DECIMAL(5, 2),
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 );

@@ -4,31 +4,31 @@ import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @MappedSuperclass
-@Getter
 @EntityListeners(AuditingEntityListener.class)
+@Getter
 public class AuditableEntity {
-    @Column(name = "created_by")
+
     @CreatedBy
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(nullable = false, updatable = false, name = "created_date")
-    @CreatedDate
-    private LocalDateTime createdDate;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
     @Column(name = "modified_by")
     @LastModifiedBy
     private String modifiedBy;
 
-    @Column(name = "modified_date")
-    @LastModifiedDate
-    private LocalDateTime modifiedDate;
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 }

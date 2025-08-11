@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Info } from "lucide-react";
+
 import { Alert } from "@heroui/alert";
 import { TAuthErrorInfo } from "@/helpers/authentication.helper";
 
@@ -13,6 +13,11 @@ export const AuthBanner: FC<TAuthBanner> = (props) => {
 
   if (!bannerData) return <></>;
   return (
-    <Alert color="danger" title={bannerData.message} onClose={() => handleBannerData && handleBannerData(undefined)} />
+    <Alert
+      color="danger"
+      title={bannerData.message}
+      onClose={() => handleBannerData && handleBannerData(undefined)}
+      className="mb-0"
+    />
   );
 };

@@ -13,12 +13,17 @@ export interface IEmailCheckData {
   email: string;
 }
 
+export interface ICsrfTokenData {
+  csrfToken: string;
+}
+
 export interface IEmailCheckResponse {
   status: "MAGIC_CODE" | "CREDENTIAL";
   existing: boolean;
   passwordAutoSet: boolean;
 }
-export type TEmailCheckResponse1 = {
+
+export type TEmailCheckResponse = {
   status: "MAGIC_CODE" | "CREDENTIAL";
   existing: boolean;
   passwordAutoSet: boolean;
@@ -36,11 +41,11 @@ export type TRegistrationResponse = {
   token: string;
 };
 
-export type TApiErrorResponse = {
-  errorCode: number;
-  errorMessage: string;
+export interface IAuthErrorResponse {
+  error_code: number;
+  error_message: string;
   payload?: Record<string, any>;
-};
+}
 
-export type TMagicCodeResponse = TRegistrationResponse | TApiErrorResponse;
-export type TEmailCheckResponse = TEmailCheckResponse1 | TApiErrorResponse;
+export type TMagicCodeResponse = TRegistrationResponse | IAuthErrorResponse;
+export type TEmailCheckResult = TEmailCheckResponse | IAuthErrorResponse;

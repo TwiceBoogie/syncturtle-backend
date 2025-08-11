@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface UserStatisticRepository extends JpaRepository<UserStatistic, Long> {
-    Optional<UserStatistic> findFirstByIntervalTypeOrderByCreatedDateDesc(TimePeriod intervalType);
+    Optional<UserStatistic> findFirstByIntervalTypeOrderByCreatedAtDesc(TimePeriod intervalType);
 }

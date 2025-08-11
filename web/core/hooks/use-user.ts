@@ -1,9 +1,6 @@
 import UserContext from "@/lib/context/user-context";
-import { ApiError } from "@/lib/errors/api-error";
-import { UserService } from "@/services/user.service";
 import { useCallback, useContext, useMemo } from "react";
 
-const userService = new UserService();
 export function useUser() {
   const context = useContext(UserContext);
   if (!context) throw new Error("useUser must be used within a UserProvider");

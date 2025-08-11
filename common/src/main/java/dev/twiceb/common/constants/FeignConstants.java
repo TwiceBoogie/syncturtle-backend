@@ -5,4 +5,5 @@ public class FeignConstants {
     public static final String NOTIFICATION_SERVICE = "notification-service";
     public static final String PASSWORD_SERVICE = "password-service";
     public static final String FILE_SERVICE = "file-service";
+    public static final String INSTANCE_SERVICE = "instance-service";
 }

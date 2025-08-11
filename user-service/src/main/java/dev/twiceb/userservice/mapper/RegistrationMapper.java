@@ -2,6 +2,7 @@ package dev.twiceb.userservice.mapper;
 
 import dev.twiceb.common.dto.response.GenericResponse;
 import dev.twiceb.common.mapper.BasicMapper;
+import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
@@ -39,5 +40,10 @@ public class RegistrationMapper {
     public RegistrationEndResponse checkRegistrationCode(String code) {
         return mapper.convertToResponse(registrationService.checkRegistrationCode(code),
                 RegistrationEndResponse.class);
+    }
+
+    public AuthenticationResponse signUp(AuthContextRequest<RegistrationRequest> request) {
+        return mapper.convertToResponse(registrationService.signUp(request),
+                AuthenticationResponse.class);
     }
 }

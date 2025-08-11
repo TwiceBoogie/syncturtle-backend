@@ -1,10 +1,18 @@
 import { API_AUTH_ENDPOINT } from "@/constants";
 import { APIService } from "./api.service";
-import { IEmailCheckData, IEmailCheckResponse } from "@/types/authentication";
+import { ICsrfTokenData, IEmailCheckData, IEmailCheckResponse } from "@/types/authentication";
 
 export class AuthService extends APIService {
   constructor() {
     super(API_AUTH_ENDPOINT);
+  }
+
+  async requestCsrfToken(): Promise<ICsrfTokenData> {
+    return this.get<ICsrfTokenData>("/auth/get-csrf-token")
+      .then((response) => response)
+      .catch((error) => {
+        throw error;
+      });
   }
 
   async emailCheck(data: IEmailCheckData): Promise<IEmailCheckResponse> {

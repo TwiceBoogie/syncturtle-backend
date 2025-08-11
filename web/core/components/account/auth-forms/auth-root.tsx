@@ -64,24 +64,28 @@ export const AuthRoot: FC<TAuthRoot> = (props) => {
     setErrorInfo(undefined);
     const res = await emailCheck(data);
     if (res.ok) {
-      const dataFromServer = res.data;
+      const response = res.data;
 
-      if (dataFromServer.existing) {
+      if (response.existing) {
         if (currentAuthMode === EAuthModes.SIGN_UP) setAuthMode(EAuthModes.SIGN_IN);
-        if (dataFromServer.status === "MAGIC_CODE") {
+        if (response.status === "MAGIC_CODE") {
           setAuthStep(EAuthSteps.UNIQUE_CODE);
           await generateEmailUniqueCode(data.email);
-        } else if (dataFromServer.status === "CREDENTIAL") {
+        } else if (response.status === "CREDENTIAL") {
           setAuthStep(EAuthSteps.PASSWORD);
         }
       } else {
         if (currentAuthMode === EAuthModes.SIGN_IN) setAuthMode(EAuthModes.SIGN_UP);
-        if (dataFromServer.status === "MAGIC_CODE") {
+        if (response.status === "MAGIC_CODE") {
           setAuthStep(EAuthSteps.UNIQUE_CODE);
           await generateEmailUniqueCode(data.email);
         }
       }
-      setIsExistingEmail(dataFromServer.existing);
+      setIsExistingEmail(response.existing);
+    } else {
+      const error = res.error;
+      const errorHandler = authErrorHandler(error.error_code.toString() as any, data.email);
+      if (errorHandler) setErrorInfo(errorHandler);
     }
   };
 

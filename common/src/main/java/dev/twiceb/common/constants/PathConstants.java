@@ -1,7 +1,7 @@
 package dev.twiceb.common.constants;
 
 public class PathConstants {
-    public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
+    public static final String AUTH_USER_ID_HEADER = "X-Auth-User-Id";
     public static final String AUTH_USER_AGENT_HEADER = "X-User-Agent";
     public static final String AUTH_USER_IP_HEADER = "X-User-Ip";
     public static final String AUTH_USER_DEVICE_KEY = "X-User-DeviceKey";
