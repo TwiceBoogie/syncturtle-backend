@@ -35,6 +35,7 @@ public class PathConstants {
 
     public static final String USER = "/user";
     public static final String API_V1_AUTH = API_V1 + AUTH;
+    public static final String API_V1_AUTH_USER_EMAIL = API_V1_AUTH + "/user/{email}";
     public static final String GET_USER_EMAIL = "/{userId}";
     public static final String API_V1_USER = API_V1 + USER;
     public static final String USER_EMAIL = "/user/{email}";
@@ -128,5 +129,13 @@ public class PathConstants {
     public static final String UPLOAD_MULTIPLE = "/upload/multiple/{bucket}";
     public static final String GET_FILE_IMAGE = "/{bucket}";
     public static final String DELETE_FILE_IMAGE = "/delete/{bucket}";
+
+    // INSTANCE_SERVICE
+    public static final String API_V1_INSTANCE = API_V1 + "/instance";
+    public static final String UI_V1_INSTANCE = UI_V1 + "/instance";
+    public static final String CONFIGURATION = "/configurations";
+
+    // INVALIDATE
+    public static final String UI_V1_INSTANCE_CONFIGURATION = UI_V1_INSTANCE + CONFIGURATION;
 
 }

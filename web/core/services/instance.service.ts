@@ -1,6 +1,6 @@
-import { TInstanceInfo } from "@/lib/context/instance-context";
 import { APIService } from "./api.service";
 import { API_BASE_URL } from "@/helpers/common.helper";
+import { IInstanceInfo } from "@/types/instance";
 
 export class InstanceService extends APIService {
   constructor() {
@@ -8,6 +8,6 @@ export class InstanceService extends APIService {
   }
 
   getInstanceInfo() {
-    return this.get<TInstanceInfo>("/", {}, { supressRedirect: true });
+    return this.get<IInstanceInfo>("/", {}, { supressRedirect: true });
   }
 }

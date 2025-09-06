@@ -6,12 +6,11 @@ import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.exception.InputFieldException;
 import dev.twiceb.common.mapper.FieldErrorMapper;
 import dev.twiceb.common.mapper.FieldErrorMapper.ValidationContext;
-
+import dev.twiceb.userservice.service.security.BcryptHasher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
@@ -32,7 +31,7 @@ public class UserServiceHelper {
     private static final int RANDOM_STRING_LENGTH_CODE = 16;
     private static final int OTP_LENGTH = 6;
 
-    private final PasswordEncoder passwordEncoder;
+    private final BcryptHasher hasher;
 
     public void processBindingResults(BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -113,11 +112,11 @@ public class UserServiceHelper {
     }
 
     public String encodePassword(String password) {
-        return passwordEncoder.encode(password);
+        return hasher.hash(password);
     }
 
     public boolean isPasswordsEqual(String password, String passwordFromDb) {
-        return passwordEncoder.matches(password, passwordFromDb);
+        return hasher.matches(password, passwordFromDb);
     }
 
     public String decodeAndHashDeviceVerificationCode(String deviceVerificationCode) {

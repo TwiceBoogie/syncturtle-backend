@@ -1,9 +1,8 @@
 package dev.twiceb.userservice.service;
 
 import java.time.LocalDateTime;
-
-import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.model.UserDevice;
+import dev.twiceb.userservice.domain.model.User;
+import dev.twiceb.userservice.domain.model.UserDevice;
 
 public interface EmailService {
     void sendMagicCodeEmail(String email, String magicCode);

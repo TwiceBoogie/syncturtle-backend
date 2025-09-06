@@ -1,11 +1,12 @@
 package dev.twiceb.userservice.dto.request;
 
+import dev.twiceb.common.dto.request.RequestMetadata;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
 public class AuthContextRequest<T> {
-    private MetadataDto metadata;
+    private RequestMetadata metadata;
     private T payload;
 }

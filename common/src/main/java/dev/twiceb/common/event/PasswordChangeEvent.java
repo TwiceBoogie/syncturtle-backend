@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -13,6 +12,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PasswordChangeEvent {
-    private LocalDateTime expirationTime; // The expiration timer of the old password in vault
+    private Instant expirationTime; // The expiration timer of the old password in vault
     private UUID deviceKeyId;
 }

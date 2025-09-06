@@ -44,7 +44,9 @@ public class CacheResponseAspect {
         }
 
         String path = !cacheAnno.path().isEmpty() ? cacheAnno.path() : request.getRequestURI();
-        String cacheKey = cacheAnno.cacheName() + ":" + userId + ":" + path;
+        String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+        String cacheKey =
+                cacheAnno.cacheName() + ":" + userId + ":" + normalizedPath.replace("/", "_");
         ValueOperations<String, Object> ops = template.opsForValue();
 
         Object cached = ops.get(cacheKey);

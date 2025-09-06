@@ -99,10 +99,9 @@ function instanceReducer(state: TInstanceState, action: TAction): TInstanceState
 
 const InstanceContext = createContext<TInstanceContext | null>(null);
 
+const instanceService = new InstanceService();
 export const InstanceProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(instanceReducer, initialState);
-
-  const instanceService = new InstanceService();
 
   const fetchInstanceInfo = useCallback(async () => {
     dispatch({ type: "FETCH_START" });

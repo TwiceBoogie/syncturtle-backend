@@ -3,12 +3,10 @@ package dev.twiceb.apigateway.filter;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.springframework.cloud.gateway.filter.factory.rewrite.RewriteFunction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,7 +47,7 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
             return Mono.justOrEmpty(body);
         }
         if (contentType != null
-                && MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(contentType)) {
+                && !MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(contentType)) {
             return Mono.justOrEmpty(body);
         }
 
@@ -59,8 +57,7 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
         String cookieToken = getCookie(exchange, CSRF_COOKIE);
 
         boolean ok = submittedToken != null && cookieToken != null
-                && HmacCsrfToken.isValid(submittedToken)
-                && submittedToken.split("\\.")[0].equals(cookieToken);
+                && submittedToken.equals(cookieToken) && HmacCsrfToken.isValid(submittedToken);
 
         if (!ok) {
             // buuild redirect for failure (303 + location) and short-cricut the chian

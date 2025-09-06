@@ -21,6 +21,9 @@ public class ErrorMessage {
             "Sorry, we couldn't find an user associated "
                     + "with the provided email address. Please double-check the email you entered and try again."
                     + " If you don't have an user, you can sign up for a new one.";
+    public static final String REASON_INCORRECT_CREDENTIALS = "Email/Password are incorrect.";
+    public static final String REASON_TOO_MANY_ATTEMPTS =
+            "Account locked due to multiple unsuccessful login attempts, Please wait.";
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
     public static final String EMAIL_ALREADY_TAKEN = "Email has already been taken.";
     public static final String BLANK_NAME = "What’s your name?";

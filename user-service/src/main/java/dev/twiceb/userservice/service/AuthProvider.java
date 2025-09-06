@@ -1,16 +1,27 @@
 package dev.twiceb.userservice.service;
 
 import dev.twiceb.common.exception.AuthException;
-import dev.twiceb.userservice.Credentials;
-import dev.twiceb.userservice.model.User;
+import dev.twiceb.userservice.domain.model.User;
 
+/**
+ * Authentication provider contract (e.g, "email", "magic-code", etc)
+ */
 public interface AuthProvider {
 
-    String provider(); // "email", "magicCode"
+    /**
+     * Returns the name of the authentication provider.
+     * 
+     * @return the provider name (e.g, {@code "email"}, {@code "magicCode"})
+     */
+    public String provider(); // "email", "magicCode"
 
     /**
-     * @param creds holds email/password or email/magicCode
-     * @param isSignUp true for sign-up flow, false for sign-in
+     * Authenticates a user using the provided credentials.
+     * 
+     * @param key the key can either be ${{@code email}} or {@code magic_} + ${{@code email}}
+     * @param code either the password or magic token
+     * @param isSignup {@code true} for sign-up flow, {@code false} for sign-in
+     * @return a saved/updated {@link User} entity from db
      */
-    User authenticate(Credentials creds, boolean isSignUp) throws AuthException;
+    public User authenticate(String key, String code, boolean isSignup) throws AuthException;
 }

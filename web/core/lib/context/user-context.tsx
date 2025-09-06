@@ -66,10 +66,10 @@ function userReducer(state: UserState, action: Action): UserState {
 
 const UserContext = createContext<UserContextType | null>(null);
 
+const userService = new UserService();
+// provider owns stat and behavior
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(userReducer, initialState);
-
-  const userService = new UserService();
 
   const fetchCurrentUser = useCallback(async () => {
     dispatch({ type: "FETCH_START" });

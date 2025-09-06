@@ -1,10 +1,12 @@
 "use client"; // if missing says 'useSWR' not found in target module
 
-import { InstanceNotReady, MaintenanceView } from "@/components/instance";
-import { useInstance } from "@/hooks/use-instance";
-import { Spinner } from "@heroui/react";
 import { FC, ReactNode } from "react";
+import { Spinner } from "@heroui/react";
 import useSWR from "swr";
+// components
+import { InstanceNotReady, MaintenanceView } from "@/components/instance";
+// hooks
+import { useInstance } from "@/hooks/store";
 
 type TInstanceWrapper = {
   children: ReactNode;

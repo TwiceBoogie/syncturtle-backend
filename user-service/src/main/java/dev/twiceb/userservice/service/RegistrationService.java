@@ -1,20 +1,14 @@
 package dev.twiceb.userservice.service;
 
-import dev.twiceb.common.records.AuthenticatedUserRecord;
+import dev.twiceb.common.dto.request.AdminSignupRequest;
+import dev.twiceb.common.dto.response.AdminTokenGrant;
+import dev.twiceb.common.dto.response.TokenGrant;
 import dev.twiceb.userservice.dto.request.*;
-import org.springframework.validation.BindingResult;
-
-import java.util.Map;
 
 public interface RegistrationService {
-    Map<String, String> registration(RegistrationRequest request, BindingResult bindingResult);
+    TokenGrant magicSignup(AuthContextRequest<MagicCodeRequest> request);
 
-    Map<String, String> sendRegistrationCode(String email, BindingResult bindingResult);
+    TokenGrant signup(AuthContextRequest<RegistrationRequest> request);
 
-    Map<String, Object> checkRegistrationCode(String code);
-
-    AuthenticatedUserRecord magicRegistration(MagicCodeRequest request,
-            BindingResult bindingResult);
-
-    AuthenticatedUserRecord signUp(AuthContextRequest<RegistrationRequest> request);
+    AdminTokenGrant adminSignup(AuthContextRequest<AdminSignupRequest> request);
 }

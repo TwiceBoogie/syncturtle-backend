@@ -1,9 +1,9 @@
 package dev.twiceb.userservice.service.cron;
 
 import dev.twiceb.common.enums.TimePeriod;
-import dev.twiceb.userservice.model.UserStatistic;
-import dev.twiceb.userservice.repository.UserRepository;
-import dev.twiceb.userservice.repository.UserStatisticRepository;
+import dev.twiceb.userservice.domain.model.UserStatistic;
+import dev.twiceb.userservice.domain.repository.UserRepository;
+import dev.twiceb.userservice.domain.repository.UserStatisticRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

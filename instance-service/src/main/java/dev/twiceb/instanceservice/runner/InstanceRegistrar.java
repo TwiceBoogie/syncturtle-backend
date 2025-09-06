@@ -2,19 +2,15 @@ package dev.twiceb.instanceservice.runner;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Instant;
 import java.util.HexFormat;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import dev.twiceb.instanceservice.AppProperties;
-import dev.twiceb.instanceservice.enums.InstanceEdition;
-import dev.twiceb.instanceservice.model.Instance;
-import dev.twiceb.instanceservice.repository.InstanceRepository;
+import dev.twiceb.instanceservice.domain.model.Instance;
+import dev.twiceb.instanceservice.domain.repository.InstanceRepository;
+import dev.twiceb.instanceservice.service.util.AppProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import oshi.SystemInfo;
@@ -36,32 +32,25 @@ public class InstanceRegistrar implements CommandLineRunner {
     @Transactional
     public void run(String... args) throws Exception {
         // check if instance is registerd
-        Optional<Instance> existing = instanceRepository.findFirstByOrderByCreatedAtAsc();
-        if (existing.isPresent()) {
-            Instance instance = existing.get();
-            instance.setLastCheckedAt(Instant.now());
-            instance.setCurrentVersion(buildProperties.getVersion());
-            instance.setLatestVersion(buildProperties.getVersion());
-            instance.setTest(appProperties.isTest());
-            instance.setEdition(InstanceEdition.COMMUNITY);
-            instanceRepository.save(instance);
+        Instance instance =
+                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
 
-            log.info("Instance already registered - updating");
-        } else {
+        // if instance is null then register this instance
+        if (instance == null) {
             String machineSignature = generateMachineSignature();
-            Instance instance = new Instance();
-            instance.setSlug(makeSlug("SyncTurtle"));
-            instance.setName("SyncTurtle");
-            instance.setEdition(InstanceEdition.COMMUNITY);
-            instance.setCurrentVersion(buildProperties.getVersion());
-            instance.setLatestVersion(buildProperties.getVersion());
-            instance.setLastCheckedAt(Instant.now());
-            instance.setDomain(appProperties.getWebUrl()); // will change later
-            instance.setMachineSignature(machineSignature);
+            instance = Instance.register(buildProperties.getVersion(), buildProperties.getVersion(),
+                    machineSignature, appProperties.isTest());
 
             instanceRepository.save(instance);
 
             log.info("New instance registered with signature: " + machineSignature);
+        } else {
+            // update instance details
+            instance.updateInstanceDetails(buildProperties.getVersion(),
+                    buildProperties.getVersion(), appProperties.isTest());
+            instanceRepository.save(instance);
+
+            log.info("Instance already registered - updating");
         }
 
     }
@@ -97,12 +86,4 @@ public class InstanceRegistrar implements CommandLineRunner {
         }).map(NetworkIF::getMacaddr).filter(mac -> mac != null && !mac.isBlank()).findFirst()
                 .orElse("00:00:00:00:00:00");
     }
-
-    private String makeSlug(String name) {
-        String base =
-                name.trim().toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
-        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        return base + "-" + suffix;
-    }
-
 }

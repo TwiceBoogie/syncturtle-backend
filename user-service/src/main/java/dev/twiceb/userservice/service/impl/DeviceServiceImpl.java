@@ -1,14 +1,12 @@
 package dev.twiceb.userservice.service.impl;
 
-import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.records.DeviceRequestMetadata;
-import dev.twiceb.userservice.enums.ActivationCodeType;
-import dev.twiceb.userservice.model.ActivationCode;
-import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.model.UserDevice;
-import dev.twiceb.userservice.repository.ActivationCodeRepository;
-import dev.twiceb.userservice.repository.UserDeviceRepository;
+import dev.twiceb.userservice.domain.enums.ActivationCodeType;
+import dev.twiceb.userservice.domain.model.ActivationCode;
+import dev.twiceb.userservice.domain.model.User;
+import dev.twiceb.userservice.domain.repository.ActivationCodeRepository;
+import dev.twiceb.userservice.domain.repository.UserDeviceRepository;
 import dev.twiceb.userservice.service.DeviceService;
 import dev.twiceb.userservice.service.EmailService;
 import dev.twiceb.userservice.service.util.UserServiceHelper;
@@ -53,16 +51,6 @@ public class DeviceServiceImpl implements DeviceService {
                 helper.decodeAndHashDeviceVerificationCode(deviceVerificationToken);
         return retrieveActivationCode(hashedDeviceToken).filter(this::validateActivationCode)
                 .map(this::invalidateActivationCode);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @Transactional
-    public User processNewDevice(User user, String deviceKey) {
-        String hashedDeviceKey = helper.decodeAndHashDeviceVerificationCode(deviceKey);
-        return updateUserDevices(user, hashedDeviceKey);
     }
 
     /**
@@ -147,13 +135,18 @@ public class DeviceServiceImpl implements DeviceService {
                 ActivationCode.class);
     }
 
-    private User updateUserDevices(User user, String deviceKey) {
-        user.setUserStatus(UserStatus.ACTIVE);
-        UserDevice newDevice = new UserDevice();
-        newDevice.setUser(user);
-        newDevice.setDeviceName("trusted_device" + UUID.randomUUID());
-        newDevice.setDeviceKey(deviceKey);
-        user.getUserDevices().add(newDevice);
-        return user;
+    @Override
+    public User processNewDevice(User user, String deviceKey) {
+        throw new UnsupportedOperationException("Unimplemented method 'processNewDevice'");
     }
+
+    // private User updateUserDevices(User user, String deviceKey) {
+    // user.setUserStatus(UserStatus.ACTIVE);
+    // UserDevice newDevice = new UserDevice();
+    // newDevice.setUser(user);
+    // newDevice.setDeviceName("trusted_device" + UUID.randomUUID());
+    // newDevice.setDeviceKey(deviceKey);
+    // user.getUserDevices().add(newDevice);
+    // return user;
+    // }
 }

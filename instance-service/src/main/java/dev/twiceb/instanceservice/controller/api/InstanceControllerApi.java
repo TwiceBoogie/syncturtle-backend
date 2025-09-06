@@ -14,7 +14,6 @@ public class InstanceControllerApi {
 
     private final InstanceService instanceService;
 
-
     @GetMapping("/config")
     public ConfigResponse getConfig() {
         return new ConfigResponse(instanceService.getConfigurationValues(),
@@ -25,5 +24,4 @@ public class InstanceControllerApi {
     public long getVersion() {
         return instanceService.getInstanceVersion();
     }
-
 }

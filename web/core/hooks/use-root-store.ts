@@ -1,19 +1,19 @@
-import { useCallback } from "react";
-import { usePasswordStore } from "./use-password";
-import { useUserStore } from "./use-user";
-import { logout } from "@/actions/auth-logout";
+// import { useCallback } from "react";
+// import { usePasswordStore } from "./use-password";
+// import { useUserStore } from "./use-user";
+// import { logout } from "@/actions/auth-logout";
 
-export function useRootStore() {
-  const userStore = useUserStore();
-  const passwordStore = usePasswordStore();
+// export function useRootStore() {
+//   const userStore = useUserStore();
+//   const passwordStore = usePasswordStore();
 
-  const resetAll = useCallback(async (): Promise<void> => {
-    await logout();
-    userStore.signOut();
-    passwordStore.dispatch({ type: "RESET" });
-  }, [userStore, passwordStore]);
+//   const resetAll = useCallback(async (): Promise<void> => {
+//     await logout();
+//     userStore.signOut();
+//     passwordStore.dispatch({ type: "RESET" });
+//   }, [userStore, passwordStore]);
 
-  return {
-    resetAll,
-  };
-}
+//   return {
+//     resetAll,
+//   };
+// }

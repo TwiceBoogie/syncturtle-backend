@@ -1,7 +1,7 @@
 package dev.twiceb.instanceservice.dto.response;
 
 import java.util.UUID;
-import dev.twiceb.instanceservice.enums.InstanceEdition;
+import dev.twiceb.instanceservice.domain.enums.InstanceEdition;
 import lombok.Data;
 
 @Data

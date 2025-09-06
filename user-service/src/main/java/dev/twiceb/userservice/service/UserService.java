@@ -1,8 +1,7 @@
 package dev.twiceb.userservice.service;
 
-import dev.twiceb.userservice.model.User;
-import dev.twiceb.userservice.repository.projection.UserDeviceProjection;
-
+import dev.twiceb.userservice.domain.model.User;
+import dev.twiceb.userservice.domain.projection.UserDeviceProjection;
 import java.util.Map;
 import java.util.UUID;
 

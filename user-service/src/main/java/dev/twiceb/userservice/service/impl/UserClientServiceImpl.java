@@ -1,7 +1,7 @@
 package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.common.dto.response.UserDeviceResponse;
-import dev.twiceb.userservice.repository.UserRepository;
+import dev.twiceb.userservice.domain.repository.UserRepository;
 import dev.twiceb.userservice.service.UserClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

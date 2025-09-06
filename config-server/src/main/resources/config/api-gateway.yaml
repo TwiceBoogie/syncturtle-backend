@@ -1,8 +1,10 @@
 server:
   port: 8000
+
 spring:
   application:
     name: api-gateway
+
   cloud:
     vault:
       uri: http://localhost:8200
@@ -12,11 +14,17 @@ spring:
         secret-id: ${VAULT_API_GATEWAY_SECRET_ID:}
       fail-fast: true
       config.lifecycle.enabled: true
+
     gateway:
+    # CORS for browser apps hitting the gateawu
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000, http://192.168.1.157:3000"
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://192.168.1.157:3000"
+              - "http://127.0.0.1.nip.io:3000"
+              - "http://*.127.0.0.1.nip.io:3000"
             exposedHeaders: "page-total-count"
             allowedHeaders: "*"
             allowedMethods:
@@ -28,11 +36,29 @@ spring:
               - OPTIONS
               - HEAD
             allowCredentials: true
+
+      # service discovery; lb://<service-id>      
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+
       routes:
+        # refresh token endpoint, rate-limited by IP
+        - id: auth-refresh
+          uri: lb://user-service
+          predicates:
+            - Path=/auth/refresh
+          filters:
+            - name: RequestRateLimiter
+              args:
+                # how many tokens replenish per second
+                redis-rate-limiter.replenishRate: 5
+                # max bucket size; allows short bursts up to this capcacity
+                redis-rate-limiter.burstCapacity: 10
+                # ipKeyResoler for this route
+                key-resolver: "#{@ipKeyResolver}"
+
         - id: login
           uri: lb://user-service
           predicates:
@@ -42,22 +68,31 @@ spring:
               args:
                 redis-rate-limiter.replenishRate: 5
                 redis-rate-limiter.burstCapacity: 10
-                key-resolver: "#{@userKeyResolver}"
+                # key-resolver: "#{@userKeyResolver}" // no key-seolver, it will fallback to @Primary
             - name: DeviceAuth
+
         - id: public
           uri: lb://user-service
           predicates:
             - Path=/ui/v1/auth/**
+
         - id: public-password
           uri: lb://password-service
           predicates:
             - Path=/ui/v1/password/policies
+
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/ui/v1/user/**, /api/v1/user/**, /api/v1/auth/**
           filters:
             - name: Auth
+
+        - id: instance-service
+          uri: lb://instance-service
+          predicates:
+            - Path=/ui/v1/instance/**
+
         - id: password-service
           uri: lb://password-service
           predicates:
@@ -65,6 +100,7 @@ spring:
           filters:
             - name: Auth
             - name: DeviceAuth
+
         - id: task-service
           uri: lb://task-service
           predicates:

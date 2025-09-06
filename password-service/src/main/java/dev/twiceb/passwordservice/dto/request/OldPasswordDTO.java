@@ -17,6 +17,6 @@ public class OldPasswordDTO {
     private String password;
     private String vector;
     private String ttl;
-    private String timestamp = LocalDateTime.now().toString();
+    private String timestamp;
 
 }

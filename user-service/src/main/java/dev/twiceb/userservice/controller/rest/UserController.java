@@ -19,6 +19,8 @@ public class UserController implements UserControllerSwagger {
 
     @Override
     public ResponseEntity<AuthenticationResponse> getUserByToken() {
-        return ResponseEntity.ok(authenticationMapper.getUserByToken());
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUserByToken'");
     }
+
 }

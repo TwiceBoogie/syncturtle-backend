@@ -27,4 +27,9 @@ public class AuthException extends RuntimeException {
         response.setPayload(payload);
         return response;
     }
+
+    public Map<String, String> getMapVersion() {
+        return Map.of("error_code", String.valueOf(errorCode.getCode()), "error_message",
+                errorCode.getMessage());
+    }
 }

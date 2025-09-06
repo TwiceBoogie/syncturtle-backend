@@ -8,7 +8,11 @@ import lombok.Data;
 public class MetadataDto {
     private String userAgent;
     private String ipAddress;
+    private String domain;
+    private String requestId;
+    private String correlationId;
     private String referer;
     private String acceptLanguage;
     private String httpMethod;
+    private String deviceKey;
 }

@@ -1,8 +1,7 @@
 package dev.twiceb.userservice.service;
 
 import dev.twiceb.common.records.DeviceRequestMetadata;
-import dev.twiceb.userservice.model.User;
-
+import dev.twiceb.userservice.domain.model.User;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;

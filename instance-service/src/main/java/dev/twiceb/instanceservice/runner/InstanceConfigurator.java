@@ -11,10 +11,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import dev.twiceb.instanceservice.ConfigKeyRecord;
-import dev.twiceb.instanceservice.model.InstanceConfiguration;
-import dev.twiceb.instanceservice.repository.InstanceConfigurationRepository;
-import dev.twiceb.instanceservice.util.ConfigurationHelper;
+import dev.twiceb.common.enums.InstanceConfigurationKey;
+import dev.twiceb.instanceservice.domain.model.InstanceConfiguration;
+import dev.twiceb.instanceservice.domain.repository.InstanceConfigurationRepository;
+import dev.twiceb.instanceservice.service.util.ConfigurationHelper;
+import dev.twiceb.instanceservice.shared.ConfigKeyRecord;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,8 +37,8 @@ public class InstanceConfigurator implements CommandLineRunner {
         List<ConfigKeyRecord> configKeys = cHelper.loadEnvConfigKeys();
 
         List<InstanceConfiguration> existingConfigs = iConfigurationRepository.findAll();
-        Set<String> existingKeys = existingConfigs.stream().map(InstanceConfiguration::getKey)
-                .collect(Collectors.toSet());
+        Set<InstanceConfigurationKey> existingKeys = existingConfigs.stream()
+                .map(InstanceConfiguration::getKey).collect(Collectors.toSet());
 
         List<InstanceConfiguration> toInsert =
                 cHelper.loadMissingConfigKeys(configKeys, existingKeys);
@@ -48,8 +49,9 @@ public class InstanceConfigurator implements CommandLineRunner {
 
         if (!existingKeys.containsAll(ConfigurationHelper.INTEGRATION_FLAGS)) {
             // reuse existing configs to avoid refetching
-            Map<String, InstanceConfiguration> configMap = existingConfigs.stream()
-                    .collect(Collectors.toMap(InstanceConfiguration::getKey, Function.identity()));
+            Map<InstanceConfigurationKey, InstanceConfiguration> configMap =
+                    existingConfigs.stream().collect(
+                            Collectors.toMap(InstanceConfiguration::getKey, Function.identity()));
 
             // save to db
             iConfigurationRepository.saveAll(cHelper.loadIntegrationFlags(configMap));

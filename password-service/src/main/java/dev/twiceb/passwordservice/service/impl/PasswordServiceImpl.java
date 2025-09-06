@@ -1,6 +1,6 @@
 package dev.twiceb.passwordservice.service.impl;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 
 import dev.twiceb.common.exception.ApiRequestException;
@@ -154,7 +154,7 @@ public class PasswordServiceImpl implements PasswordService {
         addAndSaveNewChangeLog(keychain, "password update", "password", deviceKeyId);
         OldPasswordDTO oldPasswordDTO = storeOldPassword(keychain);
         passwordChangeProducer.sendPasswordChangeEvent(authUser.getId(),
-                LocalDateTime.parse(oldPasswordDTO.getTimestamp()), deviceKeyId);
+                Instant.parse(oldPasswordDTO.getTimestamp()), deviceKeyId);
         return Map.of("message", "Password updated successfully.");
     }
 
@@ -237,6 +237,7 @@ public class PasswordServiceImpl implements PasswordService {
         oldPasswordDTO.setDekId(String.valueOf(keychain.getEncryptionKey().getId()));
         oldPasswordDTO.setTtl("1h");
         oldPasswordDTO.setVector(Base64.getEncoder().encodeToString(keychain.getVector()));
+        oldPasswordDTO.setTimestamp(Instant.now().toString());
         return oldPasswordRepository.save(oldPasswordDTO);
         // operations.put(completeSecretPath.toString(), oldPasswordDTO);
         // return oldPasswordDTO;

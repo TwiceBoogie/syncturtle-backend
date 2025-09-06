@@ -26,6 +26,10 @@ spring:
     user: ${LIQUIBASE_USER:}
     password: ${LIQUIBASE_PW:}
     change-log: classpath:db/changelog/db.changelog-master.xml
+  kafka:
+    bootstrap-servers: ${BROKER_HOST:localhost:9092}
+    consumer:
+      group-id: user
 
 eureka:
   client:
@@ -50,6 +54,14 @@ app:
   configKeys:
     enableSignup: ${ENABLE_SIGNUP:1}
     enableEmailPassword: ${ENABLE_EMAIL_PASSWORD:1}
+    enableSmtp: ${ENABLE_SMTP:0}
+    emailHost: ${EMAIL_HOST:}
+    emailHostUser: ${EMAIL_HOST_USER:}
+    emailHostPasswrod: ${EMAIL_HOST_PASSWORD:}
+    emailPort: ${EMAIL_PORT:587}
+    emailFrom: ${EMAIL_FROM:}
+    emailUseTls: ${EMAIL_USE_TLS:1}
+    emailUseSsl: ${EMAIL_USE_SSL:}
     enableMagicLinkLogin: ${ENABLE_MAGIC_LINK_LOGIN:0}
     googleClientId: ${GOOGLE_CLIENT_ID:}
     googleClientSecret: ${GOOGLE_CLIENT_SECRET:}
