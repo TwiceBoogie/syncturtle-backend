@@ -8,13 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.userservice.application.internal.params.AuthSubjectParams;
 import dev.twiceb.userservice.domain.model.LoginPolicy;
 import dev.twiceb.userservice.domain.model.Profile;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.LoginPolicyRepository;
 import dev.twiceb.userservice.domain.repository.ProfileRepository;
 import dev.twiceb.userservice.domain.repository.UserRepository;
-import dev.twiceb.userservice.dto.internal.AuthUserData;
 import dev.twiceb.userservice.service.CredentialService;
 import dev.twiceb.userservice.service.FeatureFlagService;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,8 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     @Transactional
-    public User completeLoginOrSignup(String code, AuthUserData authUserData, String provider) {
-        String email = authUserData.getEmail();
+    public User completeLoginOrSignup(String code, AuthSubjectParams subject, String provider) {
+        String email = subject.getEmail();
         String normalizedEmail = normalizeEmail(email);
 
         User user = userRepository.findByEmail(normalizedEmail).orElse(null);
@@ -42,13 +42,13 @@ public class CredentialServiceImpl implements CredentialService {
 
         if (user == null) {
             // new user
-            checkSignUp(normalizedEmail);
+            checkSignup(normalizedEmail);
 
             // initalize user
             user = new User(normalizedEmail, UUID.randomUUID().toString().replace("-", ""));
 
             // check if password is autoset
-            if (authUserData.getUserData().isPasswordAutoset()) {
+            if (subject.getDraft() != null && subject.getDraft().isPasswordAutoset()) {
                 user.setPassword(UUID.randomUUID().toString().replace("-", ""));
                 user.setPasswordAutoSet(true);
                 user.setEmailVerified(true);
@@ -61,8 +61,8 @@ public class CredentialServiceImpl implements CredentialService {
             // set user details
             LoginPolicy policyRef = lPolicyRepository.getReferenceById(1L); // default
             user.setLoginPolicy(policyRef);
-            String firstName = authUserData.getUserData().getFirstName();
-            String lastName = authUserData.getUserData().getLastName();
+            String firstName = subject.getDraft() != null ? subject.getDraft().getFirstName() : "";
+            String lastName = subject.getDraft() != null ? subject.getDraft().getLastName() : "";
             user.setFirstName(firstName);
             user.setLastName(lastName);
             // user must exist for it to be referenced by Profile
@@ -90,7 +90,7 @@ public class CredentialServiceImpl implements CredentialService {
         return email.strip().toLowerCase();
     }
 
-    private boolean checkSignUp(String email) {
+    private boolean checkSignup(String email) {
         String signupEnabled = featureFlagService.get(InstanceConfigurationKey.ENABLE_SIGNUP);
 
         if ("0".equals(signupEnabled)) {

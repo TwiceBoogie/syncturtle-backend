@@ -3,7 +3,7 @@ package dev.twiceb.common.exception;
 import dev.twiceb.common.dto.response.ApiErrorResponse;
 import dev.twiceb.common.dto.response.AuthErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,14 +14,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(InputFieldException.class)
-    public ResponseEntity<ApiErrorResponse> handleInputFieldException(InputFieldException exception) {
+    public ResponseEntity<ApiErrorResponse> handleInputFieldException(
+            InputFieldException exception) {
         InputFieldException inputFieldException;
         ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
 
         if (exception.getBindingResult() != null) {
             inputFieldException = new InputFieldException(exception.getBindingResult());
         } else {
-            inputFieldException = new InputFieldException(exception.getStatus(), exception.getErrorsMap());
+            inputFieldException =
+                    new InputFieldException(exception.getStatus(), exception.getErrorsMap());
         }
 
         apiErrorResponse.setMessage("Input Field Exception");
@@ -31,12 +33,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ApiRequestException.class)
-    public ResponseEntity<ApiErrorResponse> handleApiRequestException(ApiRequestException exception) {
-        ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
-        apiErrorResponse.setMessage(exception.getMessage());
-        apiErrorResponse.setErrors(null);
+    public ResponseEntity<Map<String, Object>> handleApiRequestException(
+            ApiRequestException exception) {
+        // ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
+        // apiErrorResponse.setMessage(exception.getMessage());
+        // apiErrorResponse.setErrors(null);
 
-        return ResponseEntity.status(exception.getStatus()).body(apiErrorResponse);
+        return ResponseEntity.status(exception.getStatus()).body(exception.getPayload());
     }
 
     @ExceptionHandler(NoRollbackApiRequestException.class)
@@ -51,7 +54,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(JwtAuthenticationException.class)
-    public ResponseEntity<ApiErrorResponse> handleJWTRequestException(JwtAuthenticationException exception) {
+    public ResponseEntity<ApiErrorResponse> handleJWTRequestException(
+            JwtAuthenticationException exception) {
         ApiErrorResponse apiErrorResponse = new ApiErrorResponse();
         apiErrorResponse.setMessage(exception.getMessage());
         apiErrorResponse.setErrors(null);

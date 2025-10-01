@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.RandomStringUtils;
+import org.hibernate.annotations.UuidGenerator;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,7 +17,9 @@ import java.util.UUID;
 public class User extends AuditableEntity {
 
     @Id
-    @Column(name = "id", columnDefinition = "uuid", updatable = false, nullable = false)
+    @Column(name = "id", columnDefinition = "uuid")
+    @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
     @Column(name = "username", length = 128, nullable = false)
@@ -84,7 +87,6 @@ public class User extends AuditableEntity {
     protected User() {} // jpa friendly
 
     public User(String email, String username) {
-        this.id = UUID.randomUUID();
         this.email = normalize(email);
         this.username = (username == null || username.isBlank())
                 ? UUID.randomUUID().toString().replace("-", "")
@@ -128,7 +130,6 @@ public class User extends AuditableEntity {
             this.isEmailVerified = true;
         }
 
-        this.id = UUID.randomUUID();
         this.email = normalizedEmail;
         this.displayName = deriveDisplayName(normalizedEmail);
         this.username = UUID.randomUUID().toString().replace("-", "");
@@ -138,6 +139,8 @@ public class User extends AuditableEntity {
         this.isPasswordExpired = false;
         this.isActive = true;
         this.loginPolicy = policyRef;
+        this.firstName = nvl(firstName, "");
+        this.lastName = nvl(lastName, "");
     }
 
     public static User createWithPasswordAdmin(String email, String passwordHash,
@@ -199,6 +202,13 @@ public class User extends AuditableEntity {
 
     private static String normalize(String email) {
         return email == null ? null : email.trim().toLowerCase();
+    }
+
+    private static String nvl(String val, String def) {
+        if (val == null || val.isBlank()) {
+            return def;
+        }
+        return val;
     }
 
 }

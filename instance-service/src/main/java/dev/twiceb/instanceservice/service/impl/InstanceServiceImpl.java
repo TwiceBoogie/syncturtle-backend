@@ -7,13 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
-import dev.twiceb.common.dto.response.AdminTokenGrant;
-import dev.twiceb.common.dto.response.TokenGrant;
+import dev.twiceb.common.dto.response.InstanceStatusResult;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
+import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.instanceservice.client.UserClient;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
@@ -23,12 +26,19 @@ import dev.twiceb.instanceservice.domain.model.InstanceConfiguration;
 import dev.twiceb.instanceservice.domain.repository.InstanceAdminRepository;
 import dev.twiceb.instanceservice.domain.repository.InstanceConfigurationRepository;
 import dev.twiceb.instanceservice.domain.repository.InstanceRepository;
+import dev.twiceb.instanceservice.domain.projection.OnlyId;
+import dev.twiceb.instanceservice.domain.projection.InstanceAdminProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceProjection;
+import dev.twiceb.instanceservice.domain.projection.InstanceStatusProjection;
 import dev.twiceb.instanceservice.service.InstanceService;
+import dev.twiceb.instanceservice.service.util.AppProperties;
 import dev.twiceb.instanceservice.service.util.ConfigurationHelper;
 import dev.twiceb.instanceservice.shared.ConfigKeyLookupRecord;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InstanceServiceImpl implements InstanceService {
@@ -50,29 +60,51 @@ public class InstanceServiceImpl implements InstanceService {
     private final InstanceAdminRepository iAdminRepository;
     private final InstanceConfigurationRepository iConfigurationRepository;
     private final ConfigurationHelper cHelper;
+    private final AppProperties appProperties;
 
     @Override
     @Transactional
-    public InstanceProjection getInstancePrinciple() {
+    public InstanceProjection getInstanceInfo() {
         return instanceRepository.findFirstByOrderByCreatedAtAsc(InstanceProjection.class)
-                .orElse(null);
+                .orElseThrow(
+                        () -> new ApiRequestException("INSTANCE_NOT_SETUP", HttpStatus.BAD_REQUEST,
+                                Map.of("isActivated", false, "isSetupDone", false)));
+
     }
 
     @Override
-    public Map<InstanceConfigurationKey, String> getConfigurationValues() {
+    @Transactional(readOnly = true)
+    public InstanceStatusResult getInstanceStatus() {
+        InstanceStatusProjection instance = instanceRepository
+                .findFirstByOrderByCreatedAtAsc(InstanceStatusProjection.class).orElse(null);
+        if (instance == null || !instance.isSetupDone()) {
+            return new InstanceStatusResult(false, "UNKNOWN", Instant.now());
+        }
+        return new InstanceStatusResult(instance.isSetupDone(), instance.getEdition(),
+                instance.getUpdatedAt());
+    }
+
+    @Override
+    public ConfigResult getConfigurationValues() {
         Map<InstanceConfigurationKey, String> config = cHelper.getConfigurationValues(List.of(
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_SIGNUP, "0"),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GOOGLE_ENABLED, "0"),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GITHUB_ENABLED, "0"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITHUB_APP_NAME, ""),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GITLAB_ENABLED, "0"),
+                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITHUB_APP_NAME, ""),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.EMAIL_HOST, ""),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN, "1"),
                 new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD, "1")));
-        return config;
+        ConfigResult result = new ConfigResult();
+        result.setConfigKeys(config);
+        result.setSmtpConfigured(!config.get(InstanceConfigurationKey.EMAIL_HOST).isBlank());
+        result.setAdminBaseUrl(appProperties.getBaseUrls().getAdmin());
+        result.setAppBaseUrl(appProperties.getBaseUrls().getApp());
+        return result;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long getInstanceVersion() {
         Instance instance =
                 instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
@@ -119,7 +151,7 @@ public class InstanceServiceImpl implements InstanceService {
 
     @Override
     @Transactional
-    public TokenGrant adminSignup(AdminSignupRequest payload) {
+    public IssuedTokens adminSignup(AdminSignupRequest payload) {
         // check if instance exist;
         Instance instance =
                 instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
@@ -128,7 +160,8 @@ public class InstanceServiceImpl implements InstanceService {
         }
 
         // check if instance already has admin;
-        UUID instanceAdminId = iAdminRepository.findFirstIdByOrderByCreatedAtAsc().orElse(null);
+        UUID instanceAdminId =
+                iAdminRepository.findFirstIdByOrderByCreatedAtAsc().map(OnlyId::getId).orElse(null);
         if (instanceAdminId != null) {
             throw new AuthException(AuthErrorCodes.ADMIN_ALREADY_EXIST);
         }
@@ -146,12 +179,23 @@ public class InstanceServiceImpl implements InstanceService {
                             payload.getLastName(), "company_name", payload.getCompanyName()));
         }
 
-        AdminTokenGrant adminTokenGrant = userClient.createUser(payload);
+        AuthAdminResult adminTokenGrant = userClient.createUser(payload);
         instance.finishSetup(payload.getCompanyName());
         instance = instanceRepository.save(instance);
         InstanceAdmin instanceAdmin = InstanceAdmin.create(instance, adminTokenGrant.getUserId());
         iAdminRepository.save(instanceAdmin);
         return adminTokenGrant.getTokenGrant();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InstanceAdminProjection> getInstanceAdmins() {
+        UUID instance = instanceRepository.findFirstByOrderByCreatedAtAsc(OnlyId.class)
+                .map(OnlyId::getId).orElse(null);
+        if (instance == null) {
+            throw new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED);
+        }
+        return iAdminRepository.findAllByInstance_Id(instance);
     }
 
     private Map<InstanceConfigurationKey, String> toUpdatesMap(
@@ -206,5 +250,11 @@ public class InstanceServiceImpl implements InstanceService {
         throw new IllegalStateException("Configuration Key not found");
     }
 
-
+    @Data
+    public static class ConfigResult {
+        private Map<InstanceConfigurationKey, String> configKeys;
+        private boolean isSmtpConfigured;
+        private String adminBaseUrl;
+        private String appBaseUrl;
+    }
 }

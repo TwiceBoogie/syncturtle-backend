@@ -1,10 +1,11 @@
 package dev.twiceb.userservice.dto.response;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@Data
+@Getter
+@AllArgsConstructor
 public class AuthenticationResponse {
-    private AuthUserResponse user;
-    private String token;
-    private String deviceToken;
+    private final String redirectionPath;
+    private final TokenGrantResponse tokenGrant;
 }

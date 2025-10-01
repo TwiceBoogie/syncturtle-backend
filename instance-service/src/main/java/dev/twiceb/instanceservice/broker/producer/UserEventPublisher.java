@@ -1,5 +1,6 @@
 package dev.twiceb.instanceservice.broker.producer;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
@@ -9,6 +10,7 @@ import dev.twiceb.common.dto.context.TraceContext;
 import dev.twiceb.common.event.UserCreateEvent;
 import lombok.RequiredArgsConstructor;
 
+@Profile("!setup")
 @Service
 @RequiredArgsConstructor
 public class UserEventPublisher {

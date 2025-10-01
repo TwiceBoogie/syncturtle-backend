@@ -5,9 +5,9 @@ import org.springframework.stereotype.Component;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.userservice.application.internal.params.AuthSubjectParams;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.UserRepository;
-import dev.twiceb.userservice.dto.internal.AuthUserData;
 import dev.twiceb.userservice.service.AuthProvider;
 import dev.twiceb.userservice.service.CredentialService;
 import dev.twiceb.userservice.service.FeatureFlagService;
@@ -29,7 +29,7 @@ public class EmailAuthProvider implements AuthProvider {
     }
 
     @Override
-    public User authenticate(String key, String code, boolean isSignUp) throws AuthException {
+    public User authenticate(String email, String password, boolean isSignUp) throws AuthException {
         boolean isEmailPWEnabled =
                 "1".equals(featureFlagService.get(InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD));
 
@@ -37,30 +37,30 @@ public class EmailAuthProvider implements AuthProvider {
             throw new AuthException(AuthErrorCodes.EMAIL_PASSWORD_AUTHENTICATION_DISABLED);
         }
 
-        AuthUserData userData = setUserData(key, code, isSignUp);
+        AuthSubjectParams subject = buildParams(email, password, isSignUp);
 
-        return credentialService.completeLoginOrSignup(code, userData, provider());
+        return credentialService.completeLoginOrSignup(password, subject, provider());
     }
 
-    private AuthUserData setUserData(String key, String code, boolean isSignUp) {
+    private AuthSubjectParams buildParams(String email, String password, boolean isSignUp) {
         if (isSignUp) {
-            if (userRepository.existsByEmail(key)) {
-                throw new AuthException(AuthErrorCodes.USER_DOES_NOT_EXIST, Map.of("email", key));
+            if (userRepository.existsByEmail(email)) {
+                throw new AuthException(AuthErrorCodes.USER_DOES_NOT_EXIST, Map.of("email", email));
             }
 
-            return AuthUserData.forEmailPassword(key);
+            return AuthSubjectParams.forEmailPassword(email);
         } else {
-            User user = userRepository.findByEmail(key)
+            User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new AuthException(AuthErrorCodes.USER_ALREADY_EXIST));
 
-            if (!hasher.matches(code, user.getPassword())) {
+            if (!hasher.matches(password, user.getPassword())) {
                 AuthErrorCodes errCode =
                         isSignUp == true ? AuthErrorCodes.AUTHENTICATION_FAILED_SIGN_UP
                                 : AuthErrorCodes.AUTHENTICATION_FAILED_SIGN_IN;
-                throw new AuthException(errCode, Map.of("email", key));
+                throw new AuthException(errCode, Map.of("email", email));
             }
 
-            return AuthUserData.forEmailPassword(key);
+            return AuthSubjectParams.forEmailPassword(email);
         }
     }
 

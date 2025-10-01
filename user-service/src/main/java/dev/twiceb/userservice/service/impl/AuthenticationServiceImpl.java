@@ -1,10 +1,12 @@
 package dev.twiceb.userservice.service.impl;
 
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.context.AuthContext;
 import dev.twiceb.common.dto.context.RequestMetadataContext;
+import dev.twiceb.common.dto.internal.MagicCodeResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.request.RequestMetadata;
-import dev.twiceb.common.dto.response.TokenGrant;
+import dev.twiceb.common.dto.response.InstanceStatusResult;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
@@ -13,7 +15,6 @@ import dev.twiceb.common.enums.UserStatus;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
-import dev.twiceb.common.records.MagicCodeRecord;
 import dev.twiceb.userservice.domain.enums.LoginContext;
 import dev.twiceb.userservice.domain.model.*;
 import dev.twiceb.userservice.domain.projection.UserPrincipalProjection;
@@ -43,6 +44,7 @@ import static dev.twiceb.common.constants.ErrorMessage.*;
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     // services
+    private final InstanceService instanceService;
     private final FeatureFlagService featureFlagService;
     private final LoginService loginService;
     private final TokenService tokenService;
@@ -75,7 +77,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional(readOnly = true)
-    public MagicCodeRecord checkEmail(String email) {
+    public UserPrincipalProjection findUserByToken(UUID userId) {
+        return userRepository.getUserById(userId, UserPrincipalProjection.class).orElse(null);
+    }
+
+    @Override
+    public UUID findUserIdByEmail(String email) {
+        String normalizedEmail = email.trim().toLowerCase();
+        return userRepository.findIdByEmailIgnoreCase(normalizedEmail).orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MagicCodeResult checkEmail(String email) {
+        InstanceStatusResult instance = instanceService.status();
+        if (instance == null || !instance.isSetupDone()) {
+            throw new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED);
+        }
+
         Map<InstanceConfigurationKey, String> configMap = featureFlagService.getConfig();
         boolean isSmtpConfigured = configMap.get(InstanceConfigurationKey.EMAIL_HOST).isBlank();
         boolean isMagicCodeEnabled =
@@ -85,13 +104,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String normalizedEmail = email.trim().toLowerCase();
         // check if email-service is up (ping)
+
         // check if user already exists with provided email
         boolean isUserExist = userRepository.existsByEmail(normalizedEmail);
         if (isUserExist) {
-            return new MagicCodeRecord(true, status);
+            return new MagicCodeResult(true, status);
         }
 
-        return new MagicCodeRecord(false, status);
+        return new MagicCodeResult(false, status);
     }
 
     @Override
@@ -107,7 +127,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public TokenGrant magicLogin(AuthContextRequest<MagicCodeRequest> request) {
+    public IssuedTokens magicLogin(AuthContextRequest<MagicCodeRequest> request) {
         AuthProvider provider = verifyAuthByBeanName.get("emailAuthProvider");
 
         MagicCodeRequest payload = request.getPayload();
@@ -150,7 +170,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
                     .now(Instant.now()).build();
 
-            return tokenService.mint(user, provenance);
+            return tokenService.issueTokens(user, provenance);
         } catch (AuthException e) {
             // log login attempt failure and rethrow
             throw e;
@@ -159,7 +179,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public TokenGrant refreshToken(AuthContextRequest<RefreshTokenRequest> request) {
+    public IssuedTokens refreshToken(AuthContextRequest<RefreshTokenRequest> request) {
         RefreshTokenRequest payload = request.getPayload();
         RequestMetadata metadata = request.getMetadata();
 
@@ -169,12 +189,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 // .deviceId(device.getId())
                 .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
                 .now(Instant.now()).build();
-        return tokenService.rotate(payload.getToken(), provenance);
+        return tokenService.rotateRefreshToken(payload.getToken(), provenance);
     }
 
     @Override
     @Transactional
-    public TokenGrant login(AuthContextRequest<AuthenticationRequest> request) {
+    public IssuedTokens login(AuthContextRequest<AuthenticationRequest> request) {
         // get provider
         AuthProvider provider = verifyAuthByBeanName.get("emailAuthProvider");
 
@@ -214,7 +234,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                             .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
                             .now(Instant.now()).build();
 
-            return tokenService.mint(user, provenance);
+            return tokenService.issueTokens(user, provenance);
         } catch (AuthException e) {
             // log login attempt failure and rethrow
             loginService.failure(user, false, null, null, meta);
@@ -230,7 +250,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public TokenGrant createAdminUser(AdminSignupRequest payload) {
+    public IssuedTokens createAdminUser(AdminSignupRequest payload) {
         // zxcbn here
         // normalize email
         String email = payload.getEmail().trim().toLowerCase();
@@ -248,6 +268,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
                 .now(Instant.now()).build();
 
-        return tokenService.mint(user, provenance);
+        return tokenService.issueTokens(user, provenance);
     }
 }

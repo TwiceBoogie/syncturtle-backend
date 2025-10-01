@@ -1,23 +1,18 @@
 package dev.twiceb.apigateway.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
-// import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-
+import org.springframework.web.reactive.function.client.WebClient;
 import dev.twiceb.apigateway.service.UserService;
-import dev.twiceb.apigateway.service.util.UserServiceHelper;
-import dev.twiceb.common.dto.response.UserDeviceResponse;
-import dev.twiceb.common.dto.response.UserPrincipleResponse;
-import dev.twiceb.common.exception.ApiRequestException;
+import dev.twiceb.common.dto.response.UserPrincipalResponse;
+import dev.twiceb.common.enums.AuthErrorCodes;
+import dev.twiceb.common.exception.AuthException;
 import lombok.RequiredArgsConstructor;
 
 import static dev.twiceb.common.constants.PathConstants.*;
-
-import java.util.Optional;
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -25,45 +20,66 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final RestTemplate restTemplate;
-    private final UserServiceHelper helper;
+    private static final Duration TTL = Duration.ofMinutes(5);
 
-    /**
-     * {@inheritDoc}
-     */
+    private final WebClient.Builder web;
+    private final ReactiveRedisTemplate<String, UserPrincipalResponse> redis;
+    // private final UserServiceHelper helper;
+
     @Override
-    @Cacheable(value = "users", key = "#email", cacheManager = "cacheManager",
-            unless = "#result == null")
-    public UserPrincipleResponse getCachedUserDetails(String email) {
-        log.info(">>> SHOULD NOT REACH HERE IF CACHED <<<");
-        try {
-            return Optional
-                    .ofNullable(
-                            restTemplate.getForObject(
-                                    String.format("http://%s:8001%s", USER_SERVICE,
-                                            API_V1_AUTH + USER_EMAIL),
-                                    UserPrincipleResponse.class, email))
-                    .filter(UserPrincipleResponse::isVerified)
-                    .orElseThrow(() -> new ApiRequestException("Email not activated",
-                            HttpStatus.BAD_REQUEST));
-        } catch (RestClientException e) {
-            throw new ApiRequestException("User service is currently unavailable",
-                    HttpStatus.SERVICE_UNAVAILABLE);
-        }
+    public Mono<UserPrincipalResponse> getCachedUserDetails(UUID userId) {
+        String key = "users:" + userId;
+        return redis.opsForValue().get(key)
+                .switchIfEmpty(web.baseUrl("http://" + USER_SERVICE + ":8001").build().get()
+                        .uri(INTERNAL_V1_USER + "/{id}/principal", userId).retrieve()
+                        .bodyToMono(UserPrincipalResponse.class)
+                        .filter(UserPrincipalResponse::isVerified)
+                        .switchIfEmpty(
+                                Mono.error(new AuthException(AuthErrorCodes.USER_DOES_NOT_EXIST)))
+                        .flatMap(u -> redis.opsForValue().set(key, u, TTL).thenReturn(u)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public UUID getValidUserDeviceId(UserPrincipleResponse user, String deviceKey) {
-        String hashedDeviceKey = helper.decodeAndHashDeviceVerificationCode(deviceKey);
-        for (UserDeviceResponse userDevice : user.getUserDevices()) {
-            if (hashedDeviceKey.equals(userDevice.getDeviceKey())) {
-                return userDevice.getId();
-            }
-        }
-        return null;
+    public Mono<UUID> getValidUserDeviceId(UserPrincipalResponse user, String deviceKey) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getValidUserDeviceId'");
     }
+
+    // /**
+    // * {@inheritDoc}
+    // */
+    // @Override
+    // @Cacheable(value = "users", key = "#userId", cacheManager = "cacheManager",
+    // unless = "#result == null")
+    // public UserPrincipalResponse getCachedUserDetails(UUID userId) {
+    // log.info(">>> SHOULD NOT REACH HERE IF CACHED <<<");
+    // try {
+    // return Optional
+    // .ofNullable(restTemplate.getForObject(
+    // String.format("http://%s:8001%s", USER_SERVICE,
+    // API_V1_AUTH + "/user/token/{id}"),
+    // UserPrincipalResponse.class, userId))
+    // .filter(UserPrincipalResponse::isVerified)
+    // .orElseThrow(() -> new ApiRequestException("Email not activated",
+    // HttpStatus.BAD_REQUEST));
+    // } catch (RestClientException e) {
+    // throw new ApiRequestException("User service is currently unavailable",
+    // HttpStatus.SERVICE_UNAVAILABLE);
+    // }
+    // }
+
+    // /**
+    // * {@inheritDoc}
+    // */
+    // @Override
+    // public UUID getValidUserDeviceId(UserPrincipalResponse user, String deviceKey) {
+    // String hashedDeviceKey = helper.decodeAndHashDeviceVerificationCode(deviceKey);
+    // for (UserDeviceResponse userDevice : user.getUserDevices()) {
+    // if (hashedDeviceKey.equals(userDevice.getDeviceKey())) {
+    // return userDevice.getId();
+    // }
+    // }
+    // return null;
+    // }
 
 }

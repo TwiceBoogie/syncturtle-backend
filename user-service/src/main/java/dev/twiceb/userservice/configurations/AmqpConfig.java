@@ -1,7 +1,7 @@
 package dev.twiceb.userservice.configurations;
 
 import dev.twiceb.common.dto.request.EmailRequest;
-import dev.twiceb.common.dto.response.UserPrincipleResponse;
+import dev.twiceb.common.dto.response.UserPrincipalResponse;
 
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -26,7 +26,7 @@ public class AmqpConfig {
         DefaultClassMapper classMapper = new DefaultClassMapper();
         Map<String, Class<?>> idClassMapping = new HashMap<>();
         idClassMapping.put("emailRequest", EmailRequest.class);
-        idClassMapping.put("userPrincipalResponse", UserPrincipleResponse.class);
+        idClassMapping.put("userPrincipalResponse", UserPrincipalResponse.class);
         classMapper.setTrustedPackages("*");
         classMapper.setIdClassMapping(idClassMapping);
         return classMapper;

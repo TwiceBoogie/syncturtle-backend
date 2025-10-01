@@ -1,10 +1,10 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.MagicCodeResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
-import dev.twiceb.common.dto.response.TokenGrant;
 import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.records.AuthenticatedUserRecord;
-import dev.twiceb.common.records.MagicCodeRecord;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.projection.UserPrincipalProjection;
 import dev.twiceb.userservice.dto.request.AuthContextRequest;
@@ -19,19 +19,23 @@ public interface AuthenticationService {
 
     User getAuthenticatedUser();
 
+    UUID findUserIdByEmail(String email);
+
+    UserPrincipalProjection findUserByToken(UUID userId);
+
     UserPrincipalProjection getUserPrincipleByEmail(String email);
 
-    MagicCodeRecord checkEmail(String email);
+    MagicCodeResult checkEmail(String email);
 
     String generateMagicCode(String email, MagicCodeType type);
 
-    TokenGrant magicLogin(AuthContextRequest<MagicCodeRequest> request);
+    IssuedTokens magicLogin(AuthContextRequest<MagicCodeRequest> request);
 
-    TokenGrant login(AuthContextRequest<AuthenticationRequest> request);
+    IssuedTokens login(AuthContextRequest<AuthenticationRequest> request);
 
     AuthenticatedUserRecord getUserByToken();
 
-    TokenGrant refreshToken(AuthContextRequest<RefreshTokenRequest> request);
+    IssuedTokens refreshToken(AuthContextRequest<RefreshTokenRequest> request);
 
-    TokenGrant createAdminUser(AdminSignupRequest payload);
+    IssuedTokens createAdminUser(AdminSignupRequest payload);
 }

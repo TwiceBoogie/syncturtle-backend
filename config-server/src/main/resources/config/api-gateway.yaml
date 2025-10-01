@@ -20,13 +20,8 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:3000"
-              - "http://192.168.1.157:3000"
-              - "http://127.0.0.1.nip.io:3000"
-              - "http://*.127.0.0.1.nip.io:3000"
-            exposedHeaders: "page-total-count"
-            allowedHeaders: "*"
+            allowedOriginPattern:
+              - "http://localhost"
             allowedMethods:
               - GET
               - POST
@@ -35,9 +30,11 @@ spring:
               - PATCH
               - OPTIONS
               - HEAD
+            allowedHeaders: "*"
+            exposedHeaders: "page-total-count"
             allowCredentials: true
 
-      # service discovery; lb://<service-id>      
+      # service discovery; lb://<service-id>
       discovery:
         locator:
           enabled: true
@@ -45,11 +42,12 @@ spring:
 
       routes:
         # refresh token endpoint, rate-limited by IP
-        - id: auth-refresh
+        - id: auth-public
           uri: lb://user-service
           predicates:
-            - Path=/auth/refresh
+            - Path=/api/v1/auth/**
           filters:
+            - StripPrefix=2
             - name: RequestRateLimiter
               args:
                 # how many tokens replenish per second
@@ -59,52 +57,44 @@ spring:
                 # ipKeyResoler for this route
                 key-resolver: "#{@ipKeyResolver}"
 
-        - id: login
-          uri: lb://user-service
-          predicates:
-            - Path=/ui/v1/auth/login
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
-                # key-resolver: "#{@userKeyResolver}" // no key-seolver, it will fallback to @Primary
-            - name: DeviceAuth
-
-        - id: public
-          uri: lb://user-service
-          predicates:
-            - Path=/ui/v1/auth/**
-
-        - id: public-password
+        - id: password-policies-public
           uri: lb://password-service
           predicates:
-            - Path=/ui/v1/password/policies
+            - Path=/api/v1/password/policies
+          filters:
+            - StripPrefix=2
 
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/ui/v1/user/**, /api/v1/user/**, /api/v1/auth/**
+            - Path=/api/v1/users/**
           filters:
+            - StripPrefix=2
             - name: Auth
 
-        - id: instance-service
+        - id: instance-public
           uri: lb://instance-service
           predicates:
-            - Path=/ui/v1/instance/**
+            - Path=/api/v1/instances/**
+          filters:
+            - StripPrefix=2
 
         - id: password-service
           uri: lb://password-service
           predicates:
-            - Path=/ui/v1/password/**
+            - Path=/api/v1/password/**
           filters:
+            - StripPrefix=2
             - name: Auth
-            - name: DeviceAuth
+            # - name: DeviceAuth
 
         - id: task-service
           uri: lb://task-service
           predicates:
-            - Path=/ui/v1/task/**, /api/v1/task/**
+            - Path=/api/v1/task/**
+          filters:
+            - StripPrefix=2
+
         # Swagger/OpenAPI doc rewrites
         - id: user-service-doc
           uri: lb://user-service
@@ -148,8 +138,8 @@ security:
 
 management:
   endpoint:
-    shutdown:
-      enabled: true
+    # shutdown:
+    #   enabled: true
     gateway:
       enabled: true
   endpoints:
@@ -158,7 +148,7 @@ management:
         include: "*"
   zipkin:
     tracing:
-      endpoint: http://${ZIPKIN_HOST:localhost}:9411
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411/api/v2/spans
   tracing:
     sampling:
       probability: 1.0

@@ -5,7 +5,7 @@ import Image from "next/image";
 import PlaneBackgroundPatternDark from "@/public/auth/background-pattern-dark.svg";
 import WhiteHorizontalLogo from "@/public/syncturtle-logos/white-horizontal-logo-with-text.png";
 import PlaneTakeOffImage from "@/public/plane-takeoff.png";
-import { GOD_MODE_URL } from "@/helpers/common.helper";
+import { ADMIN_BASE_PATH, GOD_MODE_URL } from "@/helpers/common.helper";
 import { Button } from "@heroui/button";
 
 export const InstanceNotReady: FC = () => {
@@ -28,15 +28,15 @@ export const InstanceNotReady: FC = () => {
           <div className="h-full w-full relative container px-5 mx-auto flex justify-center items-center">
             <div className="w-auto max-w-2xl relative space-y-8 py-10">
               <div className="relative flex flex-col justify-center items-center space-y-4">
-                <h1 className="text-3xl font-bold pb-3">Welcome aboard Plane!</h1>
-                <Image src={PlaneTakeOffImage} alt="Plane Logo" />
+                <h1 className="text-3xl font-bold pb-3">Welcome aboard</h1>
+                <Image src={PlaneTakeOffImage} alt="Plane Logo" priority />
                 <p className="font-medium text-base text-onboarding-text-400">
                   Get started by setting up your instance and workspace
                 </p>
               </div>
               <div>
-                <a href={GOD_MODE_URL}>
-                  <Button size="lg" color="primary" className="w-full">
+                <a href={ADMIN_BASE_PATH}>
+                  <Button size="sm" color="primary" className="w-full">
                     Get started
                   </Button>
                 </a>

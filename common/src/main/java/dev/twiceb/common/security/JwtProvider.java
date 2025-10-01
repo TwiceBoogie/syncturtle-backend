@@ -1,5 +1,6 @@
 package dev.twiceb.common.security;
 
+import dev.twiceb.common.application.value.AccessToken;
 import dev.twiceb.common.exception.JwtAuthenticationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -8,8 +9,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
@@ -48,7 +47,7 @@ public class JwtProvider {
     private long validityInMilliseconds;
 
     // private final PrivateKey priv;
-    private final String kid = "gw-2025-08-01";
+    // private final String kid = "gw-2025-08-01";
 
     @PostConstruct
     protected void init() {
@@ -139,10 +138,4 @@ public class JwtProvider {
         return (String) body.getPayload().get("deviceKey");
     }
 
-    @Getter
-    @AllArgsConstructor
-    public static class AccessToken {
-        private final String jwt;
-        private final Instant exp;
-    }
 }

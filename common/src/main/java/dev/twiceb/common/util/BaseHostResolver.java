@@ -3,13 +3,17 @@ package dev.twiceb.common.util;
 import java.net.URI;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
-import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class BaseHostResolver {
+
+    private static final String PROTOCOL = "http://";
+
+    @Value("${app.root-domain:127.0.0.1.nip.io:3000}")
+    private String rootDomain;
+
     @Value("${web.url:http://localhost:8000}")
     private String webUrl;
 
@@ -29,7 +33,8 @@ public class BaseHostResolver {
     private String appBaseUrl;
 
     /** primary entry */
-    public String resolve(boolean isAdmin, boolean isSpace, boolean isApp) {
+    public String resolve(boolean isAdmin, boolean isSpace, boolean isApp,
+            String tenantDomainSlug) {
         if (isAdmin) {
             String path = normalizePath(adminBasePath);
             return (adminBaseUrl != null && !adminBaseUrl.isBlank()) ? adminBaseUrl + path
@@ -37,6 +42,10 @@ public class BaseHostResolver {
         }
 
         if (isApp) {
+            if (!tenantDomainSlug.isBlank()) {
+                String subdomain = normalizePath(tenantDomainSlug);
+                return PROTOCOL + subdomain + "." + rootDomain;
+            }
             return (appBaseUrl != null && !appBaseUrl.isBlank()) ? appBaseUrl : webUrl;
         }
 
@@ -44,15 +53,15 @@ public class BaseHostResolver {
     }
 
     /** for future use; create from scheme/host from request */
-    public String resolve(HttpServletRequest request, boolean isAdmin, boolean isSpace,
-            boolean isApp) {
-        return resolve(isAdmin, isSpace, isApp); // currently ignore request
-    }
+    // public String resolve(HttpServletRequest request, boolean isAdmin, boolean isSpace,
+    // boolean isApp, String tenantDomainSlug) {
+    // return resolve(isAdmin, isSpace, isApp, tenantDomainSlug); // currently ignore request
+    // }
 
-    public String resolve(ServerHttpRequest request, boolean isAdmin, boolean isSpace,
-            boolean isApp) {
-        return resolve(isAdmin, isSpace, isApp); // currently ignore requests
-    }
+    // public String resolve(ServerHttpRequest request, boolean isAdmin, boolean isSpace,
+    // boolean isApp, String tenantDomainSlug) {
+    // return resolve(isAdmin, isSpace, isApp, tenantDomainSlug); // currently ignore requests
+    // }
 
     public URI buildUrl(String base, Map<String, String> params) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(base);

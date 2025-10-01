@@ -12,24 +12,34 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
     database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # database-platform: org.hibernate.dialect.PostgreSQLDialect # hibernate 6 auto detects
     open-in-view: false
     generate-ddl: false
     properties:
       hibernate:
-        temp:
-          "[use_jdbc_metadata_defaults]": false
+        jdbc:
+          "[time_zone]": UTC
+        "[format_sql]": true
+        "[highligh_sql]": true
+        "[use_sql_comments]": true
+        # temp:
+        #   "[use_jdbc_metadata_defaults]": false # hibernate 5 era settigs
   liquibase:
     enabled: true
-    user: ${LIQUIBASE_USER:}
-    password: ${LIQUIBASE_PW:}
+    # so it does not borrow the main datasource which vault populates later
+    # removes any race with vaults datasoruce creds
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/instance
+    user: ${LIQUIBASE_COMMAND_USERNAME:}
+    password: ${LIQUIBASE_COMMAND_PASSWORD:}
     change-log: classpath:db/changelog/db.changelog-master.xml
   kafka:
     bootstrap-servers: ${BROKER_HOST:localhost:9092}
-    consumer:
-      group-id: user
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
 
 eureka:
   client:
@@ -44,39 +54,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: info
-info:
-  app:
-    name: ${spring.application.name}
+        include: "*"
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0
 
-app:
-  skipEnvVar: false
-  configKeys:
-    enableSignup: ${ENABLE_SIGNUP:1}
-    enableEmailPassword: ${ENABLE_EMAIL_PASSWORD:1}
-    enableSmtp: ${ENABLE_SMTP:0}
-    emailHost: ${EMAIL_HOST:}
-    emailHostUser: ${EMAIL_HOST_USER:}
-    emailHostPasswrod: ${EMAIL_HOST_PASSWORD:}
-    emailPort: ${EMAIL_PORT:587}
-    emailFrom: ${EMAIL_FROM:}
-    emailUseTls: ${EMAIL_USE_TLS:1}
-    emailUseSsl: ${EMAIL_USE_SSL:}
-    enableMagicLinkLogin: ${ENABLE_MAGIC_LINK_LOGIN:0}
-    googleClientId: ${GOOGLE_CLIENT_ID:}
-    googleClientSecret: ${GOOGLE_CLIENT_SECRET:}
-    githubClientId: ${GITHUB_CLIENT_ID:}
-    githubClientSecret: ${GITHUB_CLIENT_SECRET:}
-    gitlabHost: ${GITLAB_HOST:}
-    gitlabClientId: ${GITLAB_CLIENT_ID:}
-    gitlabClientSecret: ${GITLAB_CLIENT_SECRET:}
-  use-minio: true
-  file-size-limit: 5242880
-  debug: true
-  hard-delete-after-days: 60
-  web-url: http://${WEB_URL:localhost}
-  secret-key: ${SECRET_KEY:}
-  isTest: false
-  base-urls:
-    admin: ${ADMIN_BASE_URL:}
-    app: ${APP_BASE_URL:}
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE # bound params (hibernate 6)

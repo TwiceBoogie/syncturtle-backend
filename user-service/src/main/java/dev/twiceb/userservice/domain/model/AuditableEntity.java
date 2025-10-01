@@ -22,9 +22,9 @@ public abstract class AuditableEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "modified_by")
     @LastModifiedBy
-    private String modifiedBy;
+    @Column(name = "updated_by")
+    private String updatedBy;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)

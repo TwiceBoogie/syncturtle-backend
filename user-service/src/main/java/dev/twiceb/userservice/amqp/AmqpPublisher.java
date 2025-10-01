@@ -1,7 +1,7 @@
 package dev.twiceb.userservice.amqp;
 
 import dev.twiceb.common.dto.request.EmailRequest;
-import dev.twiceb.common.dto.response.UserPrincipleResponse;
+import dev.twiceb.common.dto.response.UserPrincipalResponse;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.domain.projection.UserPrincipalProjection;
@@ -44,8 +44,8 @@ public class AmqpPublisher {
         }
 
         log.info("==> converting and sending to amqp exchange");
-        UserPrincipleResponse userData =
-                basicMapper.convertToResponse(user, UserPrincipleResponse.class);
+        UserPrincipalResponse userData =
+                basicMapper.convertToResponse(user, UserPrincipalResponse.class);
         amqpTemplate.convertAndSend(this.fanoutExchange, "", userData);
     }
 

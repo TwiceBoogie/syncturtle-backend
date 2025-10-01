@@ -33,4 +33,18 @@ public class HmacCsrfToken {
         }
     }
 
+    public static boolean constantTimeEquals(String a, String b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        if (a.length() != b.length()) {
+            return false;
+        }
+        int r = 0;
+        for (int i = 0; i < a.length(); i++) {
+            r |= a.charAt(i) ^ b.charAt(i);
+        }
+        return r == 0;
+    }
+
 }

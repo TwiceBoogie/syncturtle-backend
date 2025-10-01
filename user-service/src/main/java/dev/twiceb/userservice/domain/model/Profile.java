@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 @Entity
@@ -24,17 +25,21 @@ public class Profile extends AuditableEntity {
     private UUID id;
 
     @Column(name = "is_onboarded", nullable = false)
-    private boolean isOnboarded;
+    private boolean onboarded;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "onboarding_step", columnDefinition = "jsonb", nullable = false)
-    private JsonNode onBoardingStep;
+    private JsonNode onboardingStep;
 
     @Column(name = "billing_address_country", length = 255, nullable = false)
     private String billingAddressCountry;
 
+    @Getter(AccessLevel.NONE)
     @Column(name = "has_billing_address", nullable = false)
     private boolean hasBillingAddress;
+
+    @Column(name = "last_tenant_id", nullable = true)
+    private UUID lastTenantId;
 
     @Column(name = "company_name", length = 255, nullable = false)
     private String companyName;
@@ -55,8 +60,8 @@ public class Profile extends AuditableEntity {
         }
         Profile p = new Profile();
         p.id = UUID.randomUUID();
-        p.isOnboarded = false;
-        p.onBoardingStep = JsonDefaults.profileOnboarding();
+        p.onboarded = false;
+        p.onboardingStep = JsonDefaults.profileOnboarding();
         p.billingAddressCountry = "UNITED STATES";
         p.hasBillingAddress = false;
         p.companyName = companyName != null ? companyName : "";
@@ -64,6 +69,10 @@ public class Profile extends AuditableEntity {
         p.user = user;
 
         return p;
+    }
+
+    public boolean getHasBillingAddress() {
+        return hasBillingAddress;
     }
 
 }

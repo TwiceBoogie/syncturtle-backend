@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
+    Optional<UUID> findIdByEmailIgnoreCase(String email);
+
     @Query("SELECT user FROM User user WHERE user.email = :email")
     <T> Optional<T> getUserByEmail(@Param("email") String email, Class<T> type);
 
@@ -47,6 +49,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT user.email FROM User user WHERE user.id = :userId")
     String getUserEmail(@Param("userId") UUID userId);
+
+    UUID findIdByEmail(String email);
 
     @Modifying
     @Query("UPDATE User user SET user.notificationCount = user.notificationCount + 1 WHERE user.id = :userId")

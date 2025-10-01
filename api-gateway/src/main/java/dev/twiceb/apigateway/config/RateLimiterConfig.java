@@ -1,39 +1,40 @@
 package dev.twiceb.apigateway.config;
 
-import dev.twiceb.common.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
-import java.util.Objects;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class RateLimiterConfig {
 
-    private final JwtProvider jwtProvider;
+    // private final JwtProvider jwtProvider;
 
-    @Bean
-    @Primary // can't have 2 KeyResolver Beans which is why we need this
-    KeyResolver userKeyResolver() {
-        return exchange -> {
-            String deviceToken = jwtProvider.resolveDeviceToken(exchange.getRequest());
-            if (deviceToken != null) {
-                String deviceKey = jwtProvider.parseDeviceToken(deviceToken);
-                return Mono.just(deviceKey);
-            } else {
-                return Mono.just(Objects.requireNonNull(exchange.getRequest().getRemoteAddress())
-                        .getAddress().getHostAddress());
-            }
-        };
-    }
+    // @Bean
+    // @Primary // can't have 2 KeyResolver Beans which is why we need this
+    // KeyResolver userKeyResolver() {
+    // log.info("inside RateLimiterConfig.java");
+    // return exchange -> {
+    // String deviceToken = jwtProvider.resolveDeviceToken(exchange.getRequest());
+    // if (deviceToken != null) {
+    // String deviceKey = jwtProvider.parseDeviceToken(deviceToken);
+    // return Mono.just(deviceKey);
+    // } else {
+    // return Mono.just(Objects.requireNonNull(exchange.getRequest().getRemoteAddress())
+    // .getAddress().getHostAddress());
+    // }
+    // };
+    // }
 
     @Bean
     KeyResolver ipKeyResolver() {
+        log.info("inside RateLimiterConfig.java");
         return exchange -> {
             ServerHttpRequest request = exchange.getRequest();
             String ip = null;

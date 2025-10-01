@@ -19,46 +19,65 @@ import static dev.twiceb.common.constants.PathConstants.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(UI_V1_USER_SETTINGS_UPDATE)
+@RequestMapping(USERS + "/setting")
 public class UserSettingsController implements UserSettingsControllerSwagger {
 
     private final UserSettingsMapper userSettingsMapper;
 
     @Override
-    public ResponseEntity<String> updateUsername(SettingsRequest request, BindingResult bindingResult) {
+    @PutMapping(USERNAME)
+    public ResponseEntity<String> updateUsername(SettingsRequest request,
+            BindingResult bindingResult) {
         return ResponseEntity.ok(userSettingsMapper.updateUsername(request, bindingResult));
     }
 
-    @Override
-    public ResponseEntity<AuthenticationResponse> updateEmail(SettingsRequest request, BindingResult bindingResult) {
-        return ResponseEntity.ok(userSettingsMapper.updateEmail(request, bindingResult));
-    }
+    // @Override
+    // public ResponseEntity<AuthenticationResponse> updateEmail(SettingsRequest request,
+    // BindingResult bindingResult) {
+    // return ResponseEntity.ok(userSettingsMapper.updateEmail(request, bindingResult));
+    // }
 
     @Override
-    public ResponseEntity<UserPhoneResponse> updatePhone(SettingsRequest request, BindingResult bindingResult) {
+    @PutMapping(EMAIL)
+    public ResponseEntity<UserPhoneResponse> updatePhone(SettingsRequest request,
+            BindingResult bindingResult) {
         return ResponseEntity.ok(userSettingsMapper.updatePhone(request, bindingResult));
     }
 
     @Override
-    public ResponseEntity<String> updateGender(SettingsRequest request, BindingResult bindingResult) {
+    @PutMapping(PHONE)
+    public ResponseEntity<String> updateGender(SettingsRequest request,
+            BindingResult bindingResult) {
         return ResponseEntity.ok(userSettingsMapper.updateGender(request, bindingResult));
     }
 
     @Override
+    @PutMapping(GENDER)
     public ResponseEntity<ProfilePicResponse> updateProfilePic(@PathVariable Long userProfileId) {
         return ResponseEntity.ok(userSettingsMapper.updateProfilePic(userProfileId));
     }
 
     @Override
-    public ResponseEntity<List<ProfilePicResponse>> uploadProfilePics(@RequestPart("files") MultipartFile[] files) {
+    @PutMapping(SET_AVATAR)
+    public ResponseEntity<List<ProfilePicResponse>> uploadProfilePics(
+            @RequestPart("files") MultipartFile[] files) {
         HeaderResponse<ProfilePicResponse> res = userSettingsMapper.uploadProfilePics(files);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
     }
 
     @Override
+    @PostMapping(AVATAR)
     public ResponseEntity<List<ProfilePicResponse>> deleteProfilePic(
             @PathVariable Long userProfileId) {
         HeaderResponse<ProfilePicResponse> res = userSettingsMapper.deleteProfilePic(userProfileId);
         return ResponseEntity.ok().headers(res.getHeaders()).body(res.getItems());
+    }
+
+    @Override
+    @DeleteMapping(SET_AVATAR)
+    public ResponseEntity<AuthenticationResponse> updateEmail(SettingsRequest request,
+            BindingResult bindingResult) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'updateEmail'");
     }
 }

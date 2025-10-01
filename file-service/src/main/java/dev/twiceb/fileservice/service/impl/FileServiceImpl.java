@@ -9,7 +9,6 @@ import dev.twiceb.fileservice.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
@@ -68,7 +66,8 @@ public class FileServiceImpl implements FileService {
     @Override
     public byte[] getFileImage(FileImageRequest request, String bucket) {
         String bucketName = getBucketName(bucket);
-        S3Object photoObject = amazonS3Client.getObject(bucketName, extractKeyFromImageUrl(request.getImageUrl()));
+        S3Object photoObject =
+                amazonS3Client.getObject(bucketName, extractKeyFromImageUrl(request.getImageUrl()));
         byte[] photoBytes = null;
         try (S3ObjectInputStream inputStream = photoObject.getObjectContent()) {
             photoBytes = inputStream.readAllBytes();

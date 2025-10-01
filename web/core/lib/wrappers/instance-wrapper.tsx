@@ -38,8 +38,7 @@ export const InstanceWrapper: FC<TInstanceWrapper> = (props) => {
     return <>{children}</>;
   }
   // instance is set but not setup
-  console.log(instance);
-  if (instance?.is_setup_done === false) return <InstanceNotReady />;
+  if (instance?.setupDone === false) return <InstanceNotReady />;
 
   return <>{children}</>;
 };

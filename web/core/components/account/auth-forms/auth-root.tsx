@@ -25,10 +25,13 @@ import { generateUniqueCode } from "@/actions/auth-generate-magic-code";
 // types
 import { IEmailCheckData } from "@/types/authentication";
 import { OAuthOptions } from "../oauth";
+import { UserService } from "@/services/user.service";
 
 type TAuthRoot = {
   authMode: EAuthModes;
 };
+
+const userService = new UserService();
 
 export const AuthRoot: FC<TAuthRoot> = (props) => {
   const router = useRouter();

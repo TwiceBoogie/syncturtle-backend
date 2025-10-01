@@ -4,7 +4,7 @@ import dev.twiceb.common.dto.request.RequestMetadata;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.mapper.FieldErrorMapper;
 import dev.twiceb.common.mapper.FieldErrorMapper.ValidationContext;
-import dev.twiceb.common.util.BaseHostResolver;
+import dev.twiceb.common.spring.ServletHostResolverAdapterAutoConfiguration.ServletHostResolverAdapter;
 import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
@@ -31,10 +31,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(UI_V1_AUTH)
+@RequestMapping(AUTH)
 public class RegistrationController {
 
-    private final BaseHostResolver hostResolver;
+    private final ServletHostResolverAdapter resolverAdapter;
     private final RegistrationMapper registrationMapper;
 
     @PostMapping(MAGIC_SIGN_UP)
@@ -50,10 +50,10 @@ public class RegistrationController {
     @PostMapping(value = "/sign-up", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Void> signUp(@Valid @ModelAttribute RegistrationRequest request,
             BindingResult bindingResult,
-            @RequestAttribute("requestMetadata") RequestMetadata metadata) {
+            @RequestAttribute("requestMetadata") RequestMetadata metadata,
+            HttpServletRequest httpRequest) {
         String nextPath = request.getNextPath();
-        nextPath = hostResolver.validateNextPath(nextPath);
-        String base = hostResolver.resolve(false, false, true);
+        nextPath = resolverAdapter.validateNextPath(nextPath);
 
         if (bindingResult.hasErrors()) {
             AuthException exc =
@@ -62,27 +62,26 @@ public class RegistrationController {
             if (!nextPath.isBlank()) {
                 params.put("next_path", nextPath);
             }
-            URI location = hostResolver.buildUrl(base, params);
+            String base = resolverAdapter.resolve(httpRequest, false, false, true, null);
+            URI location = resolverAdapter.buildUrl(base, params);
 
             return ResponseEntity.status(302).location(location).build();
         }
 
         AuthContextRequest<RegistrationRequest> payload =
                 new AuthContextRequest<>(metadata, request);
-        AuthenticationResponse data = registrationMapper.signUp(payload);
+        AuthenticationResponse res = registrationMapper.signUp(payload);
 
-        ResponseCookie deviceToken = ResponseCookie.from("dk", data.getDeviceToken()).httpOnly(true)
-                .secure(false).domain(".127.0.0.1.nip.io").path(UI_V1_AUTH + "/refresh")
-                .maxAge(Duration.ofDays(90)).sameSite("Lax").build();
-        ResponseCookie refreshToken = ResponseCookie.from("token", data.getToken()).httpOnly(true)
-                .domain(".127.0.0.1.nip.io").secure(false).path(UI_V1_AUTH + "/refresh")
-                .maxAge(Duration.ofDays(30)).sameSite("Lax").build();
+        ResponseCookie refreshToken = ResponseCookie
+                .from("token", res.getTokenGrant().getRt().getToken()).httpOnly(true).secure(false)
+                .path("/").maxAge(Duration.ofDays(30)).sameSite("Strict").build();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.SET_COOKIE, deviceToken.toString());
         headers.add(HttpHeaders.SET_COOKIE, refreshToken.toString());
 
-        URI location = hostResolver.buildUrl(base, Map.of("next_path", nextPath));
+        String base =
+                resolverAdapter.resolve(httpRequest, false, false, true, res.getRedirectionPath());
+        URI location = resolverAdapter.buildUrl(base, Map.of("next_path", nextPath));
 
         return ResponseEntity.status(302).location(location).headers(headers).build();
     }
@@ -91,30 +90,31 @@ public class RegistrationController {
     // FORM: application/json (SPA/fetch/mobile)
     @PostMapping(value = "/sign-up", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthenticationResponse> signUp(
-            @ModelAttribute @Valid RegistrationRequest form, BindingResult bindingResult,
+    public ResponseEntity<AuthenticationResponse> signUpJson(
+            @RequestBody @Valid RegistrationRequest request, BindingResult bindingResult,
             @RequestAttribute("requestMetadata") RequestMetadata metadata,
-            HttpServletRequest request) {
-        String nextPath = form.getNextPath();
+            HttpServletRequest httpRequest) {
+        String nextPath = request.getNextPath();
         if (bindingResult.hasErrors()) {
             Map<String, String> params = FieldErrorMapper
                     .mapToAuthException(bindingResult, ValidationContext.SIGN_UP).getMapVersion();
-            nextPath = hostResolver.validateNextPath(nextPath);
+            nextPath = resolverAdapter.validateNextPath(nextPath);
             if (!nextPath.isBlank()) {
                 params.put("next_path", nextPath);
             }
-            String base = hostResolver.resolve(request, false, false, false);
-            URI location = hostResolver.buildUrl(base, params);
+            String base = resolverAdapter.resolve(httpRequest, false, false, false, null);
+            URI location = resolverAdapter.buildUrl(base, params);
             return ResponseEntity.status(302).location(location).build();
         }
-        AuthContextRequest<RegistrationRequest> payload = new AuthContextRequest<>(metadata, form);
+        AuthContextRequest<RegistrationRequest> payload =
+                new AuthContextRequest<>(metadata, request);
 
         AuthenticationResponse res = registrationMapper.signUp(payload);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-Auth-Token", res.getToken());
-        headers.add("X-Auth-Device-Token", res.getDeviceToken());
 
-        return ResponseEntity.ok().headers(headers).body(res);
+        String base =
+                resolverAdapter.resolve(httpRequest, false, false, true, res.getRedirectionPath());
+        URI location = resolverAdapter.buildUrl(base, Map.of("next_path", nextPath));
+        return ResponseEntity.ok().location(location).body(res);
     }
 
 }

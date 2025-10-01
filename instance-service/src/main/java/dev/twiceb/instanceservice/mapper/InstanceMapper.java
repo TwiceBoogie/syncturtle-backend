@@ -1,16 +1,19 @@
 package dev.twiceb.instanceservice.mapper;
 
+import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
-import dev.twiceb.common.dto.response.TokenGrant;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
 import dev.twiceb.instanceservice.dto.response.ConfigDataResponse;
+import dev.twiceb.instanceservice.dto.response.InstanceAdminResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceInfoResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceSetupResponse;
 import dev.twiceb.instanceservice.service.InstanceService;
+import dev.twiceb.instanceservice.service.impl.InstanceServiceImpl.ConfigResult;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -21,13 +24,13 @@ public class InstanceMapper {
     private final BasicMapper mapper;
 
     public InstanceSetupResponse getInstanceInfo() {
-        InstanceInfoResponse instance = mapper.convertToResponse(
-                instanceService.getInstancePrinciple(), InstanceInfoResponse.class);
-        if (instance == null)
-            return new InstanceSetupResponse(false, false);
-        InstanceSetupResponse response = new InstanceSetupResponse(true, instance.isSetupDone());
-        response.setConfig(
-                ConfigDataResponse.fromConfigMap(instanceService.getConfigurationValues()));
+        InstanceInfoResponse instance = mapper.convertToResponse(instanceService.getInstanceInfo(),
+                InstanceInfoResponse.class);
+
+        ConfigResult config = instanceService.getConfigurationValues();
+        InstanceSetupResponse response = new InstanceSetupResponse();
+        response.setConfig(ConfigDataResponse.fromConfigMap(config.getConfigKeys(),
+                config.isSmtpConfigured(), config.getAdminBaseUrl(), config.getAppBaseUrl()));
         response.setInstance(instance);
         return response;
     }
@@ -37,7 +40,12 @@ public class InstanceMapper {
         return instanceService.updateConfigurations(request);
     }
 
-    public TokenGrant adminSignup(AdminSignupRequest request) {
+    public IssuedTokens adminSignup(AdminSignupRequest request) {
         return instanceService.adminSignup(request);
+    }
+
+    public List<InstanceAdminResponse> getInstanceAdmins() {
+        return mapper.convertToResponseList(instanceService.getInstanceAdmins(),
+                InstanceAdminResponse.class);
     }
 }

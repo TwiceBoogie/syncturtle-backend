@@ -99,6 +99,7 @@ public class RefreshToken {
         rt.issuedAt = now;
         rt.absoluteExpiresAt = now.plus(Duration.ofDays(90));
         rt.expiresAt = now.plus(Duration.ofDays(15));
+        rt.lastUsedAt = now;
         rt.revoked = false;
         // provenance
         rt.issuedIp = provenance.getIp();

@@ -17,7 +17,7 @@ export interface IInstance {
   currentVersion: string;
   domain: string;
   namespace: string;
-  is_setup_done: boolean;
+  setupDone: boolean;
   verified: boolean;
   test: boolean;
 }

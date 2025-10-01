@@ -1,7 +1,9 @@
 package dev.twiceb.userservice.service;
 
 import dev.twiceb.userservice.domain.model.User;
+import dev.twiceb.userservice.domain.projection.ProfileProjection;
 import dev.twiceb.userservice.domain.projection.UserDeviceProjection;
+import dev.twiceb.userservice.domain.projection.UserMeProjection;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,4 +14,8 @@ public interface UserService {
     UserDeviceProjection getUserDeviceDetails(UUID userId);
 
     Map<String, String> updateUserProfile(User userInfo);
+
+    ProfileProjection getProfile();
+
+    UserMeProjection getUser();
 }

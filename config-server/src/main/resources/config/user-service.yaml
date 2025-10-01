@@ -34,7 +34,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false # use loggers instead
     database: postgresql
     # database-platform: org.hibernate.dialect.PostgreSQLDialect # hibernate 6 auto-detects postgres
     open-in-view: false
@@ -43,12 +43,18 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+        format_sql: true #multiline + indentation
+        highligh_sql: true
+        use_sql_comments: true
         # temp:
         #   "[use_jdbc_metadata_defaults]": false // hibernate 5 era settings
   liquibase:
     enabled: true
-    user: ${LIQUIBASE_USER:}
-    password: ${LIQUIBASE_PW:}
+    # so it does not borrow the main datasource which vault populates later
+    # removes any race with vaults datasoruce creds
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/user
+    user: ${LIQUIBASE_COMMAND_USERNAME:}
+    password: ${LIQUIBASE_COMMAND_PASSWORD:}
     change-log: classpath:db/changelog/db.changelog-master.xml
   rabbitmq:
     addresses: ${RABBITMQ_HOST:localhost}:5672
@@ -71,16 +77,17 @@ management:
     web:
       exposure:
         include: "*"
-  endpoint:
-    shutdown:
-      enabled: true
   zipkin:
     tracing:
-      endpoint: http://${ZIPKIN_HOST:localhost}:9411
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411/api/v2/spans
   tracing:
     sampling:
       probability: 1.0
 
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE # bound params (hibernate 6)
 rabbitmq:
   exchanges:
     internal-direct: email.exchange
@@ -90,3 +97,6 @@ rabbitmq:
   queues:
     internal-fanout-queue: q.usersvc
     internal-mail: q.mail
+
+app:
+  root-domain: ${ROOT_DOMAIN:127.0.0.1.nip.io:3000}

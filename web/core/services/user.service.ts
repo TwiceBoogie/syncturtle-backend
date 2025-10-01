@@ -10,7 +10,10 @@ export class UserService extends APIService {
   }
 
   getCurrentUser(): Promise<IAuthUserToken> {
-    return this.get<IAuthUserToken>("/ui/v1/user/token", {}, { supressRedirect: true });
+    return secureFetch(`${this.baseURL}/ui/v1/user/token`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   async getCurrentUserProfile(): Promise<IUserProfile> {

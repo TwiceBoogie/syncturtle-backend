@@ -2,13 +2,14 @@ package dev.twiceb.instanceservice.domain.model;
 
 import java.time.Instant;
 import java.util.UUID;
-import dev.twiceb.instanceservice.domain.enums.InstanceEdition;
+import dev.twiceb.common.enums.InstanceEdition;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 
 @Entity
@@ -22,8 +23,8 @@ public class Instance extends AuditableEntity {
     @Column(name = "slug", unique = true)
     private String slug;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "instance_name")
+    private String instanceName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "edition", nullable = false)
@@ -45,8 +46,8 @@ public class Instance extends AuditableEntity {
     @Column(name = "namespace")
     private String namespace;
 
-    @Column(name = "machine_signature", nullable = false, unique = true)
-    private String machineSignature;
+    @Column(name = "instance_id", nullable = false, unique = true)
+    private String instanceId;
 
     @Column(name = "vm_host")
     private String vmHost;
@@ -66,6 +67,10 @@ public class Instance extends AuditableEntity {
     @Column(name = "config_last_checked_at")
     private Instant configLastCheckedAt;
 
+    @Version
+    @Column(name = "version")
+    private long version;
+
     protected Instance() {} // jpa friendly
 
     public void updateInstanceDetails(String currentVersion, String latestVersion, boolean isTest) {
@@ -78,12 +83,12 @@ public class Instance extends AuditableEntity {
 
     public void finishSetup(String instanceName) {
         this.setupDone = true;
-        this.name = instanceName;
-        this.slug = makeSlug(this.name);
+        this.instanceName = instanceName;
+        this.slug = makeSlug(this.instanceName);
     }
 
-    public static Instance register(String currentVersion, String latestVersion,
-            String machineSignature, boolean isTest) {
+    public static Instance register(String currentVersion, String latestVersion, String instanceId,
+            boolean isTest) {
         Instant now = Instant.now();
         Instance instance = new Instance();
         instance.id = UUID.randomUUID();
@@ -91,7 +96,7 @@ public class Instance extends AuditableEntity {
         instance.currentVersion = currentVersion;
         instance.latestVersion = latestVersion;
         instance.lastCheckedAt = now;
-        instance.machineSignature = machineSignature;
+        instance.instanceId = instanceId;
         instance.test = isTest;
         instance.setupDone = false;
         instance.verified = false;

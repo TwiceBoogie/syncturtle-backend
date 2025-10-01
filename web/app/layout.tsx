@@ -12,7 +12,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      {/* <link rel="preload" href={`http://localhost:8000/ui/v1/user/token `} as="fetch" crossOrigin="use-credentials" /> */}
+      <head>
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
+      </head>
       <body>
         <AppProvider>
           <div className={cn("h-screen w-full overflow-hidden relative flex flex-col")}>

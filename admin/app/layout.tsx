@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { AppProvider } from "./provider";
+import { ADMIN_BASE_PATH } from "@/helpers/common.helper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +24,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const ASSET_PREFIX = ADMIN_BASE_PATH;
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <link rel="icon" type="image/png" sizes="32x32" href={`${ASSET_PREFIX}/favicon/favicon-32x32.png`} />
+        <link rel="icon" type="image/png" sizes="16x16" href={`${ASSET_PREFIX}/favicon/favicon-16x16.png`} />
+        <link rel="shortcut icon" href={`${ASSET_PREFIX}/favicon/favicon.ico`} />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

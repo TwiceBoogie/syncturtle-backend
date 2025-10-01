@@ -3,6 +3,7 @@ package dev.twiceb.userservice.service.impl;
 import java.util.Map;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import dev.twiceb.common.dto.response.ConfigResponse;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.userservice.client.InstanceClient;
 import dev.twiceb.userservice.service.FeatureFlagService;
@@ -17,7 +18,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     @Override
     public Map<InstanceConfigurationKey, String> getConfig() {
         long version = instanceClient.getVersion(); // cheap probe
-        return getConfigCached(version); // cache aware
+        return getConfigCached(version).getValues(); // cache aware
     }
 
     @Override
@@ -26,9 +27,10 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     }
 
     @Cacheable(value = "s2s:instance:configuration", keyGenerator = "versionKeyGen",
-            unless = "#result == null", sync = true)
-    protected Map<InstanceConfigurationKey, String> getConfigCached(long version) {
-        return instanceClient.getConfig().getValues();
+            unless = "#result == null || #result.values == null || #result.values.isEmpty()",
+            sync = true)
+    protected ConfigResponse getConfigCached(long version) {
+        return instanceClient.getConfig();
     }
 
 }

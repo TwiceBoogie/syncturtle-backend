@@ -33,7 +33,8 @@ export async function emailCheck(payload: EmailSchema): Promise<Result<IEmailChe
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/email-check/`, {
+    console.log(`URL: ${API_BASE_URL}/auth/email-check`);
+    const res = await fetch(`${API_BASE_URL}/ui/v1/auth/email-check`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,6 +43,7 @@ export async function emailCheck(payload: EmailSchema): Promise<Result<IEmailChe
     });
 
     const data = await res.json();
+    console.log(data);
 
     if (!res.ok && isApiErrorResponse(data)) {
       return { ok: false, error: data };

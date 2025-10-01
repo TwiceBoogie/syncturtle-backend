@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public class JwtAuthenticationException extends RuntimeException {
-    private HttpStatus httpStatus;
+    private HttpStatus httpStatus = HttpStatus.FORBIDDEN;
 
     public JwtAuthenticationException(String msg) {
         super(msg);

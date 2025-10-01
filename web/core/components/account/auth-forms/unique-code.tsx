@@ -47,6 +47,7 @@ export const AuthUniqueCodeForm: FC<TAuthUniqueCodeForm> = (props) => {
   useEffect(() => {
     if (csrfPromise === undefined) {
       const promise = authService.requestCsrfToken();
+      console.log(promise);
       setCsrfPromise(promise);
     }
   }, [csrfPromise]);

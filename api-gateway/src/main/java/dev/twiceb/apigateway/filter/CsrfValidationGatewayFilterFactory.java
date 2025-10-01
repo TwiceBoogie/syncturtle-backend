@@ -24,7 +24,7 @@ import dev.twiceb.apigateway.service.util.HmacCsrfToken;
 import dev.twiceb.common.dto.response.AuthErrorResponse;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.exception.AuthException;
-import dev.twiceb.common.util.BaseHostResolver;
+import dev.twiceb.common.spring.WebfluxHostResolverAdapterAutoConfiguration.WebfluxHostResolverAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -39,7 +39,7 @@ public class CsrfValidationGatewayFilterFactory
     private static final String CSRF_FORM_FIELD = "csrf_token";
     private static final String NEXT_PATH_FIELD = "next_path";
 
-    private final BaseHostResolver hostResolver;
+    private final WebfluxHostResolverAdapter resolverAdapter;
 
     @Override
     public GatewayFilter apply(Config config) {
@@ -69,9 +69,9 @@ public class CsrfValidationGatewayFilterFactory
                         AuthException exception =
                                 new AuthException(AuthErrorCodes.AUTHENTICATION_FAILED);
                         AuthErrorResponse errorResponse = exception.toErrorResponse();
-                        String baseHost =
-                                hostResolver.resolve(exchange.getRequest(), false, false, true);
-                        String cleanNextPath = hostResolver.validateNextPath(nextPath);
+                        String baseHost = resolverAdapter.resolve(exchange.getRequest(), false,
+                                false, true, null);
+                        String cleanNextPath = resolverAdapter.validateNextPath(nextPath);
 
                         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseHost)
                                 .queryParam("error_code", errorResponse.getErrorCode())

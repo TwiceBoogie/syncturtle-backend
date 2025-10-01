@@ -20,7 +20,7 @@ import dev.twiceb.apigateway.service.util.HmacCsrfToken;
 import dev.twiceb.common.dto.response.AuthErrorResponse;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.exception.AuthException;
-import dev.twiceb.common.util.BaseHostResolver;
+import dev.twiceb.common.spring.WebfluxHostResolverAdapterAutoConfiguration.WebfluxHostResolverAdapter;
 import jakarta.ws.rs.core.HttpHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +35,21 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
     private static final String CSRF_FIELD = "csrf_token";
     private static final String NEXT_PATH = "next_path";
 
-    private final BaseHostResolver hostResolver;
+    private final WebfluxHostResolverAdapter resolverAdapter;
     private final ObjectMapper mapper;
 
     @Override
     public Mono<String> apply(ServerWebExchange exchange, String body) {
         // only for form posts
+        log.info("===> CsrfFormRewrite <===");
         MediaType contentType = exchange.getRequest().getHeaders().getContentType();
+
+        if (contentType != null) {
+            log.info("CT full={}, type={}, subtype={}", contentType.toString(), // e.g.
+                                                                                // application/x-www-form-urlencoded
+                    contentType.getType(), // application
+                    contentType.getSubtype()); // x-www-form-urlencoded
+        }
 
         if (contentType != null && MediaType.APPLICATION_JSON.isCompatibleWith(contentType)) {
             return Mono.justOrEmpty(body);
@@ -51,7 +59,9 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
             return Mono.justOrEmpty(body);
         }
 
+        log.info(body);
         Map<String, String> form = parseForm(body);
+        log.info("Form", form);
         String submittedToken = form.get(CSRF_FIELD);
         String nextPath = form.get(NEXT_PATH);
         String cookieToken = getCookie(exchange, CSRF_COOKIE);
@@ -64,8 +74,8 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
             log.warn("CSRF validation failed");
             AuthException exception = new AuthException(AuthErrorCodes.AUTHENTICATION_FAILED);
             AuthErrorResponse errorResponse = exception.toErrorResponse();
-            String base = hostResolver.resolve(exchange.getRequest(), false, false, true);
-            String cleanNextPath = hostResolver.validateNextPath(nextPath);
+            String base = resolverAdapter.resolve(exchange.getRequest(), false, false, true, null);
+            String cleanNextPath = resolverAdapter.validateNextPath(nextPath);
             URI location = UriComponentsBuilder.fromUriString(base)
                     .queryParam("error_code", errorResponse.getErrorCode())
                     .queryParam("error_message", errorResponse.getErrorMessage())
@@ -83,10 +93,10 @@ public class CsrfFormRewrite implements RewriteFunction<String, String> {
         form.remove(CSRF_FIELD);
 
         // tell downsteram we're sending json and let scg recompute length
-        exchange.getRequest().mutate().headers(h -> {
-            h.setContentType(MediaType.APPLICATION_JSON);
-            h.remove(HttpHeaders.CONTENT_LENGTH);
-        }).build();
+        // exchange.getRequest().mutate().headers(h -> {
+        // h.setContentType(MediaType.APPLICATION_JSON);
+        // h.remove(HttpHeaders.CONTENT_LENGTH);
+        // }).build();
 
         try {
             String json = mapper.writeValueAsString(form);

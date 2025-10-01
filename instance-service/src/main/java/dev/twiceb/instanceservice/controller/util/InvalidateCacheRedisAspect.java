@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
+import dev.twiceb.instanceservice.dto.internal.CachedHttpResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class InvalidateCacheRedisAspect {
 
-    private final RedisTemplate<String, Object> template;
+    private final RedisTemplate<String, CachedHttpResponse> template;
 
     @Around("@annotation(invalidateAnno)")
     public Object around(ProceedingJoinPoint joinPoint, InvalidateCacheRedis invalidateAnno)

@@ -1,7 +1,7 @@
 package dev.twiceb.userservice.controller.rest;
 
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.request.RequestMetadata;
-import dev.twiceb.common.dto.response.TokenGrant;
 import dev.twiceb.userservice.dto.request.*;
 import dev.twiceb.userservice.dto.response.AccessTokenResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
@@ -9,6 +9,7 @@ import dev.twiceb.userservice.dto.response.MagicCodeResponse;
 import dev.twiceb.userservice.dto.response.MagicKeyResponse;
 import dev.twiceb.userservice.mapper.AuthenticationMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +22,10 @@ import java.time.Instant;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(UI_V1_AUTH)
+@RequestMapping(AUTH)
 public class AuthenticationController {
 
     private final AuthenticationMapper authenticationMapper;
@@ -31,6 +33,7 @@ public class AuthenticationController {
     @PostMapping(CHECK_EMAIL)
     public ResponseEntity<MagicCodeResponse> checkEmail(@RequestBody MagicCodeRequest request,
             BindingResult bindingResult) {
+        log.info("endpoint hit");
         return ResponseEntity.ok(authenticationMapper.checkEmail(request));
     }
 
@@ -71,12 +74,11 @@ public class AuthenticationController {
             @RequestAttribute("requestMetadata") RequestMetadata metadata) {
         AuthContextRequest<RefreshTokenRequest> authContextRequest =
                 new AuthContextRequest<>(metadata, new RefreshTokenRequest(refreshToken));
-        TokenGrant res = authenticationMapper.refreshToken(authContextRequest);
+        IssuedTokens res = authenticationMapper.refreshToken(authContextRequest);
 
-        ResponseCookie cookie =
-                ResponseCookie.from("token", res.getRc().getToken()).httpOnly(true).secure(false)
-                        .domain(".127.0.0.1.nip.io").sameSite("Lax").path(UI_V1_AUTH + "/refresh")
-                        .maxAge(Duration.between(Instant.now(), res.getRc().getExp())).build();
+        ResponseCookie cookie = ResponseCookie.from("token", res.getRc().getToken()).httpOnly(true)
+                .secure(false).sameSite("Strict").path("/")
+                .maxAge(Duration.between(Instant.now(), res.getRc().getExp())).build();
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookie.toString());

@@ -1,14 +1,14 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
-import dev.twiceb.common.dto.response.AdminTokenGrant;
-import dev.twiceb.common.dto.response.TokenGrant;
+import dev.twiceb.userservice.dto.internal.AuthUserResult;
 import dev.twiceb.userservice.dto.request.*;
 
 public interface RegistrationService {
-    TokenGrant magicSignup(AuthContextRequest<MagicCodeRequest> request);
+    AuthUserResult magicSignup(AuthContextRequest<MagicCodeRequest> request);
 
-    TokenGrant signup(AuthContextRequest<RegistrationRequest> request);
+    AuthUserResult signup(AuthContextRequest<RegistrationRequest> request);
 
-    AdminTokenGrant adminSignup(AuthContextRequest<AdminSignupRequest> request);
+    AuthAdminResult adminSignup(AuthContextRequest<AdminSignupRequest> request);
 }

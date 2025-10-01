@@ -1,5 +1,7 @@
 package dev.twiceb.userservice.controller.api;
 
+import dev.twiceb.common.dto.response.UserPrincipalResponse;
+import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.service.UserClientService;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +14,15 @@ import java.util.UUID;
 
 import static dev.twiceb.common.constants.PathConstants.*;
 
+
 @Hidden
 @RestController
-@RequestMapping(API_V1_USER)
+@RequestMapping(INTERNAL_V1_USER)
 @RequiredArgsConstructor
 public class UserApiController {
 
     private final UserClientService userService;
-
-    @GetMapping(GET_USER_EMAIL)
-    public String getUserEmail(@PathVariable UUID userId) {
-        return userService.getUserEmail(userId);
-    }
+    private final BasicMapper mapper;
 
     @GetMapping(ADD_NOTIFICATION)
     public void increaseNotificationCount(@PathVariable UUID userId) {
@@ -39,4 +38,16 @@ public class UserApiController {
     public void resetNotificationCount(@PathVariable UUID userId) {
         userService.resetNotificationCount(userId);
     }
+
+    @GetMapping(GET_USER_PRINCIPAL)
+    public UserPrincipalResponse getUserPrincipal(@PathVariable("id") UUID userId) {
+        return mapper.convertToResponse(userService.getUserPrincipal(userId),
+                UserPrincipalResponse.class);
+    }
+
+    @GetMapping(EMAIL_PATH_VAR)
+    public UUID getUserIdByEmail(@PathVariable String email) {
+        return userService.findUserIdByEmail(email);
+    }
+
 }

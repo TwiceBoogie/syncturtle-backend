@@ -20,7 +20,7 @@ public interface UserPrincipalProjection {
         return getFirstName() + " " + getLastName();
     }
 
-    List<DevicePrincipleProjection> getUserDevices();
+    List<DevicePrincipalProjection> getUserDevices();
 
     String getFirstName();
 

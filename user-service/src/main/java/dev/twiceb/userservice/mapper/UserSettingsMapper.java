@@ -4,7 +4,6 @@ import dev.twiceb.common.dto.response.HeaderResponse;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.domain.projection.ProfilePicUrlProjection;
 import dev.twiceb.userservice.dto.request.SettingsRequest;
-import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.ProfilePicResponse;
 import dev.twiceb.userservice.dto.response.UserPhoneResponse;
 import dev.twiceb.userservice.service.UserSettingsService;
@@ -20,7 +19,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserSettingsMapper {
 
-    private final AuthenticationMapper authenticationMapper;
     private final UserSettingsService userSettingsService;
     private final BasicMapper mapper;
 
@@ -28,15 +26,15 @@ public class UserSettingsMapper {
         return userSettingsService.updateUsername(request.getUsername(), bindingResult);
     }
 
-    public AuthenticationResponse updateEmail(SettingsRequest request,
-            BindingResult bindingResult) {
-        Map<String, Object> map =
-                userSettingsService.updateEmail(request.getEmail(), bindingResult);
-        AuthenticationResponse authenticationResponse =
-                authenticationMapper.getAuthenticationResponse(map);
-        authenticationResponse.getUser().setEmail(request.getEmail());
-        return authenticationResponse;
-    }
+    // public AuthenticationResponse updateEmail(SettingsRequest request,
+    // BindingResult bindingResult) {
+    // Map<String, Object> map =
+    // userSettingsService.updateEmail(request.getEmail(), bindingResult);
+    // AuthenticationResponse authenticationResponse =
+    // authenticationMapper.getAuthenticationResponse(map);
+    // authenticationResponse.getUser().setEmail(request.getEmail());
+    // return authenticationResponse;
+    // }
 
     public UserPhoneResponse updatePhone(SettingsRequest request, BindingResult bindingResult) {
         Map<String, Object> phoneParams = userSettingsService.updatePhone(request.getCountryCode(),

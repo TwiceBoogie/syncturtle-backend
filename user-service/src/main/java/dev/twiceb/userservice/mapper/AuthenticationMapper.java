@@ -1,13 +1,12 @@
 package dev.twiceb.userservice.mapper;
 
-import dev.twiceb.common.dto.response.TokenGrant;
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.enums.MagicCodeType;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.AuthenticationRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RefreshTokenRequest;
-import dev.twiceb.userservice.dto.response.AuthUserResponse;
 import dev.twiceb.userservice.dto.response.AuthenticationResponse;
 import dev.twiceb.userservice.dto.response.MagicCodeResponse;
 import dev.twiceb.userservice.dto.response.MagicKeyResponse;
@@ -25,9 +24,8 @@ public class AuthenticationMapper {
     private final BasicMapper mapper;
 
     public MagicCodeResponse checkEmail(MagicCodeRequest request) {
-        return mapper.convertToResponse(
-
-                authenticationService.checkEmail(request.getEmail()), MagicCodeResponse.class);
+        return mapper.convertToResponse(authenticationService.checkEmail(request.getEmail()),
+                MagicCodeResponse.class);
     }
 
     public MagicKeyResponse generateMagicCodeAuth(MagicCodeRequest request) {
@@ -55,14 +53,7 @@ public class AuthenticationMapper {
                 AuthenticationResponse.class);
     }
 
-    public TokenGrant refreshToken(AuthContextRequest<RefreshTokenRequest> request) {
+    public IssuedTokens refreshToken(AuthContextRequest<RefreshTokenRequest> request) {
         return authenticationService.refreshToken(request);
-    }
-
-    AuthenticationResponse getAuthenticationResponse(Map<String, Object> credentials) {
-        AuthenticationResponse response = new AuthenticationResponse();
-        response.setUser(mapper.convertToResponse(credentials.get("user"), AuthUserResponse.class));
-        response.setToken((String) credentials.get("token"));
-        return response;
     }
 }

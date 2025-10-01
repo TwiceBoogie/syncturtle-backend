@@ -7,8 +7,11 @@ import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import dev.twiceb.common.dto.request.util.MetadataHeaders;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class TracingHeadersFilter implements GlobalFilter, Ordered {
 
@@ -19,14 +22,17 @@ public class TracingHeadersFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        log.info("Inside TracingHeadersFilter");
         ServerHttpRequest request = exchange.getRequest();
-        String requestId =
-                nvl(request.getHeaders().getFirst("X-Request-Id"), UUID.randomUUID().toString());
-        String correlationId = nvl(request.getHeaders().getFirst("X-Correlation-Id"), requestId);
+        String requestId = nvl(request.getHeaders().getFirst(MetadataHeaders.REQUEST_ID),
+                UUID.randomUUID().toString());
+        String correlationId =
+                nvl(request.getHeaders().getFirst(MetadataHeaders.CORRELATION_ID), requestId);
 
-        String host = nvl(request.getHeaders().getFirst("X-Forwarded-Host"),
-                nvl(request.getHeaders().getFirst("Host"), request.getURI().getHost()));
-        String clientIp = firstForwardedFor(request.getHeaders().getFirst("X-Forwarded-For"));
+        String host = nvl(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_HOST), nvl(
+                request.getHeaders().getFirst(MetadataHeaders.HOST), request.getURI().getHost()));
+        String clientIp =
+                firstForwardedFor(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_FOR));
         if (clientIp == null && request.getRemoteAddress() != null) {
             clientIp = request.getRemoteAddress().getAddress().getHostAddress();
         }
@@ -34,14 +40,14 @@ public class TracingHeadersFilter implements GlobalFilter, Ordered {
                 request.getURI().getScheme());
 
         // mutate downstream request with headers
-        ServerHttpRequest mutated = request.mutate().header("X-Request_id", requestId)
-                .header("X-Correlation-Id", correlationId).header("X-Forwarded-Host", host)
-                .header("X-Forwarded-Proto", proto)
-                .header("X-Forwarded-For", clientIp == null ? "" : clientIp).build();
+        ServerHttpRequest mutated = request.mutate().header(MetadataHeaders.REQUEST_ID, requestId)
+                .header(MetadataHeaders.CORRELATION_ID, correlationId)
+                .header(MetadataHeaders.FORWARDED_HOST, host).header("X-Forwarded-Proto", proto)
+                .header(MetadataHeaders.FORWARDED_FOR, clientIp == null ? "" : clientIp).build();
 
         // also expose in the response for client-side debugging/logs
-        exchange.getResponse().getHeaders().set("X-Request-Id", requestId);
-        exchange.getResponse().getHeaders().set("X-Correlation-Id", correlationId);
+        exchange.getResponse().getHeaders().set(MetadataHeaders.REQUEST_ID, requestId);
+        exchange.getResponse().getHeaders().set(MetadataHeaders.CORRELATION_ID, correlationId);
 
         return chain.filter(exchange.mutate().request(mutated).build());
 

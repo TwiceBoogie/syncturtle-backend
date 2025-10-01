@@ -10,11 +10,18 @@ public class PathConstants {
 
     public static final String API_V1 = "/api/v1";
     public static final String UI_V1 = "/ui/v1";
+    public static final String INTERNAL_V1 = "/internal/v1";
 
     // USER_SERVICE
     public static final String AUTH = "/auth";
+    public static final String USERS = "/users";
     public static final String UI_V1_AUTH = UI_V1 + AUTH;
-    public static final String CHECK_EMAIL = "/check-email";
+    public static final String INTERNAL_V1_AUTH = INTERNAL_V1 + AUTH;
+    public static final String INTERNAL_V1_USER = INTERNAL_V1 + USERS;
+    public static final String ADMINS_SIGNUP = "/admins/sign-up";
+    public static final String EMAIL_PATH_VAR = "/{email}";
+    public static final String GET_USER_PRINCIPAL = "/{id}/principal";
+    public static final String CHECK_EMAIL = "/email-check";
     public static final String GENERATE_MAGIC_CODE = "/generate-magic-code";
     public static final String GENERATE_MAGIC_CODE_DEVICE = "/generate-magic-code-device";
     public static final String MAGIC_LOGIN = "/magic-sign-in";
@@ -131,7 +138,7 @@ public class PathConstants {
     public static final String DELETE_FILE_IMAGE = "/delete/{bucket}";
 
     // INSTANCE_SERVICE
-    public static final String API_V1_INSTANCE = API_V1 + "/instance";
+    public static final String INTERNAL_V1_INSTANCE = INTERNAL_V1 + "/instances";
     public static final String UI_V1_INSTANCE = UI_V1 + "/instance";
     public static final String CONFIGURATION = "/configurations";
 

@@ -1,0 +1,3 @@
+dev.twiceb.common.spring.HostResolverAutoConfiguration
+dev.twiceb.common.spring.WebfluxHostResolverAdapterAutoConfiguration
+dev.twiceb.common.spring.ServletHostResolverAdapterAutoConfiguration

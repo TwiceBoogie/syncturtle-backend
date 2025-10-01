@@ -1,9 +1,9 @@
 package dev.twiceb.userservice.service.impl;
 
+import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.request.RequestMetadata;
-import dev.twiceb.common.dto.response.AdminTokenGrant;
-import dev.twiceb.common.dto.response.TokenGrant;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.exception.AuthException;
@@ -14,6 +14,7 @@ import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.LoginPolicyRepository;
 import dev.twiceb.userservice.domain.repository.ProfileRepository;
 import dev.twiceb.userservice.domain.repository.UserRepository;
+import dev.twiceb.userservice.dto.internal.AuthUserResult;
 import dev.twiceb.userservice.dto.internal.TokenProvenance;
 import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
@@ -23,6 +24,7 @@ import dev.twiceb.userservice.service.LoginService;
 import dev.twiceb.userservice.service.RegistrationService;
 import dev.twiceb.userservice.service.TokenService;
 import dev.twiceb.userservice.service.security.BcryptHasher;
+import dev.twiceb.userservice.service.util.RedirectionPathHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     // service
     private final TokenService tokenService;
     private final LoginService loginService;
+    // helpers
+    private final RedirectionPathHelper redirectionPathHelper;
     // repositories
     private final UserRepository userRepository;
     private final LoginPolicyRepository lPolicyRepository;
@@ -47,7 +51,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override // orchestrator
     @Transactional
-    public TokenGrant signup(AuthContextRequest<RegistrationRequest> request) {
+    public AuthUserResult signup(AuthContextRequest<RegistrationRequest> request) {
         AuthProvider provider = verifyAuthByBeanName.get("emailAuthProvider");
 
         RegistrationRequest payload = request.getPayload();
@@ -61,16 +65,22 @@ public class RegistrationServiceImpl implements RegistrationService {
             // policyService.ensureNotLocked(user.getId(), metadata.getIpAddress());
             // 3: device upsert
 
-            // 4: mintt tokens w/ provenance
+            // 4: log user and ?store device info?
+            loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.APP, metadata);
+
+            // 5: mintt tokens w/ provenance and create refresh/access token
             TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
                     .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
                     .context(LoginContext.APP)
                     // .deviceId(device.getId())
                     .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
                     .now(Instant.now()).build();
+            IssuedTokens issuedTokens = tokenService.issueTokens(user, provenance);
 
-            loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.APP, metadata);
-            return tokenService.mint(user, provenance);
+            // get redirection path
+            String path = redirectionPathHelper.getRedirectionPath(user);
+
+            return new AuthUserResult(path, issuedTokens);
         } catch (AuthException e) {
             // might do something here
             throw e;
@@ -79,7 +89,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public TokenGrant magicSignup(AuthContextRequest<MagicCodeRequest> request) {
+    public AuthUserResult magicSignup(AuthContextRequest<MagicCodeRequest> request) {
         AuthProvider provider = verifyAuthByBeanName.get("magicCodeProvider");
 
         MagicCodeRequest payload = request.getPayload();
@@ -99,18 +109,22 @@ public class RegistrationServiceImpl implements RegistrationService {
             // policyService.ensureNotLocked(user.getId(), metadata.getIpAddress());
             // 3: device upsert
 
-            // 4: mintt tokens w/ provenance
+            // 4: log user and ?store device info?
+            loginService.success(user, isUserExist, AuthMedium.MAGIC_LINK, LoginContext.APP,
+                    metadata);
+
+            // 5: mintt tokens w/ provenance and create refresh/access token
             TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
                     .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
                     .context(LoginContext.APP)
                     // .deviceId(device.getId())
                     .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
                     .now(Instant.now()).build();
+            IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
 
-            // log login attempt for audit?
-            loginService.success(user, isUserExist, AuthMedium.MAGIC_LINK, LoginContext.APP,
-                    metadata);
-            return tokenService.mint(user, provenance);
+            // 6: get redirection path
+            String path = redirectionPathHelper.getRedirectionPath(user);
+            return new AuthUserResult(path, tokenGrant);
         } catch (AuthException e) {
             // might do something here
             throw e;
@@ -119,7 +133,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public AdminTokenGrant adminSignup(AuthContextRequest<AdminSignupRequest> request) {
+    public AuthAdminResult adminSignup(AuthContextRequest<AdminSignupRequest> request) {
         AdminSignupRequest payload = request.getPayload();
         RequestMetadata meta = request.getMetadata();
 
@@ -132,15 +146,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         Profile profile = Profile.create(user, payload.getCompanyName());
         profileRepository.save(profile);
 
+        // 4: log user and ?store device info?
+        loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.ADMIN, meta);
+
+        // 5: mintt tokens w/ provenance and create refresh/access token
         TokenProvenance provenance = TokenProvenance.builder().ip(meta.getIpAddress())
                 .userAgent(meta.getUserAgent()).domain(meta.getDomain()).context(LoginContext.APP)
                 // .deviceId(device.getId())
                 .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
                 .now(Instant.now()).build();
-
-        TokenGrant tGrant = tokenService.mint(user, provenance);
-        // log login for audit
-        loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.ADMIN, meta);
-        return new AdminTokenGrant(user.getId(), tGrant);
+        IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
+        return new AuthAdminResult(user.getId(), tokenGrant);
     }
 }

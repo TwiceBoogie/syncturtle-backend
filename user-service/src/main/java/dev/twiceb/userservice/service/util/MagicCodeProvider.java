@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.userservice.application.internal.params.AuthSubjectParams;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.UserRepository;
-import dev.twiceb.userservice.dto.internal.AuthUserData;
 import dev.twiceb.userservice.dto.internal.CodeRecord;
 import dev.twiceb.userservice.service.AuthInitiator;
 import dev.twiceb.userservice.service.AuthProvider;
@@ -43,7 +43,7 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
     }
 
     @Override
-    public User authenticate(String key, String code, boolean isSignUp) throws AuthException {
+    public User authenticate(String email, String code, boolean isSignUp) throws AuthException {
         Map<InstanceConfigurationKey, String> configMap = featureFlagService.getConfig();
         String emailHost = configMap.get(InstanceConfigurationKey.EMAIL_HOST);
         boolean isMagicCodeEnabled =
@@ -56,9 +56,9 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
             throw new AuthException(AuthErrorCodes.MAGIC_LINK_LOGIN_DISABLED);
         }
 
-        AuthUserData userData = setUserData(key, code);
+        AuthSubjectParams subject = buildParams(email, code);
 
-        return credentialService.completeLoginOrSignup(code, userData, provider());
+        return credentialService.completeLoginOrSignup(code, subject, provider());
     }
 
     @Override
@@ -96,7 +96,7 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
         return new TokenPair(key, token);
     }
 
-    private AuthUserData setUserData(String key, String code) {
+    private AuthSubjectParams buildParams(String key, String code) {
         ValueOperations<String, CodeRecord> ops = redis.opsForValue();
         // check if record exist by key
         CodeRecord record = ops.get(key);
@@ -105,7 +105,7 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
             // delete code and return user data
             if (hasher.matches(code, tokenHash)) {
                 redis.delete(key);
-                return AuthUserData.forPasswordless(record.getEmail());
+                return AuthSubjectParams.forPasswordless(record.getEmail());
             } else {
                 String email = key.split("_", 2)[1];
                 if (userRepository.existsByEmail(email)) {

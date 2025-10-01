@@ -13,7 +13,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class MetadataFilter extends OncePerRequestFilter {
 
@@ -29,10 +31,15 @@ public class MetadataFilter extends OncePerRequestFilter {
         }
         if (ipAddress == null || ipAddress.isBlank()) {
             ipAddress = request.getRemoteAddr();
+            log.info("IpAddress: {}", ipAddress);
         }
 
+        log.info(request.getHeader(MetadataHeaders.FORWARDED_HOST));
         String domain = Optional.ofNullable(request.getHeader(MetadataHeaders.FORWARDED_HOST))
                 .orElseGet(() -> request.getHeader(MetadataHeaders.HOST));
+        if (domain.contains(",")) {
+            domain = domain.split(",")[0].trim();
+        }
         String requestId = Optional.ofNullable(request.getHeader(MetadataHeaders.REQUEST_ID))
                 .orElse(UUID.randomUUID().toString());
         String correlationId = Optional
@@ -44,6 +51,7 @@ public class MetadataFilter extends OncePerRequestFilter {
                         .domain(domain).requestId(requestId).correlationId(correlationId)
                         .acceptLanguage(request.getHeader(MetadataHeaders.ACCEPT_LANGUAGE))
                         .httpMethod(request.getMethod()).build();
+        log.info("Metadata: {}", metadata);
         // attach it to the incoming request
         // must call @RequestAttribute('requestMetadata') to actually use it
         request.setAttribute("requestMetadata", metadata);

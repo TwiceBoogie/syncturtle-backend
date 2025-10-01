@@ -4,10 +4,10 @@ import { IInstanceInfo } from "@/types/instance";
 
 export class InstanceService extends APIService {
   constructor() {
-    super(`${API_BASE_URL}/api/instances`);
+    super(`${API_BASE_URL}/ui/v1/instance`);
   }
 
   getInstanceInfo() {
-    return this.get<IInstanceInfo>("/", {}, { supressRedirect: true });
+    return this.get<IInstanceInfo>("", {}, { supressRedirect: true });
   }
 }

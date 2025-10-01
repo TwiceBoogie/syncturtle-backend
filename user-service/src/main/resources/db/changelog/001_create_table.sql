@@ -138,13 +138,14 @@ CREATE TABLE IF NOT EXISTS profiles (
   billing_address_country  VARCHAR(255) NOT NULL,
   billing_address          JSONB,
   has_billing_address      BOOLEAN     NOT NULL,
+  last_tenant_id           UUID,
   company_name             VARCHAR(255) NOT NULL,
   user_id                  UUID        NOT NULL,
   role                     VARCHAR(300),
   created_by               VARCHAR(36),
   updated_by               VARCHAR(36),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  PRIMARY KEY (id),
+  PRIMARY KEY (id)
 );
 
 -- Enforce true 1:1 (one profile per user)
@@ -385,3 +386,43 @@ VALUES
   ('High Security Policy', 3, '15 minutes','48 hours', now(), now()),
   ('No Lockout Policy',   10,  NULL,       NULL,       now(), now())
 ON CONFLICT DO NOTHING;
+
+-- =========================================
+-- denormalized tables from instance-service (VIEW ONLY)
+-- =========================================
+-- tenants the user-service needs to render slugs and names
+CREATE TABLE IF NOT EXISTS tenants_view (
+  tenant_id    UUID PRIMARY KEY,
+  slug         VARCHAR(100) NOT NULL,
+  name         VARCHAR(255) NOT NULL,
+  instance_id  UUID NOT NULL,
+  plan_key     VARCHAR(50),
+  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+  deleted_at   TIMESTAMPTZ,
+  version      BIGINT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tenants_view_slug ON tenants_view(slug);
+
+-- memberships to check access quickly
+CREATE TABLE IF NOT EXISTS tenant_memberships_view (
+  tenant_id   UUID NOT NULL,
+  user_id     UUID NOT NULL,
+  role        INT  NOT NULL,
+  is_active   BOOLEAN NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL,
+  version     BIGINT NOT NULL,
+  PRIMARY KEY (tenant_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tm_user_active ON tenant_memberships_view(user_id, is_active);
+
+-- optional: invites (often you only need a count by email)
+CREATE TABLE IF NOT EXISTS tenant_invites_view (
+  tenant_id   UUID NOT NULL,
+  email       VARCHAR(255) NOT NULL,
+  role        INT NOT NULL,
+  accepted    BOOLEAN NOT NULL,
+  responded_at TIMESTAMPTZ,
+  PRIMARY KEY (tenant_id, email)
+);
+CREATE INDEX IF NOT EXISTS idx_invites_email_pending ON tenant_invites_view(email) WHERE accepted = FALSE;

@@ -1,20 +1,25 @@
 package dev.twiceb.instanceservice.domain.projection;
 
+import java.time.Instant;
 import java.util.UUID;
-import dev.twiceb.instanceservice.domain.enums.InstanceEdition;
+import dev.twiceb.common.enums.InstanceEdition;
 
 public interface InstanceProjection {
     UUID getId();
 
     String getSlug();
 
-    String getName();
-
-    InstanceEdition getEdition();
+    String getInstanceName();
 
     String getCurrentVersion();
 
+    String getLatestVersion();
+
+    InstanceEdition getEdition();
+
     String getDomain();
+
+    Instant getLastCheckedAt();
 
     String getNamespace();
 
@@ -23,4 +28,8 @@ public interface InstanceProjection {
     boolean isVerified();
 
     boolean isTest();
+
+    Instant getCreatedAt();
+
+    Instant getUpdatedAt();
 }

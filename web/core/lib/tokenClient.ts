@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL } from "@/helpers/common.helper";
+
 let at: string | null = null;
 let expMs = 0; // epoch ms of AT expiration
 let inflight: Promise<string> | null = null;
@@ -15,9 +17,9 @@ async function doRefresh(): Promise<string> {
   const csrf =
     document.cookie
       .split("; ")
-      .find((c) => c.startsWith("csrftoken="))
+      .find((c) => c.startsWith("__Host-csrf="))
       ?.split("=")[1] || "";
-  const res = await fetch("/auth/refresh", {
+  const res = await fetch(`${API_BASE_URL}/ui/v1/auth/refresh`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrf },

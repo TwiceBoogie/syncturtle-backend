@@ -23,8 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CacheResponseAspect {
 
-    private final RedisTemplate<String, Object> template;
+    private final RedisTemplate<String, CachedHttpResponse> template;
 
+    // https://docs.spring.io/spring-framework/reference/core/aop/ataspectj/advice.html#aop-ataspectj-around-advice
     @Around("@annotation(cacheAnno)")
     public Object around(ProceedingJoinPoint joinPoint, CacheResponse cacheAnno) throws Throwable {
         HttpServletRequest request =
@@ -47,15 +48,18 @@ public class CacheResponseAspect {
         String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
         String cacheKey =
                 cacheAnno.cacheName() + ":" + userId + ":" + normalizedPath.replace("/", "_");
-        ValueOperations<String, Object> ops = template.opsForValue();
+        log.info("CacheKey: {}", cacheKey);
+        ValueOperations<String, CachedHttpResponse> ops = template.opsForValue();
 
-        Object cached = ops.get(cacheKey);
-        if (cached instanceof CachedHttpResponse cachedResponse) {
+        CachedHttpResponse cached = ops.get(cacheKey);
+        if (cached instanceof CachedHttpResponse cachedResponse && cached != null) {
+            log.info("--> returning a ResponseEntity <--");
             return ResponseEntity.status(cachedResponse.getStatus()).body(cachedResponse.getBody());
         }
 
+        // this would keep going and call the service layer
         Object result = joinPoint.proceed();
-
+        log.info("--> controller method called and returned <--");
         if (result instanceof ResponseEntity<?> response
                 && response.getStatusCode().is2xxSuccessful()) {
             CachedHttpResponse toCache =
