@@ -79,6 +79,14 @@ spring:
           filters:
             - StripPrefix=2
 
+        - id: workspace-service
+          uri: lb://workspace-service
+          predicates:
+            - Path=/api/v1/workspaces/**
+          filters:
+            - StripPrefix=2
+            - name: Auth
+
         - id: password-service
           uri: lb://password-service
           predicates:

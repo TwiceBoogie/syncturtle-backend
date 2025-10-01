@@ -1,6 +1,7 @@
 package dev.twiceb.workspace_service.repository;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,6 +11,8 @@ import dev.twiceb.common.enums.InstanceEdition;
 import dev.twiceb.workspace_service.model.InstanceView;
 
 public interface InstanceViewRepository extends JpaRepository<InstanceView, UUID> {
+
+    Optional<UUID> findFirstIdByOrderByUpdatedAtAsc();
 
     @Modifying
     @Query("""

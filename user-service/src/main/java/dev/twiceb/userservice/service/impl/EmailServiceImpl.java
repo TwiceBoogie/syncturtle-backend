@@ -52,7 +52,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendUsernameToUsersEmail(String username, String email) {
-        String subject = String.format("Here's your SyncTurtle username: %s", username);
+        // String subject = String.format("Here's your SyncTurtle username: %s", username);
         throw new UnsupportedOperationException("Unimplemented method 'sendUsernameToUsersEmail'");
     }
 

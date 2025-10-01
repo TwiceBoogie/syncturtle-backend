@@ -1,13 +1,13 @@
 package dev.twiceb.userservice.service.impl;
 
-import dev.twiceb.common.security.JwtProvider;
-import dev.twiceb.userservice.client.FileClient;
+// import dev.twiceb.common.security.JwtProvider;
+// import dev.twiceb.userservice.client.FileClient;
 import dev.twiceb.userservice.domain.projection.ProfilePicUrlProjection;
-import dev.twiceb.userservice.domain.repository.UserProfileRepository;
-import dev.twiceb.userservice.domain.repository.UserRepository;
-import dev.twiceb.userservice.service.AuthenticationService;
+// import dev.twiceb.userservice.domain.repository.UserProfileRepository;
+// import dev.twiceb.userservice.domain.repository.UserRepository;
+// import dev.twiceb.userservice.service.AuthenticationService;
 import dev.twiceb.userservice.service.UserSettingsService;
-import dev.twiceb.userservice.service.util.UserServiceHelper;
+// import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
@@ -20,15 +20,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserSettingsServiceImpl implements UserSettingsService {
 
-    private static final String USER_PROFILE_BUCKET = "USER";
-    private static final int MAX_PROFILE_PIC_COUNT = 10;
+    // private static final String USER_PROFILE_BUCKET = "USER";
+    // private static final int MAX_PROFILE_PIC_COUNT = 10;
 
-    private final AuthenticationService authenticationService;
-    private final UserServiceHelper userServiceHelper;
-    private final UserRepository userRepository;
-    private final UserProfileRepository userProfileRepository;
-    private final FileClient fileClient;
-    private final JwtProvider jwtProvider;
+    // private final AuthenticationService authenticationService;
+    // private final UserServiceHelper userServiceHelper;
+    // private final UserRepository userRepository;
+    // private final UserProfileRepository userProfileRepository;
+    // private final FileClient fileClient;
+    // private final JwtProvider jwtProvider;
 
     @Override
     public String updateUsername(String username, BindingResult bindingResult) {

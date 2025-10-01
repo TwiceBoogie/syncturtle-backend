@@ -26,6 +26,7 @@ public class GlobalReactiveExceptionHandler implements ErrorWebExceptionHandler 
     private final ObjectMapper mapper;
 
     @Override
+    @SuppressWarnings("null")
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         if (exchange.getResponse().isCommitted()) {
             return Mono.error(ex);

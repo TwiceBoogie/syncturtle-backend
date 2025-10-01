@@ -2,12 +2,12 @@ package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.userservice.domain.model.PasswordResetToken;
 import dev.twiceb.userservice.domain.model.User;
-import dev.twiceb.userservice.domain.repository.PasswordResetOtpRepository;
-import dev.twiceb.userservice.domain.repository.PasswordResetTokenRepository;
-import dev.twiceb.userservice.domain.repository.UserRepository;
-import dev.twiceb.userservice.service.EmailService;
+// import dev.twiceb.userservice.domain.repository.PasswordResetOtpRepository;
+// import dev.twiceb.userservice.domain.repository.PasswordResetTokenRepository;
+// import dev.twiceb.userservice.domain.repository.UserRepository;
+// import dev.twiceb.userservice.service.EmailService;
 import dev.twiceb.userservice.service.PasswordResetService;
-import dev.twiceb.userservice.service.util.UserServiceHelper;
+// import dev.twiceb.userservice.service.util.UserServiceHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +18,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PasswordResetServiceImpl implements PasswordResetService {
 
-    private final EmailService emailService;
-    private final UserRepository userRepository;
-    private final PasswordResetOtpRepository passwordResetOtpRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final UserServiceHelper helper;
+    // private final EmailService emailService;
+    // private final UserRepository userRepository;
+    // private final PasswordResetOtpRepository passwordResetOtpRepository;
+    // private final PasswordResetTokenRepository passwordResetTokenRepository;
+    // private final UserServiceHelper helper;
 
     @Override
     public Map<String, String> createAndSendPasswordResetOtpEmail(User user) {

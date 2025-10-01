@@ -22,6 +22,7 @@ public class WebfluxHostResolverAdapterAutoConfiguration {
 
     public static final class WebfluxHostResolverAdapter {
         private final HostResolver delegate;
+        @SuppressWarnings("unused")
         private final HostProps props;
 
         WebfluxHostResolverAdapter(HostResolver delegate, HostProps props) {

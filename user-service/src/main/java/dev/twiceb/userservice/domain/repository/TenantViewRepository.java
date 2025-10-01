@@ -14,6 +14,7 @@ public interface TenantViewRepository extends JpaRepository<TenantView, UUID> {
 
     Optional<TenantView> findBySlug(String slug);
 
+    @SuppressWarnings("null")
     boolean existsById(UUID tenantId);
 
     List<TenantView> findAllByIdIn(Collection<UUID> ids);

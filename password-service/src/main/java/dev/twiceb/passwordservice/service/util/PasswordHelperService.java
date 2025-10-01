@@ -4,8 +4,6 @@ import dev.twiceb.common.util.EnvelopeEncryption;
 import dev.twiceb.passwordservice.model.*;
 import dev.twiceb.passwordservice.repository.*;
 import dev.twiceb.passwordservice.repository.projection.DecryptedPasswordProjection;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

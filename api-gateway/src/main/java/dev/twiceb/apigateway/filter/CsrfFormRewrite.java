@@ -21,7 +21,6 @@ import dev.twiceb.common.dto.response.AuthErrorResponse;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.common.spring.WebfluxHostResolverAdapterAutoConfiguration.WebfluxHostResolverAdapter;
-import jakarta.ws.rs.core.HttpHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;

@@ -22,6 +22,7 @@ public class ServletHostResolverAdapterAutoConfiguration {
 
     public static final class ServletHostResolverAdapter {
         private final HostResolver delegate;
+        @SuppressWarnings("unused")
         private final HostProps props;
 
         ServletHostResolverAdapter(HostResolver delegate, HostProps props) {

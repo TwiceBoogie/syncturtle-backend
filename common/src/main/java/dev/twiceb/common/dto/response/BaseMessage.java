@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public abstract class BaseMessage {
 
+    @SuppressWarnings("unused")
     private String messageType;
 
     public BaseMessage(String messageType) {

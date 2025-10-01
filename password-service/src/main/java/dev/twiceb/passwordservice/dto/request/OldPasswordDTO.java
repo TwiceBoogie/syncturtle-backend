@@ -5,8 +5,6 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.vault.repository.mapping.Secret;
 
-import java.time.LocalDateTime;
-
 @Secret
 @Getter
 @Setter
