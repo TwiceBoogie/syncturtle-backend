@@ -1,17 +1,18 @@
 package dev.twiceb.instanceservice.domain.projection;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface InstanceAdminProjection {
     UUID getId();
 
-    OnlyId getInstance();
+    UUID getInstance();
 
-    UUID getUserId();
+    UserLiteViewProjection getUser();
 
     int getRole();
 
-    default UUID getInstanceId() {
-        return getInstance().getId();
-    }
+    Instant getUpdatedAt();
+
+    Instant getCreatedAt();
 }

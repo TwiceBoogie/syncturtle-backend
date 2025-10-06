@@ -1,5 +1,6 @@
 package dev.twiceb.instanceservice.domain.model;
 
+import static dev.twiceb.common.util.StringHelper.*;
 import java.time.Instant;
 import java.util.UUID;
 import dev.twiceb.common.enums.InstanceEdition;
@@ -7,23 +8,29 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Entity
 @Getter
+@Entity
 @Table(name = "instances")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(onlyExplicitlyIncluded = true)
 public class Instance extends AuditableEntity {
 
-    @Id
-    private UUID id;
-
+    @Size(max = 100)
+    @ToString.Include
     @Column(name = "slug", unique = true)
     private String slug;
 
-    @Column(name = "instance_name")
+    @Size(max = 255)
+    @Column(name = "instance_name", length = 255)
     private String instanceName;
 
     @Enumerated(EnumType.STRING)
@@ -31,6 +38,7 @@ public class Instance extends AuditableEntity {
     private InstanceEdition edition;
 
     // app binary
+    @NotBlank
     @Column(name = "current_version", nullable = false)
     private String currentVersion;
 
@@ -40,16 +48,29 @@ public class Instance extends AuditableEntity {
     @Column(name = "last_checked_at", nullable = false)
     private Instant lastCheckedAt;
 
+    @Column(name = "config_version", nullable = false)
+    private Long configVersion;
+
+    @Column(name = "config_last_checked_at")
+    private Instant configLastCheckedAt;
+
+    @Size(max = 800)
     @Column(name = "domain")
     private String domain;
 
+    @Size(max = 255)
     @Column(name = "namespace")
     private String namespace;
 
+    // external install/deployment identifier; unique
+    @NotBlank
+    @Size(max = 255)
     @Column(name = "instance_id", nullable = false, unique = true)
+    @ToString.Include
     private String instanceId;
 
-    @Column(name = "vm_host")
+    @Size(max = 512)
+    @Column(name = "vm_host", length = 512)
     private String vmHost;
 
     @Column(name = "is_setup_done", nullable = false)
@@ -61,48 +82,41 @@ public class Instance extends AuditableEntity {
     @Column(name = "is_test", nullable = false)
     private boolean test;
 
-    @Column(name = "config_version", nullable = false)
-    private long configVersion;
-
-    @Column(name = "config_last_checked_at")
-    private Instant configLastCheckedAt;
-
     @Version
     @Column(name = "version")
-    private long version;
-
-    protected Instance() {} // jpa friendly
-
-    public void updateInstanceDetails(String currentVersion, String latestVersion, boolean isTest) {
-        this.lastCheckedAt = Instant.now();
-        this.currentVersion = currentVersion;
-        this.latestVersion = latestVersion;
-        this.test = isTest;
-        this.edition = InstanceEdition.COMMUNITY;
-    }
-
-    public void finishSetup(String instanceName) {
-        this.setupDone = true;
-        this.instanceName = instanceName;
-        this.slug = makeSlug(this.instanceName);
-    }
+    private Long version;
 
     public static Instance register(String currentVersion, String latestVersion, String instanceId,
             boolean isTest) {
         Instant now = Instant.now();
+
         Instance instance = new Instance();
-        instance.id = UUID.randomUUID();
         instance.edition = InstanceEdition.COMMUNITY;
-        instance.currentVersion = currentVersion;
-        instance.latestVersion = latestVersion;
+        instance.currentVersion = nvl(currentVersion, "");
+        instance.latestVersion = nvl(latestVersion, "");
         instance.lastCheckedAt = now;
-        instance.instanceId = instanceId;
+        instance.instanceId = firstNonBlank(instanceId, "instanceId");
         instance.test = isTest;
         instance.setupDone = false;
         instance.verified = false;
-        instance.configVersion = 0L;
-        instance.configLastCheckedAt = now;
+        instance.configVersion = 0l;
+
         return instance;
+    }
+
+    public void updateBinaryCheck(String currentVersion, String latestVersion, boolean isTest) {
+        this.currentVersion = nvl(currentVersion, "");
+        this.latestVersion = nvl(latestVersion, "");
+        this.test = isTest;
+        this.lastCheckedAt = Instant.now();
+    }
+
+    public void finishSetup(String instanceName) {
+        this.setupDone = true;
+        this.instanceName = normalize(instanceName);
+        // slug only generated once if absent;
+        if (isBlank(this.slug) && !isBlank(instanceName))
+            this.slug = makeSlug(this.instanceName);
     }
 
     private static String makeSlug(String name) {

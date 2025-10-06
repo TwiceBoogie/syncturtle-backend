@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS login_policies (
 CREATE TABLE IF NOT EXISTS users (
   created_at               TIMESTAMPTZ NOT NULL,
   updated_at               TIMESTAMPTZ NOT NULL,
-  id                       UUID        NOT NULL,
+  deleted_at               TIMESTAMPTZ,
+  id                       UUID PRIMARY KEY NOT NULL,
   username                 VARCHAR(128) NOT NULL,
   email                    VARCHAR(255) NOT NULL,
   first_name               VARCHAR(36)  NOT NULL,
@@ -41,8 +42,9 @@ CREATE TABLE IF NOT EXISTS users (
   display_name             VARCHAR(255) NOT NULL,
   user_status              VARCHAR(32)  NOT NULL,
   notification_count       BIGINT       NOT NULL,
-  login_policy_id  BIGINT       NOT NULL,
+  login_policy_id          BIGINT       NOT NULL,
   notify_password_change   BOOLEAN      NOT NULL,
+  date_joined              TIMESTAMPTZ NOT NULL,
   created_by               VARCHAR(36),
   updated_by               VARCHAR(36),
 
@@ -52,12 +54,9 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_uagent        VARCHAR(1024),
   last_login_medium        VARCHAR(32),
   last_active              TIMESTAMPTZ,
+  version                  BIGINT NOT NULL,
 
-  CONSTRAINT pk_users PRIMARY KEY (id),
-  CONSTRAINT uq_users_email UNIQUE (email),
-  CONSTRAINT uq_users_username UNIQUE (username),
-  CONSTRAINT fk_users_login_policy
-    FOREIGN KEY (login_policy_id) REFERENCES login_policies(id),
+  FOREIGN KEY (login_policy_id) REFERENCES login_policies(id),
   CONSTRAINT ck_users_status CHECK (user_status IN (
     'SUSPENDED','INACTIVE','ACTIVE','ARCHIVED',
     'BLOCKED','PENDING_DELETION','LOCKED','PENDING_USER_CONFIRMATION'
@@ -70,10 +69,11 @@ CREATE INDEX IF NOT EXISTS gin_users_username ON users USING gin (username gin_t
 CREATE INDEX IF NOT EXISTS gin_users_email    ON users USING gin (email gin_trgm_ops);
 
 -- Case-insensitive uniqueness
-CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower
-  ON users (lower(email));
-CREATE UNIQUE INDEX IF NOT EXISTS uq_users_username_lower
-  ON users (lower(username));
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email_active_lower
+  ON users (lower(email)) WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username_active_lower
+  ON users (lower(username)) WHERE deleted_at IS NULL;
 
 -- =========================================
 -- Refresh Tokens (session)
@@ -388,24 +388,24 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- =========================================
--- denormalized tables from instance-service (VIEW ONLY)
+-- denormalized tables from workspace-service (VIEW ONLY)
 -- =========================================
 -- tenants the user-service needs to render slugs and names
-CREATE TABLE IF NOT EXISTS tenants_view (
-  tenant_id    UUID PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS workspaces_lite (
+  workspace_id    UUID PRIMARY KEY,
   slug         VARCHAR(100) NOT NULL,
   name         VARCHAR(255) NOT NULL,
   instance_id  UUID NOT NULL,
   plan_key     VARCHAR(50),
-  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+  is_active    BOOLEAN NOT NULL,
   deleted_at   TIMESTAMPTZ,
   version      BIGINT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS ux_tenants_view_slug ON tenants_view(slug);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ws_view_slug ON workspaces_lite(slug);
 
 -- memberships to check access quickly
-CREATE TABLE IF NOT EXISTS tenant_memberships_view (
-  tenant_id   UUID NOT NULL,
+CREATE TABLE IF NOT EXISTS workspace_memberships_lite (
+  workspace_id   UUID NOT NULL,
   user_id     UUID NOT NULL,
   role        INT  NOT NULL,
   is_active   BOOLEAN NOT NULL,
@@ -414,15 +414,15 @@ CREATE TABLE IF NOT EXISTS tenant_memberships_view (
   version     BIGINT NOT NULL,
   PRIMARY KEY (tenant_id, user_id)
 );
-CREATE INDEX IF NOT EXISTS idx_tm_user_active ON tenant_memberships_view(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_wsm_user_active ON workspace_memberships_lite(user_id, is_active);
 
 -- optional: invites (often you only need a count by email)
-CREATE TABLE IF NOT EXISTS tenant_invites_view (
-  tenant_id   UUID NOT NULL,
+CREATE TABLE IF NOT EXISTS workspace_invites_lite (
+  workspace_id   UUID NOT NULL,
   email       VARCHAR(255) NOT NULL,
   role        INT NOT NULL,
   accepted    BOOLEAN NOT NULL,
   responded_at TIMESTAMPTZ,
   PRIMARY KEY (tenant_id, email)
 );
-CREATE INDEX IF NOT EXISTS idx_invites_email_pending ON tenant_invites_view(email) WHERE accepted = FALSE;
+CREATE INDEX IF NOT EXISTS idx_invites_email_pending ON workspace_invites_lite(email) WHERE accepted = FALSE;

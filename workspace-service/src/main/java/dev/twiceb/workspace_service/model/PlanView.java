@@ -2,6 +2,7 @@ package dev.twiceb.workspace_service.model;
 
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.NaturalId;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -17,6 +18,10 @@ public class PlanView {
 
     @Id
     private UUID id;
+
+    @NaturalId
+    @Column(name = "key", nullable = false)
+    private String key;
 
     @Column(name = "version", nullable = false)
     private long version;

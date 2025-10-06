@@ -151,7 +151,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         try {
             // 1: auth via provider; created/updated user from db
-            User user = provider.authenticate("magic_" + email, payload.getMagicCode(), false);
+            User user = provider.authenticate(email, payload.getMagicCode(), false);
             // get or create Profile
             Profile profile = profileRepository.findByUserId(user.getId()).orElse(null);
 

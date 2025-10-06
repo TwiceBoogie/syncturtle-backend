@@ -2,21 +2,28 @@ package dev.twiceb.userservice.service.impl;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import dev.twiceb.common.enums.AuthErrorCodes;
+import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
+import dev.twiceb.common.event.UserEvent;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.common.util.StringHelper;
 import dev.twiceb.userservice.application.internal.params.AuthSubjectParams;
+import dev.twiceb.userservice.application.internal.params.RegistrationDraft;
 import dev.twiceb.userservice.domain.model.LoginPolicy;
 import dev.twiceb.userservice.domain.model.Profile;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.LoginPolicyRepository;
 import dev.twiceb.userservice.domain.repository.ProfileRepository;
 import dev.twiceb.userservice.domain.repository.UserRepository;
+// import dev.twiceb.userservice.events.UserAuthenticatedEvent;
+import dev.twiceb.userservice.events.UserChangedEvent;
 import dev.twiceb.userservice.service.CredentialService;
 import dev.twiceb.userservice.service.FeatureFlagService;
+import dev.twiceb.userservice.service.security.BcryptHasher;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,72 +32,88 @@ public class CredentialServiceImpl implements CredentialService {
 
     // service
     private final FeatureFlagService featureFlagService;
+    // publisher
+    private final ApplicationEventPublisher publisher;
     // repositories
     private final UserRepository userRepository;
     private final LoginPolicyRepository lPolicyRepository;
     private final ProfileRepository profileRepository;
+    // hasher
+    private final BcryptHasher hasher;
 
     @Override
     @Transactional
-    public User completeLoginOrSignup(String code, AuthSubjectParams subject, String provider) {
-        String email = subject.getEmail();
-        String normalizedEmail = normalizeEmail(email);
+    public User completeLoginOrSignup(String codeOrPassword, AuthSubjectParams subject,
+            AuthMedium provider) {
+        String normalizedEmail = StringHelper.normalizeEmail(subject.getEmail());
+        if (!StringHelper.isEmailish(normalizedEmail)) {
+            throw new AuthException(AuthErrorCodes.INVALID_EMAIL,
+                    Map.of("email", subject.getEmail()));
+        }
 
         User user = userRepository.findByEmail(normalizedEmail).orElse(null);
         // used in the callback but not java idiomatic
-        // boolean isSignup = user == null;
-
+        // boolean isSignup = (user == null);
+        // its a signup
         if (user == null) {
             // new user
-            checkSignup(normalizedEmail);
+            ensureSignupEnabled(normalizedEmail);
 
-            // initalize user
-            user = new User(normalizedEmail, UUID.randomUUID().toString().replace("-", ""));
+            LoginPolicy policyRef = lPolicyRepository.getReferenceById(1L);
+            RegistrationDraft draft = subject.getDraft();
 
             // check if password is autoset
-            if (subject.getDraft() != null && subject.getDraft().isPasswordAutoset()) {
-                user.setPassword(UUID.randomUUID().toString().replace("-", ""));
-                user.setPasswordAutoSet(true);
-                user.setEmailVerified(true);
+            if (draft != null && draft.isPasswordAutoset()) {
+                user = User.createPasswordless(normalizedEmail, policyRef);
+
+                if (!StringHelper.isBlank(draft.getFirstName())
+                        || !StringHelper.isBlank(draft.getLastName())) {
+                    // user.completeOnboarding(StringHelper.nvl(draft.getFirstName(), ""),
+                    // StringHelper.nvl(draft.getLastName(), ""), null, null);
+                }
             } else {
-                validatePassword(normalizedEmail, code);
-                user.setPassword(code);
-                user.setPasswordAutoSet(false);
+                validatePasswordPolicy(normalizedEmail, codeOrPassword);
+                String hash = hasher.hash(codeOrPassword);
+                user = User.createWithPassword(normalizedEmail, hash, policyRef);
             }
 
-            // set user details
-            LoginPolicy policyRef = lPolicyRepository.getReferenceById(1L); // default
-            user.setLoginPolicy(policyRef);
-            String firstName = subject.getDraft() != null ? subject.getDraft().getFirstName() : "";
-            String lastName = subject.getDraft() != null ? subject.getDraft().getLastName() : "";
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
             // user must exist for it to be referenced by Profile
             user = userRepository.save(user);
+
+            publisher.publishEvent(new UserChangedEvent(UserEvent.Type.USER_CREATED, user.getId(),
+                    user.getEmail(), user.getFirstName(), user.getLastName(), user.getDisplayName(),
+                    user.getDateJoined(), Instant.now()));
 
             // create default
             Profile profile = Profile.create(user, null);
             profileRepository.save(profile);
         }
 
-        user = touchUserLoginSnapshot(provider, user);
+        boolean shouldEmail = false;
+        if (!user.isActive()) {
+            shouldEmail = true;
+        }
+        user.markLastLogin(provider, Instant.now());
+        user.setActive(true);
+
+        user = userRepository.save(user);
+
+        if (shouldEmail) {
+            // publisher.publishEvent(new UserAuthenticatedEvent(user.getId(), isSignup, provider,
+            // user.getEmail(), Instant.now()));
+        }
 
         return user;
     }
 
-    private void validatePassword(String normalizedEmail, String code) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'validatePassword'");
-    }
-
-    private String normalizeEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new AuthException(AuthErrorCodes.INVALID_EMAIL, Map.of("email", email));
+    private void validatePasswordPolicy(String email, String rawPassword) {
+        // TODO consult loginPoilicy (min length, compleixy, breach pw check, etc)
+        if (StringHelper.isBlank(rawPassword)) {
+            throw new AuthException(AuthErrorCodes.INVALID_PASSWORD, Map.of("email", email));
         }
-        return email.strip().toLowerCase();
     }
 
-    private boolean checkSignup(String email) {
+    private boolean ensureSignupEnabled(String email) {
         String signupEnabled = featureFlagService.get(InstanceConfigurationKey.ENABLE_SIGNUP);
 
         if ("0".equals(signupEnabled)) {
@@ -98,23 +121,6 @@ public class CredentialServiceImpl implements CredentialService {
         }
 
         return true;
-    }
-
-    private User touchUserLoginSnapshot(String provider, User user) {
-        user.setLastLoginMedium(provider);
-        user.setLastActive(Instant.now());
-        user.setLastLoginTime(Instant.now());
-        // next 2 are done in the LoginAttempt
-        // user.setLastLoginIp("random");
-        // user.setLastLoginUagent("useragent");
-        if (!user.isActive()) {
-            // send activation email and set user as active
-            // user_activation_email.delay(base_host(request=self.request), user.id)
-        }
-        // set user as active
-        user.setActive(true);
-
-        return userRepository.save(user);
     }
 
 }

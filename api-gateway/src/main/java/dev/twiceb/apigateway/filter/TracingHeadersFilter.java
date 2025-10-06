@@ -1,5 +1,9 @@
 package dev.twiceb.apigateway.filter;
 
+import static dev.twiceb.common.util.StringHelper.firstNonBlank;
+
+import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -21,30 +25,35 @@ public class TracingHeadersFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    @SuppressWarnings("null")
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         log.info("Inside TracingHeadersFilter");
-        ServerHttpRequest request = exchange.getRequest();
-        String requestId = nvl(request.getHeaders().getFirst(MetadataHeaders.REQUEST_ID),
-                UUID.randomUUID().toString());
-        String correlationId =
-                nvl(request.getHeaders().getFirst(MetadataHeaders.CORRELATION_ID), requestId);
 
-        String host = nvl(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_HOST), nvl(
-                request.getHeaders().getFirst(MetadataHeaders.HOST), request.getURI().getHost()));
-        String clientIp =
-                firstForwardedFor(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_FOR));
-        if (clientIp == null && request.getRemoteAddress() != null) {
-            clientIp = request.getRemoteAddress().getAddress().getHostAddress();
-        }
-        String proto = nvl(request.getHeaders().getFirst("X-Forwarded-Proto"),
-                request.getURI().getScheme());
+        ServerHttpRequest request = exchange.getRequest();
+
+        String requestId = firstNonBlank(request.getHeaders().getFirst(MetadataHeaders.REQUEST_ID),
+                UUID.randomUUID().toString());
+
+        String correlationId = firstNonBlank(
+                request.getHeaders().getFirst(MetadataHeaders.CORRELATION_ID), requestId);
+
+        String host = firstNonBlank(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_HOST),
+                request.getHeaders().getFirst(MetadataHeaders.HOST), request.getURI().getHost(),
+                "localhost");
+
+        String clientIp = firstNonBlank(
+                firstForwardedFor(request.getHeaders().getFirst(MetadataHeaders.FORWARDED_FOR)),
+                Optional.ofNullable(request.getRemoteAddress()).map(InetSocketAddress::getAddress)
+                        .map(addr -> addr.getHostAddress()).orElse(null),
+                "");
+
+        String proto = firstNonBlank(request.getHeaders().getFirst("X-Forwarded-Proto"),
+                request.getURI().getScheme(), "http");
 
         // mutate downstream request with headers
         ServerHttpRequest mutated = request.mutate().header(MetadataHeaders.REQUEST_ID, requestId)
                 .header(MetadataHeaders.CORRELATION_ID, correlationId)
                 .header(MetadataHeaders.FORWARDED_HOST, host).header("X-Forwarded-Proto", proto)
-                .header(MetadataHeaders.FORWARDED_FOR, clientIp == null ? "" : clientIp).build();
+                .header(MetadataHeaders.FORWARDED_FOR, clientIp).build();
 
         // also expose in the response for client-side debugging/logs
         exchange.getResponse().getHeaders().set(MetadataHeaders.REQUEST_ID, requestId);
@@ -59,13 +68,6 @@ public class TracingHeadersFilter implements GlobalFilter, Ordered {
             return null;
         int comma = xff.indexOf(",");
         return comma >= 0 ? xff.substring(0, comma).trim() : xff.trim();
-    }
-
-    private static String nvl(String val, String def) {
-        if (val == null || val.isBlank()) {
-            return def;
-        }
-        return val;
     }
 
 }

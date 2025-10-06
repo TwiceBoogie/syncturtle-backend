@@ -1,13 +1,18 @@
 package dev.twiceb.workspace_service.service.impl;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import dev.twiceb.common.dto.context.AuthContext;
 import dev.twiceb.workspace_service.dto.request.CreateWorkspaceRequest;
+import dev.twiceb.workspace_service.enums.WorkspaceRole;
 import dev.twiceb.workspace_service.model.Workspace;
+import dev.twiceb.workspace_service.model.WorkspaceMember;
+import dev.twiceb.workspace_service.repository.WorkspaceMemberRepository;
 import dev.twiceb.workspace_service.repository.WorkspaceRepository;
+import dev.twiceb.workspace_service.repository.projections.WorkspacesProjection;
 import dev.twiceb.workspace_service.service.WorkspaceService;
 import dev.twiceb.workspace_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 public class WorkspaceServiceImpl implements WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceMemberRepository wMemberRepository;
 
     @Override
     @Transactional
-    public void createWorkspaceWithOwner(CreateWorkspaceRequest request) {
+    public List<WorkspacesProjection> createWorkspaceWithOwner(CreateWorkspaceRequest request) {
         ValidationUtils.validateName(request.getName());
         ValidationUtils.validateSlug(request.getSlug());
+
         // 1; create workspace;
         Workspace ws = new Workspace();
         ws.setName(request.getName());
@@ -32,6 +39,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         ws.setOrganizationSize(request.getOrganizationSize());
         ws.setOwnerId(AuthContext.get());
 
+        ws = workspaceRepository.save(ws);
+        // 2; create workspace member
+        WorkspaceMember wsm = new WorkspaceMember();
+        wsm.setWorkspace(ws);
+        wsm.setMemberId(AuthContext.get());
+        wsm.setRole(WorkspaceRole.ADMIN);
+        wsm.setCompanyRole(request.getCompanyRole());
+        wsm.setActive(true);
+
+        wMemberRepository.save(wsm);
+
+        return workspaceRepository.findMyWorkspaces(AuthContext.get(), ws.getName());
     }
 
     @Override

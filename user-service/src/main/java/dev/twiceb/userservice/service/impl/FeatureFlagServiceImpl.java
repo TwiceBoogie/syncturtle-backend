@@ -17,7 +17,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
 
     @Override
     public Map<InstanceConfigurationKey, String> getConfig() {
-        long version = instanceClient.getVersion(); // cheap probe
+        long version = instanceClient.getConfigVersion(); // cheap probe
         return getConfigCached(version).getValues(); // cache aware
     }
 

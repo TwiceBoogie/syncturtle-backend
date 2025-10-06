@@ -21,12 +21,6 @@ import lombok.Setter;
 @SQLRestriction("deleted_at IS NULL")
 public class Workspace extends AuditableEntity {
 
-    @Column(name = "instance_id", nullable = false)
-    private UUID instanceId;
-
-    @Column(name = "plan_id", nullable = false)
-    private UUID planId;
-
     @Column(name = "name", nullable = false, length = 80)
     private String name;
 

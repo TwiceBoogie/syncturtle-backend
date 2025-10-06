@@ -1,19 +1,24 @@
 package dev.twiceb.userservice.domain.model;
 
+import static dev.twiceb.common.util.StringHelper.*;
+
 import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.enums.UserStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang.RandomStringUtils;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedDate;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
 @Getter
-@Setter
+@Entity
 @Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // jpa friendly
 public class User extends AuditableEntity {
 
     @Id
@@ -22,15 +27,20 @@ public class User extends AuditableEntity {
     @UuidGenerator
     private UUID id;
 
+    @Size(max = 128)
     @Column(name = "username", length = 128, nullable = false)
     private String username;
 
+    @Email
+    @Size(max = 255)
     @Column(name = "email", length = 255, nullable = false)
     private String email;
 
+    @Size(max = 36)
     @Column(name = "first_name", length = 36, nullable = false)
     private String firstName;
 
+    @Size(max = 36)
     @Column(name = "last_name", length = 36, nullable = false)
     private String lastName;
 
@@ -53,14 +63,19 @@ public class User extends AuditableEntity {
     @Column(name = "notify_password_change", nullable = false)
     private boolean notifyPasswordChange;
 
+    @CreatedDate
+    @Column(name = "date_joined", nullable = false)
+    private Instant dateJoined;
+
     // ====== DENORMALIZED ======
     // denormalized last-known snapshotss
     // so we don't call loginAttemptRepo
     @Column(name = "last_login_time")
     private Instant lastLoginTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "last_login_medium", length = 32)
-    private String lastLoginMedium;
+    private AuthMedium lastLoginMedium;
 
     @Column(name = "last_active")
     private Instant lastActive;
@@ -77,86 +92,66 @@ public class User extends AuditableEntity {
     private boolean isEmailVerified;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    private boolean active;
 
     // User -> LoginAttemptPolicy (child = User owns FK)
     @ManyToOne(fetch = FetchType.LAZY, optional = false) // multi users can share a policy
     @JoinColumn(name = "login_policy_id", nullable = false)
     private LoginPolicy loginPolicy;
 
-    protected User() {} // jpa friendly
-
-    public User(String email, String username) {
-        this.email = normalize(email);
-        this.username = (username == null || username.isBlank())
-                ? UUID.randomUUID().toString().replace("-", "")
-                : username;
-        this.displayName = deriveDisplayName(this.email);
-        this.userStatus = UserStatus.ACTIVE;
-        this.notificationCount = 0L;
-        this.notifyPasswordChange = true;
-        this.isPasswordExpired = false;
-        this.isActive = true;
-    }
-
-    private User(String email, String passwordHash, AuthMedium method, LoginPolicy policyRef,
-            String firstName, String lastName) {
-        if (policyRef == null) {
-            throw new IllegalArgumentException("Policy reference is required");
-        }
-
-        String normalizedEmail = normalize(email);
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email must be valid");
-        }
-
-        if (method == AuthMedium.PASSWORD) {
-            if (passwordHash == null || passwordHash.isBlank()) {
-                throw new IllegalArgumentException(
-                        "Password hash required for PASSWORD signup/signin");
-            }
-            this.isPasswordAutoSet = false;
-            this.password = passwordHash;
-            this.isEmailVerified = false;
-        } else {
-            // must be passwordless
-            if (passwordHash != null && !passwordHash.isBlank()) {
-                throw new IllegalArgumentException(
-                        "Password must be empty for passwordless signup/signin");
-            }
-            this.isPasswordAutoSet = true;
-            this.password = UUID.randomUUID().toString();
-            // the magic-link was sent through email so by default its verified
-            this.isEmailVerified = true;
-        }
-
-        this.email = normalizedEmail;
-        this.displayName = deriveDisplayName(normalizedEmail);
-        this.username = UUID.randomUUID().toString().replace("-", "");
-        this.userStatus = UserStatus.ACTIVE;
-        this.notificationCount = 0;
-        this.notifyPasswordChange = true;
-        this.isPasswordExpired = false;
-        this.isActive = true;
-        this.loginPolicy = policyRef;
-        this.firstName = nvl(firstName, "");
-        this.lastName = nvl(lastName, "");
-    }
-
     public static User createWithPasswordAdmin(String email, String passwordHash,
             LoginPolicy policyRef, String firstName, String lastName) {
-        return new User(email, passwordHash, AuthMedium.PASSWORD, policyRef, firstName, lastName);
+        requirePolicy(policyRef);
+        requirePassword(passwordHash);
+        return baseCreate(email, passwordHash, AuthMedium.PASSWORD, policyRef, firstName, lastName,
+                false);
     }
 
     // factory for email/password users
     public static User createWithPassword(String email, String passwordHash,
             LoginPolicy policyRef) {
-        return new User(email, passwordHash, AuthMedium.PASSWORD, policyRef, null, null);
+        requirePolicy(policyRef);
+        requirePassword(passwordHash);
+        return baseCreate(email, passwordHash, AuthMedium.PASSWORD, policyRef, "", "", false);
     }
 
     // factory for magic/passwordless users
     public static User createPasswordless(String email, LoginPolicy policyRef) {
-        return new User(email, null, AuthMedium.MAGIC_LINK, policyRef, null, null);
+        requirePolicy(policyRef);
+        return baseCreate(email, null, AuthMedium.MAGIC_LINK, policyRef, "", "", true);
+    }
+
+    private static User baseCreate(String email, String passwordHash, AuthMedium method,
+            LoginPolicy policyRef, String firstName, String lastName, boolean autoSetPassword) {
+        String normEmail = normalizeEmail(email);
+        if (isBlank(normEmail) || !isEmailish(normEmail)) {
+            throw new IllegalArgumentException("Email must be valid");
+        }
+
+        User user = new User();
+        user.email = normEmail;
+        user.displayName = deriveDisplayNameFromEmail(normEmail);
+        user.username = generateRandomUsername();
+        user.userStatus = UserStatus.ACTIVE;
+        user.notificationCount = 0L;
+        user.notifyPasswordChange = true;
+        user.isPasswordExpired = false;
+        user.active = true;
+        user.loginPolicy = policyRef;
+        user.firstName = hasLengthAtMost(firstName, 36) ? firstName : truncate(firstName, 36);
+        user.lastName = hasLengthAtMost(lastName, 36) ? lastName : truncate(lastName, 36);
+
+        if (method == AuthMedium.PASSWORD) {
+            user.isPasswordAutoSet = false;
+            user.password = passwordHash;
+            user.isEmailVerified = false;
+        } else {
+            user.isPasswordAutoSet = true;
+            user.password = randomHex(32);
+            user.isEmailVerified = true;
+        }
+
+        return user;
     }
 
     public void handleUserStatus(UserStatus status) {
@@ -164,51 +159,53 @@ public class User extends AuditableEntity {
     }
 
     public void resetValidPassword(String passwordHash) {
-        if (passwordHash == null || passwordHash.isBlank()) {
-            throw new IllegalArgumentException("Password hash required for PASSWORD signup/signin");
-        }
+        requirePassword(passwordHash);
         // if user is passwordless, still reset/rotate password
         this.password = passwordHash;
+        this.isPasswordAutoSet = false;
+        this.isPasswordExpired = false;
     }
 
     public void verifyEmail(String email) {
-        String normalizedEmail = normalize(email);
-        if (email == null || email.isBlank()) {
+        String norm = normalizeEmail(email);
+        if (isBlank(norm) || !isEmailish(norm)) {
             throw new IllegalArgumentException("Email must be valid");
         }
-        this.email = normalizedEmail;
+        this.email = norm;
         this.isEmailVerified = true;
     }
 
-    public void completeOnboarding(String firstName, String lastName, String about, String gender) {
-        if (firstName == null || firstName.isBlank() || firstName.length() > 36) {
+    public void completeOnboarding(String firstName, String lastName) {
+        if (isBlank(firstName) || !hasLengthAtMost(firstName, 36)) {
             throw new IllegalArgumentException("Invalid first name");
         }
-        if (lastName == null || lastName.isBlank() || lastName.length() > 36) {
+        if (isBlank(lastName) || !hasLengthAtMost(lastName, 36)) {
             throw new IllegalArgumentException("Invalid first name");
         }
 
-        this.firstName = firstName;
-        this.lastName = lastName;
+        this.firstName = collapseWhitespace(firstName);
+        this.lastName = collapseWhitespace(lastName);
     }
 
-    private static String deriveDisplayName(String email) {
-        if (email == null) {
-            return RandomStringUtils.randomAlphabetic(6);
+    public void markLastLogin(AuthMedium medium, Instant when) {
+        this.lastLoginMedium = medium;
+        this.lastLoginTime = when;
+        this.lastActive = when;
+    }
+
+    public void setActive(boolean val) {
+        this.active = val;
+    }
+
+    private static void requirePolicy(LoginPolicy policyRef) {
+        if (policyRef == null) {
+            throw new IllegalArgumentException("Policy reference is required");
         }
-        int at = email.indexOf('@');
-        return at > 0 ? email.substring(0, at) : RandomStringUtils.randomAlphabetic(6);
     }
 
-    private static String normalize(String email) {
-        return email == null ? null : email.trim().toLowerCase();
-    }
-
-    private static String nvl(String val, String def) {
-        if (val == null || val.isBlank()) {
-            return def;
+    private static void requirePassword(String passwordHash) {
+        if (isBlank(passwordHash)) {
+            throw new IllegalArgumentException("Password hash required for PASSWORD signup/signin");
         }
-        return val;
     }
-
 }

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import dev.twiceb.workspace_service.model.Workspace;
-import dev.twiceb.workspace_service.repository.projections.WorkspaceListRow;
+import dev.twiceb.workspace_service.repository.projections.WorkspacesProjection;
 import feign.Param;
 import jakarta.persistence.QueryHint;
 
@@ -35,5 +35,5 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
             )
             AND (:search IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', :SEARCH, '%')))
             """)
-    List<WorkspaceListRow> findMyWorkspaces(UUID userId, String search);
+    List<WorkspacesProjection> findMyWorkspaces(UUID userId, String search);
 }

@@ -13,10 +13,6 @@ import dev.twiceb.instanceservice.domain.model.Instance;
 public interface InstanceRepository extends JpaRepository<Instance, UUID> {
     <T> Optional<T> findFirstByOrderByCreatedAtAsc(Class<T> type);
 
-    Optional<Long> findFirstConfigVersionByOrderByCreatedAtAsc();
-
-    Optional<UUID> findFirstIdByOrderByCreatedAtAsc();
-
     // config versioning for cache invalidation
     @Modifying
     @Query("""
@@ -49,6 +45,5 @@ public interface InstanceRepository extends JpaRepository<Instance, UUID> {
     int recordAppUpgrade(@Param("id") UUID id, @Param("current") long current,
             @Param("now") Instant now);
 
-    @Query("select i.configVersion from Instance i where i.id = :id")
     Optional<Long> findConfigVersionById(UUID id);
 }

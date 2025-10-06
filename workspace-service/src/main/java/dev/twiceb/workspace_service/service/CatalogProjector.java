@@ -8,5 +8,5 @@ public interface CatalogProjector {
     void applyInstanceUpsert(UUID instanceId, String slug, InstanceEdition edition, long version,
             Instant updatedAt);
 
-    void applyPlanUpsert(UUID planId, long version, Instant updatedAt);
+    void applyPlanUpsert(UUID planId, String key, long version, Instant updatedAt);
 }

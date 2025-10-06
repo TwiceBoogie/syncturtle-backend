@@ -18,12 +18,12 @@ public class InstanceControllerApi {
     @GetMapping("/config")
     public ConfigResponse getConfig() {
         return new ConfigResponse(instanceService.getConfigurationValues().getConfigKeys(),
-                instanceService.getInstanceVersion());
+                instanceService.getConfigVersion());
     }
 
     @GetMapping("/config-version")
-    public long getVersion() {
-        return instanceService.getInstanceVersion();
+    public Long getConfigVersion() {
+        return instanceService.getConfigVersion();
     }
 
     @GetMapping("/status")

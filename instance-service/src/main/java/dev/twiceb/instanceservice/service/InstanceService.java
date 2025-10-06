@@ -16,7 +16,7 @@ public interface InstanceService {
 
     ConfigResult getConfigurationValues();
 
-    long getInstanceVersion();
+    Long getConfigVersion();
 
     Map<InstanceConfigurationKey, String> updateConfigurations(
             InstanceConfigurationUpdateRequest request);

@@ -7,8 +7,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 import dev.twiceb.common.enums.AuthErrorCodes;
+import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.common.util.StringHelper;
 import dev.twiceb.userservice.application.internal.params.AuthSubjectParams;
 import dev.twiceb.userservice.domain.model.User;
 import dev.twiceb.userservice.domain.repository.UserRepository;
@@ -38,8 +40,8 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
     private static final int MAX_ATTEMPTS = 3;
 
     @Override
-    public String provider() {
-        return "Magic";
+    public AuthMedium provider() {
+        return AuthMedium.MAGIC_LINK;
     }
 
     @Override
@@ -56,75 +58,70 @@ public class MagicCodeProvider implements AuthProvider, AuthInitiator {
             throw new AuthException(AuthErrorCodes.MAGIC_LINK_LOGIN_DISABLED);
         }
 
-        AuthSubjectParams subject = buildParams(email, code);
+        String normEmail = StringHelper.normalizeEmail(email);
+        if (!StringHelper.isEmailish(normEmail)) {
+            throw new AuthException(AuthErrorCodes.INVALID_EMAIL, Map.of("email", email));
+        }
+
+        AuthSubjectParams subject = buildParams(normEmail, code);
 
         return credentialService.completeLoginOrSignup(code, subject, provider());
     }
 
     @Override
     public TokenPair initiate(String email) {
+        String normEmail = StringHelper.normalizeEmail(email);
+        if (!StringHelper.isEmailish(normEmail)) {
+            throw new AuthException(AuthErrorCodes.INVALID_EMAIL, Map.of("email", email));
+        }
+
         ValueOperations<String, CodeRecord> ops = redis.opsForValue();
         String token = MagicCodeGenerator.humanReadableToken();
-        String key = "magic_" + email;
+        String redisKey = "magic:" + normEmail;
 
-        // check if key already exist
-        CodeRecord record = ops.get(key);
-        int currentAttempt = 0;
+        // check if redisKey already exist
+        CodeRecord record = ops.get(redisKey);
         if (record != null) {
-            currentAttempt = record.getCurrentAttempt();
-            if (currentAttempt >= MAX_ATTEMPTS) {
-                if (userRepository.existsByEmail(email)) {
-                    throw new AuthException(AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN,
-                            Map.of("email", email));
-                } else {
-                    throw new AuthException(AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP,
-                            Map.of("email", email));
-                }
+            if (record.getCurrentAttempt() >= MAX_ATTEMPTS) {
+                boolean exists = userRepository.existsByEmail(normEmail);
+                throw new AuthException(
+                        exists ? AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_IN
+                                : AuthErrorCodes.EMAIL_CODE_ATTEMPT_EXHAUSTED_SIGN_UP,
+                        Map.of("email", normEmail));
             }
-            // hash new token
-            String tokenHash = hasher.hash(token);
             // rotate the token hash and bump current attempt
-            record = record.rotate(tokenHash);
-            ops.set(key, record, MAGIC_CODE_EXPIRY);
+            record = record.rotate(hasher.hash(token));
         } else {
             // hash new token
-            String tokenHash = hasher.hash(token);
-            record = CodeRecord.first(email, tokenHash);
-            ops.set(key, record, MAGIC_CODE_EXPIRY);
+            record = CodeRecord.first(normEmail, hasher.hash(token));
         }
+        ops.set(redisKey, record, MAGIC_CODE_EXPIRY);
 
-        return new TokenPair(key, token);
+        return new TokenPair(redisKey, token);
     }
 
-    private AuthSubjectParams buildParams(String key, String code) {
+    private AuthSubjectParams buildParams(String normalizeEmail, String code) {
+        String redisKey = "magic:" + normalizeEmail;
         ValueOperations<String, CodeRecord> ops = redis.opsForValue();
-        // check if record exist by key
-        CodeRecord record = ops.get(key);
-        if (record != null) {
-            String tokenHash = record.getTokenHash();
-            // delete code and return user data
-            if (hasher.matches(code, tokenHash)) {
-                redis.delete(key);
-                return AuthSubjectParams.forPasswordless(record.getEmail());
-            } else {
-                String email = key.split("_", 2)[1];
-                if (userRepository.existsByEmail(email)) {
-                    throw new AuthException(AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_IN,
-                            Map.of("email", email));
-                } else {
-                    throw new AuthException(AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP,
-                            Map.of("email", email));
-                }
-            }
-        } else {
-            String email = key.split("_", 2)[1];
-            if (userRepository.existsByEmail(email)) {
-                throw new AuthException(AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_IN,
-                        Map.of("email", email));
-            } else {
-                throw new AuthException(AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_UP,
-                        Map.of("email", email));
-            }
+        CodeRecord record = ops.get(redisKey);
+
+        if (record == null) {
+            boolean exists = userRepository.existsByEmail(normalizeEmail);
+            throw new AuthException(
+                    exists ? AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_IN
+                            : AuthErrorCodes.EXPIRED_MAGIC_CODE_SIGN_UP,
+                    Map.of("email", normalizeEmail));
         }
+
+        if (hasher.matches(code, record.getTokenHash())) {
+            redis.delete(redisKey);
+            return AuthSubjectParams.forPasswordless(normalizeEmail);
+        }
+
+        boolean exists = userRepository.existsByEmail(normalizeEmail);
+        throw new AuthException(
+                exists ? AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_IN
+                        : AuthErrorCodes.INVALID_EMAIL_MAGIC_SIGN_UP,
+                Map.of("email", normalizeEmail));
     }
 }

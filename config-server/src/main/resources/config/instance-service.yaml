@@ -35,11 +35,13 @@ spring:
     password: ${LIQUIBASE_COMMAND_PASSWORD:}
     change-log: classpath:db/changelog/db.changelog-master.xml
   kafka:
-    bootstrap-servers: ${BROKER_HOST:localhost:9092}
-    producer:
-      acks: all
-      properties:
-        enable.idempotence: true
+    bootstrap-servers: ${BROKER_HOST:localhost}:9092
+    admin:
+      fail-fast: true
+    # producer:
+    #   acks: all
+    #   properties:
+    #     enable.idempotence: true
 
 eureka:
   client:

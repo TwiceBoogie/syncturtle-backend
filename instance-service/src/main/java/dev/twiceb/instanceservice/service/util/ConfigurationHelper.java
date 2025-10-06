@@ -1,21 +1,17 @@
 package dev.twiceb.instanceservice.service.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.instanceservice.domain.model.InstanceConfiguration;
 import dev.twiceb.instanceservice.domain.repository.InstanceConfigurationRepository;
-import dev.twiceb.instanceservice.shared.ConfigKeyLookupRecord;
-import dev.twiceb.instanceservice.shared.ConfigKeyRecord;
+import dev.twiceb.instanceservice.service.util.AppProperties.ConfigKeys;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,192 +28,265 @@ public class ConfigurationHelper {
     private final InstanceConfigurationRepository iConfigurationRepository;
     private final AppProperties appProperties;
 
-    public List<ConfigKeyRecord> loadEnvConfigKeys() {
-        // List<ConfigKeyRecord> mandatoryConfig = List.of(
-        // new ConfigKeyRecord("SECRET_KEY", appProperties.getSecretKey(), "SECURITY", true));
-
-        // for (ConfigKeyRecord config : mandatoryConfig) {
-        // if (!isNonEmpty(config.value())) {
-        // throw new IllegalStateException(
-        // config.key() + " config value is required but not set.");
-        // }
-        // }
-
-        return List.of(
-                new ConfigKeyRecord(InstanceConfigurationKey.ENABLE_SIGNUP,
-                        appProperties.getConfigKeys().getEnableSignup(), "AUTHENTICATION", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD,
-                        appProperties.getConfigKeys().getEnableEmailPassword(), "AUTHENTICATION",
-                        false),
-                new ConfigKeyRecord(InstanceConfigurationKey.ENABLE_SMTP,
-                        appProperties.getConfigKeys().getEnableSmtp(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_HOST,
-                        appProperties.getConfigKeys().getEmailHost(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_HOST_USER,
-                        appProperties.getConfigKeys().getEmailHostUser(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_HOST_PASSWORD,
-                        appProperties.getConfigKeys().getEmailHostPassword(), "SMTP", true),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_PORT,
-                        appProperties.getConfigKeys().getEmailPort(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_FROM,
-                        appProperties.getConfigKeys().getEmailFrom(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_USE_TLS,
-                        appProperties.getConfigKeys().getEmailUseTls(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.EMAIL_USE_SSL,
-                        appProperties.getConfigKeys().getEmailUseSsl(), "SMTP", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN,
-                        appProperties.getConfigKeys().getEnableMagicLinkLogin(), "AUTHENTICATION",
-                        false),
-                new ConfigKeyRecord(InstanceConfigurationKey.GOOGLE_CLIENT_ID,
-                        appProperties.getConfigKeys().getGoogleClientId(), "GOOGLE", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.GOOGLE_CLIENT_SECRET,
-                        appProperties.getConfigKeys().getGoogleClientSecret(), "GOOGLE", true),
-                new ConfigKeyRecord(InstanceConfigurationKey.GITHUB_CLIENT_ID,
-                        appProperties.getConfigKeys().getGithubClientId(), "GITHUB", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.GITHUB_CLIENT_SECRET,
-                        appProperties.getConfigKeys().getGithubClientSecret(), "GITHUB", true),
-                new ConfigKeyRecord(InstanceConfigurationKey.GITLAB_HOST,
-                        appProperties.getConfigKeys().getGitlabHost(), "GITLAB", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.GITLAB_CLIENT_ID,
-                        appProperties.getConfigKeys().getGitlabClientId(), "GITLAB", false),
-                new ConfigKeyRecord(InstanceConfigurationKey.GITLAB_CLIENT_SECRET,
-                        appProperties.getConfigKeys().getGitlabClientSecret(), "GITLAB", true));
+    public void ensureMandatorySecretsPresentOrThrow() {
+        if (!StringUtils.hasText(appProperties.getSecretKey())) {
+            throw new IllegalStateException("SECRET_KEY is required (application.yaml or env)");
+        }
     }
 
-    public Map<InstanceConfigurationKey, String> getConfigurationValues(
-            final List<ConfigKeyLookupRecord> keys) {
-        Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig =
-                iConfigurationRepository.findAll().stream().collect(
-                        Collectors.toMap(InstanceConfiguration::getKey, Function.identity()));
-        return getConfigurationValuesFromCache(keys, dbConfig);
+    public InsertPayload buildInsertPayload(InstanceConfigurationKey key) {
+        final String category = categoryFor(key);
+        final boolean encrypted = isEncrypted(key);
+        final String raw = appValueOrDefault(key);
+        final String toStore = encrypted ? safeEncrypt(raw) : nonNull(raw);
+        return new InsertPayload(category, encrypted, toStore);
     }
 
-    public Map<InstanceConfigurationKey, String> getConfigurationValuesFromCache(
-            final List<ConfigKeyLookupRecord> keys,
-            final Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig) {
-        Map<InstanceConfigurationKey, String> result = new HashMap<>();
+    public String resolveValue(InstanceConfigurationKey key) {
         if (appProperties.isSkipEnvVar()) {
-            for (ConfigKeyLookupRecord key : keys) {
-                InstanceConfiguration config = dbConfig.get(key.key());
-                if (config != null) {
-                    String value =
-                            config.isEncrypted() ? decrypt(config.getValue()) : config.getValue();
-                    result.put(key.key(), value);
-                } else {
-                    result.put(key.key(), key.defaultValue());
-                }
+            InstanceConfiguration row = iConfigurationRepository.findByKey(key).orElse(null);
+            if (row != null) {
+                return row.isEncrypted() ? safeDecrypt(row.getValue()) : nonNull(row.getValue());
             }
-        } else {
-            for (ConfigKeyLookupRecord key : keys) {
-                result.put(key.key(), key.defaultValue());
-            }
+            return defaultFor(key); // db missing
+        }
+        return appValueOrDefault(key); // application.yaml
+    }
+
+    public void insertPlainFlag(InstanceConfigurationKey key, String value, String category) {
+        if (iConfigurationRepository.existsByKey(key)) {
+            return;
         }
 
-        return result;
+        InstanceConfiguration ic = new InstanceConfiguration();
+        ic.setKey(key);
+        ic.setValue(nonNull(value));
+        ic.setCategory(nonNull(category));
+        ic.setEncrypted(false);
+        try {
+            iConfigurationRepository.save(ic);
+        } catch (DataIntegrityViolationException e) {
+            // ignored
+        }
     }
 
-    public List<InstanceConfiguration> loadMissingConfigKeys(final List<ConfigKeyRecord> records,
-            final Set<InstanceConfigurationKey> existingKeys) {
-        List<InstanceConfiguration> payload = new ArrayList<>();
-        // insert missing config keys
-        for (ConfigKeyRecord record : records) {
-            if (existingKeys.contains(record.key())) {
-                log.warn("{} configuration already exists", record.key());
-                continue;
+    public EmailConfig getEmailConfiguration() {
+        String host = resolveValue(InstanceConfigurationKey.EMAIL_HOST);
+        String user = resolveValue(InstanceConfigurationKey.EMAIL_HOST_USER);
+        String password = resolveValue(InstanceConfigurationKey.EMAIL_HOST_PASSWORD);
+        int port = parseIntOr(resolveValue(InstanceConfigurationKey.EMAIL_PORT), 587);
+        boolean tls = "1".equals(resolveValue(InstanceConfigurationKey.EMAIL_USE_TLS));
+        boolean ssl = "1".equals(resolveValue(InstanceConfigurationKey.EMAIL_USE_SSL));
+        String from = orDefault(resolveValue(InstanceConfigurationKey.EMAIL_FROM),
+                "Team Syncturtle <team@mailer.syncturtle.so");
+
+        return new EmailConfig(host, user, password, port, tls, ssl, from);
+    }
+
+    private String categoryFor(InstanceConfigurationKey key) {
+        switch (key) {
+            // auth / workspace
+            case ENABLE_SIGNUP, ENABLE_EMAIL_PASSWORD, ENABLE_MAGIC_LINK_LOGIN -> {
+                return "AUTHENTICATION";
+            }
+            // smtp
+            case ENABLE_SMTP, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_PORT, EMAIL_FROM, EMAIL_USE_TLS, EMAIL_USE_SSL -> {
+                return "SMTP";
             }
 
-            payload.add(newConfig(record.key(), record.value(), record.category(),
-                    record.isEncrypted()));
+            // oauth
+            case GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET -> {
+                return "GOOGLE";
+            }
+            case GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_APP_NAME -> {
+                return "GITHUB";
+            }
+            case GITLAB_HOST, GITLAB_CLIENT_ID, GITLAB_CLIENT_SECRET -> {
+                return "GITLAB";
+            }
 
-            log.info("{} loaded with value from environment or application.yaml", record.key());
+            // derived flags
+            case IS_GOOGLE_ENABLED, IS_GITHUB_ENABLED, IS_GITLAB_ENABLED -> {
+                return "AUTHENTICATION";
+            }
+
+            default -> {
+                return "MISC";
+            }
         }
-        return payload;
     }
 
-    public List<InstanceConfiguration> loadIntegrationFlags(
-            final Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig) {
-        List<InstanceConfiguration> payload = new ArrayList<>();
-        payload.add(loadGoogleFlag(dbConfig));
-        payload.add(loadGithubFlag(dbConfig));
-        payload.add(loadGitlabFlag(dbConfig));
-
-        return payload;
+    private boolean isEncrypted(InstanceConfigurationKey key) {
+        switch (key) {
+            case EMAIL_HOST_PASSWORD, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_SECRET, GITLAB_CLIENT_SECRET:
+                return true;
+            default:
+                return false;
+        }
     }
 
-    public String encryptValue(String value) {
-        return encrypt(value);
+    // defaults used when db is empty and skipEnvVar = true or appProperties is blanks
+    private String defaultFor(InstanceConfigurationKey key) {
+        switch (key) {
+            // auth / workspace
+            case ENABLE_SIGNUP:
+                return "1";
+            case ENABLE_EMAIL_PASSWORD:
+                return "1";
+            case ENABLE_MAGIC_LINK_LOGIN:
+                return "0";
+
+            // smtp
+            case ENABLE_SMTP:
+                return "0";
+            case EMAIL_HOST:
+                return "";
+            case EMAIL_HOST_USER:
+                return "";
+            case EMAIL_HOST_PASSWORD:
+                return "";
+            case EMAIL_PORT:
+                return "587";
+            case EMAIL_FROM:
+                return "";
+            case EMAIL_USE_TLS:
+                return "1";
+            case EMAIL_USE_SSL:
+                return "0";
+
+            // oauth
+            case GOOGLE_CLIENT_ID:
+                return "";
+            case GOOGLE_CLIENT_SECRET:
+                return "";
+            case GITHUB_CLIENT_ID:
+                return "";
+            case GITHUB_CLIENT_SECRET:
+                return "";
+            case GITHUB_APP_NAME:
+                return "";
+            case GITLAB_HOST:
+                return "https://gitlab.com";
+            case GITLAB_CLIENT_ID:
+                return "";
+            case GITLAB_CLIENT_SECRET:
+                return "";
+
+            // derived flags (safe fallback)
+            case IS_GOOGLE_ENABLED, IS_GITHUB_ENABLED, IS_GITLAB_ENABLED:
+                return "0";
+            default:
+                return "";
+        }
     }
 
-    private InstanceConfiguration loadGoogleFlag(
-            Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig) {
-        // GOOGLE
-        Map<InstanceConfigurationKey, String> google = getConfigurationValuesFromCache(
-                List.of(new ConfigKeyLookupRecord(InstanceConfigurationKey.GOOGLE_CLIENT_ID,
-                        appProperties.getConfigKeys().getGoogleClientId())),
-                dbConfig);
-        String isEnabled = isNonEmpty(google.get(InstanceConfigurationKey.GOOGLE_CLIENT_ID))
-                && isNonEmpty(google.get(InstanceConfigurationKey.GOOGLE_CLIENT_SECRET)) ? "1"
-                        : "0";
-        return newConfig(InstanceConfigurationKey.IS_GOOGLE_ENABLED, isEnabled, "AUTHENTICATION",
-                false);
+    private String appValueOrDefault(InstanceConfigurationKey key) {
+        ConfigKeys c = appProperties.getConfigKeys();
+        switch (key) {
+            // auth / workspace
+            case ENABLE_SIGNUP:
+                return orDefault(c.getEnableSignup(), defaultFor(key));
+            case ENABLE_EMAIL_PASSWORD:
+                return orDefault(c.getEnableEmailPassword(), defaultFor(key));
+            case ENABLE_MAGIC_LINK_LOGIN:
+                return orDefault(c.getEnableMagicLinkLogin(), defaultFor(key));
+
+            // smtp
+            case ENABLE_SMTP:
+                return orDefault(c.getEnableSmtp(), defaultFor(key));
+            case EMAIL_HOST:
+                return orDefault(c.getEmailHost(), defaultFor(key));
+            case EMAIL_HOST_USER:
+                return orDefault(c.getEmailHostUser(), defaultFor(key));
+            case EMAIL_HOST_PASSWORD:
+                return orDefault(c.getEmailHostPassword(), defaultFor(key));
+            case EMAIL_PORT:
+                return orDefault(c.getEmailPort(), defaultFor(key));
+            case EMAIL_FROM:
+                return orDefault(c.getEmailFrom(), defaultFor(key));
+            case EMAIL_USE_TLS:
+                return orDefault(c.getEmailUseTls(), defaultFor(key));
+            case EMAIL_USE_SSL:
+                return orDefault(c.getEmailUseSsl(), defaultFor(key));
+
+            // oauth
+            case GOOGLE_CLIENT_ID:
+                return orDefault(c.getGoogleClientId(), defaultFor(key));
+            case GOOGLE_CLIENT_SECRET:
+                return orDefault(c.getGoogleClientSecret(), defaultFor(key));
+            case GITHUB_CLIENT_ID:
+                return orDefault(c.getGithubClientId(), defaultFor(key));
+            case GITHUB_CLIENT_SECRET:
+                return orDefault(c.getGithubClientSecret(), defaultFor(key));
+            case GITLAB_HOST:
+                return orDefault(c.getGitlabHost(), defaultFor(key));
+            case GITLAB_CLIENT_ID:
+                return orDefault(c.getGitlabClientId(), defaultFor(key));
+            case GITLAB_CLIENT_SECRET:
+                return orDefault(c.getGitlabClientSecret(), defaultFor(key));
+
+            // derived flags
+            case IS_GOOGLE_ENABLED, IS_GITHUB_ENABLED, IS_GITLAB_ENABLED:
+                return defaultFor(key);
+
+            default:
+                return defaultFor(key);
+        }
     }
 
-    private InstanceConfiguration loadGithubFlag(
-            Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig) {
-        // GITHUB
-        Map<InstanceConfigurationKey, String> github = getConfigurationValuesFromCache(List.of(
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITHUB_CLIENT_ID,
-                        appProperties.getConfigKeys().getGithubClientId()),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITHUB_CLIENT_SECRET,
-                        appProperties.getConfigKeys().getGithubClientSecret())),
-                dbConfig);
-        String isEnabled = isNonEmpty(github.get(InstanceConfigurationKey.GITHUB_CLIENT_ID))
-                && isNonEmpty(github.get(InstanceConfigurationKey.GITHUB_CLIENT_SECRET)) ? "1"
-                        : "0";
-
-        return newConfig(InstanceConfigurationKey.IS_GITHUB_ENABLED, isEnabled, "AUTHENTICATION",
-                false);
+    public boolean nonEmpty(String v) {
+        return v != null && !v.isBlank();
     }
 
-    private InstanceConfiguration loadGitlabFlag(
-            Map<InstanceConfigurationKey, InstanceConfiguration> dbConfig) {
-        // GITLAB
-        Map<InstanceConfigurationKey, String> gitlab = getConfigurationValuesFromCache(List.of(
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITLAB_HOST,
-                        appProperties.getConfigKeys().getGitlabHost()),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITLAB_CLIENT_ID,
-                        appProperties.getConfigKeys().getGitlabClientId()),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITLAB_CLIENT_SECRET,
-                        appProperties.getConfigKeys().getGitlabClientSecret())),
-                dbConfig);
-        String isEnabled = isNonEmpty(gitlab.get(InstanceConfigurationKey.GITLAB_HOST))
-                && isNonEmpty(gitlab.get(InstanceConfigurationKey.GITLAB_CLIENT_ID))
-                && isNonEmpty(gitlab.get(InstanceConfigurationKey.GITLAB_CLIENT_SECRET)) ? "1"
-                        : "0";
-        return newConfig(InstanceConfigurationKey.IS_GITLAB_ENABLED, isEnabled, "AUTHENTICATION",
-                false);
+    public static int parseIntOr(String value, int d) {
+        try {
+            return Integer.parseInt(nonNull(value).trim());
+        } catch (Exception e) {
+            return d;
+        }
     }
 
-    private InstanceConfiguration newConfig(InstanceConfigurationKey key, String value,
-            String category, boolean isEncrypted) {
-        InstanceConfiguration config = new InstanceConfiguration();
-        config.setKey(key);
-        config.setCategory(category);
-        config.setEncrypted(isEncrypted);
-        config.setValue(isEncrypted ? encrypt(value) : value);
-        return config;
+    public String decryptIfNeeded(InstanceConfiguration ic) {
+        String value = ic.getValue();
+        return ic.isEncrypted() ? safeDecrypt(value) : value;
     }
 
-    private String encrypt(String rawValue) {
-        return isNonEmpty(rawValue) ? encryptor.encrypt(rawValue) : "";
+    public void encryptIfNeeded(InstanceConfiguration ic, String value) {
+        ic.setValue(ic.isEncrypted() ? safeEncrypt(value) : value);
     }
 
-    private String decrypt(String input) {
-        return isNonEmpty(input) ? encryptor.decrypt(input) : "";
+    private String safeEncrypt(String raw) {
+        return nonEmpty(raw) ? encryptor.encrypt(raw) : "";
     }
 
-    public boolean isNonEmpty(String val) {
-        return val != null && !val.isBlank();
+    private String safeDecrypt(String value) {
+        return nonEmpty(value) ? encryptor.decrypt(value) : "";
+    }
+
+    private static String nonNull(String v) {
+        return v == null ? "" : v;
+    }
+
+    private static String orDefault(String v, String d) {
+        return StringUtils.hasText(v) ? v : d;
+    }
+
+    @Value
+    public static class InsertPayload {
+        String category;
+        boolean encrypted;
+        String value;
+    }
+
+    @Value
+    public static class EmailConfig {
+        String host;
+        String user;
+        String password;
+        int port;
+        boolean useTls;
+        boolean useSSl;
+        String from;
     }
 
 }

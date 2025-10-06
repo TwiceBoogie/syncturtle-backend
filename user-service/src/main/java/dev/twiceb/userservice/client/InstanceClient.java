@@ -16,7 +16,7 @@ public interface InstanceClient {
     ConfigResponse getConfig();
 
     @GetMapping("/config-version")
-    long getVersion();
+    long getConfigVersion();
 
     @GetMapping("/status")
     InstanceStatusResult getStatus();

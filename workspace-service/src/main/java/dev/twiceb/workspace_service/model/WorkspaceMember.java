@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -23,7 +24,7 @@ import lombok.Setter;
 public class WorkspaceMember extends AuditableEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @Column(name = "workspace_id", nullable = false)
+    @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
     // logical FK to user-service.users.id

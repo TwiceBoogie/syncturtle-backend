@@ -2,6 +2,7 @@ package dev.twiceb.workspace_service.configuration;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -18,30 +20,52 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.ExponentialBackOff;
+import dev.twiceb.common.constants.KafkaTopicConstants;
 import dev.twiceb.common.event.InstanceEvent;
 import dev.twiceb.common.event.PlanEvent;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    private Map<String, Object> baseProps() {
+    private Map<String, Object> baseProps(String valueDefaultTypeFqn) {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        // delegates to jackson json
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
         // trust
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "dev.twiceb.*");
         // producer has them off for cross service stability
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, valueDefaultTypeFqn);
         // reprocess from beginning if new group
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return props;
+    }
+
+    @Bean
+    NewTopic instanceEventsDlt() {
+        // retention 7 days
+        return TopicBuilder.name(KafkaTopicConstants.INSTANCE_EVENTS_V1 + ".DLT").partitions(1)
+                .replicas((short) 1)
+                .config("retention.ms", String.valueOf(7L * 24 * 60 * 60 * 1000)).build();
+    }
+
+    @Bean
+    NewTopic planEventsDlt() {
+        return TopicBuilder.name(KafkaTopicConstants.PLAN_EVENTS_V1 + ".DLT").partitions(1)
+                .replicas((short) 1)
+                .config("retention.ms", String.valueOf(7L * 24 * 60 * 60 * 1000)).build();
     }
 
     @Bean
@@ -62,7 +86,7 @@ public class KafkaConsumerConfig {
     DefaultErrorHandler defaultErrorHandler(KafkaTemplate<String, Object> dltTemplate) {
         ExponentialBackOff backoff = new ExponentialBackOff(500L, 2.0); // start 0.5s; double each
                                                                         // time
-        backoff.setMaxElapsedTime(10_000L); // stop after 10s
+        backoff.setMaxElapsedTime(8_000L); // stop after 10s
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(dltTemplate,
                 (rec, ex) -> new TopicPartition(rec.topic() + ".DLT", rec.partition()));
         return new DefaultErrorHandler(recoverer, backoff);
@@ -70,10 +94,9 @@ public class KafkaConsumerConfig {
 
     @Bean
     ConsumerFactory<String, InstanceEvent> instanceConsumerFactory() {
-        Map<String, Object> props = baseProps();
-        JsonDeserializer<InstanceEvent> value = new JsonDeserializer<>(InstanceEvent.class);
-        value.addTrustedPackages("dev.twiceb.*");
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), value);
+        Map<String, Object> props = baseProps("dev.twiceb.common.event.InstanceEvent");
+
+        return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
@@ -83,16 +106,15 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         factory.setCommonErrorHandler(errorHandler);
-        factory.setConcurrency(3);
+        factory.setConcurrency(1);
         return factory;
     }
 
     @Bean
     ConsumerFactory<String, PlanEvent> planConsumerFactory() {
-        Map<String, Object> props = baseProps();
-        JsonDeserializer<PlanEvent> value = new JsonDeserializer<>(PlanEvent.class);
-        value.addTrustedPackages("dev.twiceb.*");
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), value);
+        Map<String, Object> props = baseProps("dev.twiceb.common.event.PlanEvent");
+
+        return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
@@ -102,7 +124,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         factory.setCommonErrorHandler(errorHandler);
-        factory.setConcurrency(3);
+        factory.setConcurrency(1);
         return factory;
     }
 }

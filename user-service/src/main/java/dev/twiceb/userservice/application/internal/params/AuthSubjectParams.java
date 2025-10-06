@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.application.internal.params;
 
 import java.util.Objects;
+import dev.twiceb.common.util.StringHelper;
 
 /**
  * provider agnostic payload. internal S2S only
@@ -73,7 +74,7 @@ public final class AuthSubjectParams {
         }
 
         public AuthSubjectParams build() {
-            if (email == null || email.isBlank()) {
+            if (StringHelper.isBlank(email)) {
                 throw new IllegalStateException("email must be set");
             }
             return new AuthSubjectParams(this);

@@ -1,5 +1,6 @@
 package dev.twiceb.instanceservice.runner;
 
+import static dev.twiceb.common.util.StringHelper.nvl;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,22 +37,22 @@ public class InstanceRegistrar {
             instance = instanceRepository.save(instance);
 
             InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_CREATED)
-                    .id(instance.getId()).slug(instance.getSlug()).edition(instance.getEdition())
-                    .version(instance.getVersion()).updatedAt(instance.getUpdatedAt())
-                    .schemaVersion(1).build();
+                    .id(instance.getId()).slug(nvl(instance.getSlug(), ""))
+                    .edition(instance.getEdition()).version(instance.getVersion())
+                    .occurredAt(instance.getCreatedAt()).schemaVersion(1).build();
 
             publisher.publish(event);
             log.info("New instance registered with signature: " + machineSignature);
         } else {
             // update instance details
-            instance.updateInstanceDetails(buildProperties.getVersion(),
-                    buildProperties.getVersion(), appProperties.isTest());
+            instance.updateBinaryCheck(buildProperties.getVersion(), buildProperties.getVersion(),
+                    appProperties.isTest());
             instance = instanceRepository.save(instance);
 
             InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_UPDATED)
-                    .id(instance.getId()).slug(instance.getSlug()).edition(instance.getEdition())
-                    .version(instance.getVersion()).updatedAt(instance.getUpdatedAt())
-                    .schemaVersion(1).build();
+                    .id(instance.getId()).slug(nvl(instance.getSlug(), ""))
+                    .edition(instance.getEdition()).version(instance.getVersion())
+                    .occurredAt(instance.getUpdatedAt()).schemaVersion(1).build();
             publisher.publish(event);
             log.info("Instance already registered - updating");
         }

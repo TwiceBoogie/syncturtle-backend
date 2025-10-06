@@ -1,12 +1,15 @@
 package dev.twiceb.instanceservice.service.impl;
 
+import static dev.twiceb.common.util.StringHelper.normalizeEmail;
 import java.time.Instant;
 import java.util.ConcurrentModificationException;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +31,14 @@ import dev.twiceb.instanceservice.domain.repository.InstanceConfigurationReposit
 import dev.twiceb.instanceservice.domain.repository.InstanceRepository;
 import dev.twiceb.instanceservice.domain.projection.OnlyId;
 import dev.twiceb.instanceservice.domain.projection.InstanceAdminProjection;
+import dev.twiceb.instanceservice.domain.projection.InstanceConfigVersionProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceStatusProjection;
 import dev.twiceb.instanceservice.service.InstanceService;
 import dev.twiceb.instanceservice.service.util.AppProperties;
 import dev.twiceb.instanceservice.service.util.ConfigurationHelper;
-import dev.twiceb.instanceservice.shared.ConfigKeyLookupRecord;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +56,18 @@ public class InstanceServiceImpl implements InstanceService {
 
     // keys that trigger version bump
     private static final Set<InstanceConfigurationKey> VERSIONED_KEYS = Set.copyOf(BOOL_KEYS);
+
+    private static final Set<InstanceConfigurationKey> MANAGED_KEYS = EnumSet.of(
+            // auth / workspace
+            InstanceConfigurationKey.ENABLE_SIGNUP, InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD,
+            InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN,
+
+            // smtp
+            InstanceConfigurationKey.ENABLE_SMTP, InstanceConfigurationKey.EMAIL_HOST,
+
+            // derived flags
+            InstanceConfigurationKey.IS_GOOGLE_ENABLED, InstanceConfigurationKey.IS_GITHUB_ENABLED,
+            InstanceConfigurationKey.IS_GITLAB_ENABLED);
 
     // clients;
     private final UserClient userClient;
@@ -85,60 +101,53 @@ public class InstanceServiceImpl implements InstanceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ConfigResult getConfigurationValues() {
-        Map<InstanceConfigurationKey, String> config = cHelper.getConfigurationValues(List.of(
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_SIGNUP, "0"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GOOGLE_ENABLED, "0"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GITHUB_ENABLED, "0"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.IS_GITLAB_ENABLED, "0"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.GITHUB_APP_NAME, ""),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.EMAIL_HOST, ""),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN, "1"),
-                new ConfigKeyLookupRecord(InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD, "1")));
-        ConfigResult result = new ConfigResult();
-        result.setConfigKeys(config);
-        result.setSmtpConfigured(!config.get(InstanceConfigurationKey.EMAIL_HOST).isBlank());
-        result.setAdminBaseUrl(appProperties.getBaseUrls().getAdmin());
-        result.setAppBaseUrl(appProperties.getBaseUrls().getApp());
+        Map<InstanceConfigurationKey, String> config =
+                iConfigurationRepository.findByKeyIn(MANAGED_KEYS).stream().collect(Collectors
+                        .toMap(InstanceConfiguration::getKey, InstanceConfiguration::getValue));
+
+        ConfigResult result = ConfigResult.builder().configKeys(config)
+                .adminBaseUrl(appProperties.getBaseUrls().getAdmin())
+                .appBaseUrl(appProperties.getBaseUrls().getApp()).build();
+
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long getInstanceVersion() {
-        Instance instance =
-                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
+    public Long getConfigVersion() {
+        Instance instance = instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class)
+                .orElseThrow(() -> new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED));
 
-        if (instance != null) {
-            return instance.getConfigVersion();
-        }
-
-        return 0L;
+        return instance.getConfigVersion();
     }
 
     @Override
     @Transactional
     public Map<InstanceConfigurationKey, String> updateConfigurations(
             InstanceConfigurationUpdateRequest request) {
-        Map<InstanceConfigurationKey, String> updates = toUpdatesMap(request);
+        InstanceConfigVersionProjection instance = instanceRepository
+                .findFirstByOrderByCreatedAtAsc(InstanceConfigVersionProjection.class)
+                .orElseThrow(() -> new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED));
+
+        Map<InstanceConfigurationKey, String> updates = toUpdateMap(request);
         List<InstanceConfiguration> iConfigs =
                 iConfigurationRepository.findByKeyIn(updates.keySet());
 
         boolean bumpNeeded = false;
         for (InstanceConfiguration iConfig : iConfigs) {
-            if (VERSIONED_KEYS.contains(iConfig.getKey())) {
+            InstanceConfigurationKey key = iConfig.getKey();
+            if (VERSIONED_KEYS.contains(key)) {
                 bumpNeeded = true;
             }
-            iConfig.setValue(
-                    iConfig.isEncrypted() ? cHelper.encryptValue(updates.get(iConfig.getKey()))
-                            : updates.get(iConfig.getKey()));
+            cHelper.encryptIfNeeded(iConfig, updates.get(key));
         }
 
         if (bumpNeeded) {
-            Long expected =
-                    instanceRepository.findFirstConfigVersionByOrderByCreatedAtAsc().orElse(null);
+            Long expected = instance.getConfigVersion();
             if (expected != null) {
-                int bumped = instanceRepository.bumpConfigVersion(UUID.randomUUID(), expected,
+                int bumped = instanceRepository.bumpConfigVersion(instance.getId(), expected,
                         Instant.now());
                 if (bumped != 1) {
                     throw new ConcurrentModificationException("Config modified concurrently");
@@ -146,7 +155,8 @@ public class InstanceServiceImpl implements InstanceService {
             }
         }
 
-        return updates;
+        return iConfigurationRepository.saveAll(iConfigs).stream().collect(
+                Collectors.toMap(InstanceConfiguration::getKey, InstanceConfiguration::getValue));
     }
 
     @Override
@@ -169,16 +179,19 @@ public class InstanceServiceImpl implements InstanceService {
         // return error if the email and password is not present
 
         // validate the email or do it on user-service
-        String email = payload.getEmail().trim().trim();
+        String email = normalizeEmail(payload.getEmail());
 
         // check if already a user exists or not
         UUID userId = userClient.getUserIdByEmail(email);
         if (userId != null) {
+            // we don't send password back
             throw new AuthException(AuthErrorCodes.ADMIN_USER_ALREADY_EXIST,
-                    Map.of("email", email, "first_name", payload.getFirstName(), "last_name",
-                            payload.getLastName(), "company_name", payload.getCompanyName()));
+                    Map.of("email", email, "firstName", payload.getFirstName(), "lastName",
+                            payload.getLastName(), "companyName", payload.getCompanyName()));
         }
 
+        // we create user in user-service and it sends a UserEvent
+        // user-service is source of truth
         AuthAdminResult adminTokenGrant = userClient.createUser(payload);
         instance.finishSetup(payload.getCompanyName());
         instance = instanceRepository.save(instance);
@@ -195,10 +208,10 @@ public class InstanceServiceImpl implements InstanceService {
         if (instance == null) {
             throw new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED);
         }
-        return iAdminRepository.findAllByInstance_Id(instance);
+        return iAdminRepository.findAllByInstanceId(instance);
     }
 
-    private Map<InstanceConfigurationKey, String> toUpdatesMap(
+    private Map<InstanceConfigurationKey, String> toUpdateMap(
             InstanceConfigurationUpdateRequest request) {
         // keep things ordered
         Map<InstanceConfigurationKey, String> map = new LinkedHashMap<>();
@@ -250,7 +263,8 @@ public class InstanceServiceImpl implements InstanceService {
         throw new IllegalStateException("Configuration Key not found");
     }
 
-    @Data
+    @Getter
+    @Builder
     public static class ConfigResult {
         private Map<InstanceConfigurationKey, String> configKeys;
         private boolean isSmtpConfigured;

@@ -39,6 +39,8 @@ spring:
         "[format_sql]": true
         "[highligh_sql]": true
         "[use_sql_comments]": true
+  kafka:
+    bootstrap-servers: ${BROKER_HOST:localhost}:9092
 
 eureka:
   client:

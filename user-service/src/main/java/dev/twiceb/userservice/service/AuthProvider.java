@@ -1,5 +1,6 @@
 package dev.twiceb.userservice.service;
 
+import dev.twiceb.common.enums.AuthMedium;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.userservice.domain.model.User;
 
@@ -13,7 +14,7 @@ public interface AuthProvider {
      * 
      * @return the provider name (e.g, {@code "email"}, {@code "magicCode"})
      */
-    public String provider(); // "email", "magicCode"
+    public AuthMedium provider(); // "email", "magicCode"
 
     /**
      * Authenticates a user using the provided credentials.

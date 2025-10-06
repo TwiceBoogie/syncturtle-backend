@@ -34,10 +34,10 @@ spring:
     user: ${LIQUIBASE_COMMAND_USERNAME:}
     password: ${LIQUIBASE_COMMAND_PASSWORD:}
     change-log: classpath:db/changelog/db.changelog-master.xml
-  # kafka:
-  #   bootstrap-servers: ${BROKER_HOST:localhost:9092}
-  #   consumer:
-  #     group-id: user
+  kafka:
+    bootstrap-servers: ${BROKER_HOST:localhost}:9092
+    admin:
+      fail-fast: true
 
 eureka:
   client:
@@ -62,5 +62,6 @@ eureka:
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE # bound params (hibernate 6)
+    # org.hibernate.SQL: INFO
+    # org.hibernate.orm.jdbc.bind: TRACE # bound params (hibernate 6)
+    org.apache.kafka: WARN
