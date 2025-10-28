@@ -12,7 +12,7 @@ public interface UserLiteViewProjection {
 
     String getLastName();
 
-    String getDisplayname();
+    String getDisplayName();
 
     Instant getDateJoined();
 }

@@ -16,13 +16,8 @@ public interface InstanceAdminRepository extends JpaRepository<InstanceAdmin, UU
             SELECT
                 ia.id AS id,
                 ia.instance.id AS instance,
-                u.id AS user_id,
-                u.email AS user_email,
-                u.firstName AS user_firstName,
-                u.lastName AS user_lastName,
-                u.displayName AS user_displayName,
-                u.dateJoined AS user_dateJoined,
-                ia.role AS roke,
+                u AS user,
+                ia.role AS role,
                 ia.updatedAt AS updatedAt,
                 ia.createdAt AS createdAt
             FROM InstanceAdmin ia

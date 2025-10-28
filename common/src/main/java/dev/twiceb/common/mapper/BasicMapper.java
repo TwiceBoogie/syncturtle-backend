@@ -27,17 +27,6 @@ public class BasicMapper {
     }
 
     public <T, S> List<S> convertToResponseList(List<T> lists, Class<S> type) {
-        // if (lists == null || lists.contains(null))
-        // return new ArrayList<>();
-
-        // List<S> result = new ArrayList<>();
-        // for (T item : lists) {
-        // S ob = convertToResponse(item, type);
-        // System.out.println("Inside baseMapper ==> " + ob.getClass());
-        // result.add(ob);
-        // }
-        // return result;
-        // java stream API is lazy which can delay or bypass field access,
         return lists.contains(null) ? new ArrayList<>()
                 : lists.stream().map(list -> convertToResponse(list, type)).toList();
     }

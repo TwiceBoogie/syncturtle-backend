@@ -22,7 +22,7 @@ public class IntegrationPublisher {
                 .occurredAt(event.getOccurredAt()).type(event.getType()).id(event.getUserId())
                 .email(event.getEmail()).firstName(event.getFirstName())
                 .lastName(event.getLastName()).displayName(event.getDisplayName())
-                .dateJoined(event.getDateJoined()).build();
+                .dateJoined(event.getDateJoined()).version(event.getVersion()).build();
 
         producer.publish(payload);
     }

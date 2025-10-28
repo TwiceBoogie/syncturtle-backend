@@ -68,7 +68,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT COUNT(user) FROM User user WHERE user.createdAt > :since")
     int countUsersByTimePeriod(@Param("since") Instant since);
 
-    @Query("SELECT COUNT(user) FROM User user WHERE user.createdAt > :since AND user.isActive = TRUE")
+    @Query("SELECT COUNT(user) FROM User user WHERE user.createdAt > :since AND user.active = TRUE")
     int countVerifiedUsersByTimePeriod(@Param("since") Instant since);
 
     boolean existsUserByUsername(String username);

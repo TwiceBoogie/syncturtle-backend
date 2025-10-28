@@ -47,16 +47,12 @@ public class InstanceConfigurator {
             InstanceConfigurationKey.GITLAB_CLIENT_ID,
             InstanceConfigurationKey.GITLAB_CLIENT_SECRET);
 
-    // private static final List<InstanceConfigurationKey> INTEGRATION_FLAGS = List.of(
-    // InstanceConfigurationKey.IS_GOOGLE_ENABLED, InstanceConfigurationKey.IS_GITHUB_ENABLED,
-    // InstanceConfigurationKey.IS_GITLAB_ENABLED);
-
     @Transactional
     public void run() {
         // 1; mandatory checks
         cHelper.ensureMandatorySecretsPresentOrThrow();
 
-        // 2; seed managed keys using appProperties (no db read; idempotent upsert)
+        // 2; seed managed keys using appProperties
         seedManagedKeys();
 
         // 3; derived flags

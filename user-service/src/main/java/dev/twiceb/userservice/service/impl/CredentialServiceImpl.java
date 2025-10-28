@@ -82,7 +82,7 @@ public class CredentialServiceImpl implements CredentialService {
 
             publisher.publishEvent(new UserChangedEvent(UserEvent.Type.USER_CREATED, user.getId(),
                     user.getEmail(), user.getFirstName(), user.getLastName(), user.getDisplayName(),
-                    user.getDateJoined(), Instant.now()));
+                    user.getDateJoined(), Instant.now(), user.getVersion()));
 
             // create default
             Profile profile = Profile.create(user, null);

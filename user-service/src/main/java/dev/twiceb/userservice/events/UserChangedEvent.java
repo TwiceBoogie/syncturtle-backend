@@ -17,4 +17,5 @@ public class UserChangedEvent {
     private final String displayName;
     private final Instant dateJoined;
     private final Instant occurredAt;
+    private final Long version;
 }

@@ -48,6 +48,7 @@ public class InvalidateCacheRedisAspect {
                 !invalidateAnno.path().isEmpty() ? invalidateAnno.path() : request.getRequestURI();
         String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
 
+        log.info("Invalidating path: {}", normalizedPath);
         if (invalidateAnno.urlParams()) {
             @SuppressWarnings("unchecked")
             Map<String, String> pathVars = (Map<String, String>) request
@@ -61,6 +62,7 @@ public class InvalidateCacheRedisAspect {
         String cacheKey =
                 invalidateAnno.cacheName() + ":" + userId + ":" + normalizedPath.replace("/", "_");
 
+        log.info("CachedKey: {}", cacheKey);
         if (invalidateAnno.multiple()) {
             String pattern = invalidateAnno.cacheName() + ":" + userId + ":*";
             Set<String> keys = template.keys(pattern);

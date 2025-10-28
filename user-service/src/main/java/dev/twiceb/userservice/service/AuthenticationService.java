@@ -1,6 +1,8 @@
 package dev.twiceb.userservice.service;
 
 import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
+import dev.twiceb.common.dto.internal.AuthUserResult;
 import dev.twiceb.common.dto.internal.MagicCodeResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.enums.MagicCodeType;
@@ -29,13 +31,13 @@ public interface AuthenticationService {
 
     String generateMagicCode(String email, MagicCodeType type);
 
-    IssuedTokens magicLogin(AuthContextRequest<MagicCodeRequest> request);
+    AuthUserResult magicLogin(AuthContextRequest<MagicCodeRequest> request);
 
-    IssuedTokens login(AuthContextRequest<AuthenticationRequest> request);
+    AuthUserResult login(AuthContextRequest<AuthenticationRequest> request);
 
     AuthenticatedUserRecord getUserByToken();
 
     IssuedTokens refreshToken(AuthContextRequest<RefreshTokenRequest> request);
 
-    IssuedTokens createAdminUser(AdminSignupRequest payload);
+    AuthAdminResult createAdminUser(AdminSignupRequest payload);
 }

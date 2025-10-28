@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-// import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-// import org.springframework.scheduling.TaskScheduler;
-// import org.springframework.vault.core.VaultOperations;
 import org.springframework.vault.core.lease.SecretLeaseContainer;
 import org.springframework.vault.core.lease.domain.RequestedSecret;
 import org.springframework.vault.core.lease.event.SecretLeaseCreatedEvent;
@@ -37,35 +34,34 @@ public class VaultLeaseConfig {
         SecretLeaseContainer leaseContainer =
                 applicationContext.getBean(SecretLeaseContainer.class);
 
+        // start in rotate mode
+        leaseContainer.addRequestedSecret(RequestedSecret.rotating(vaultCredsPath));
+
         leaseContainer.addLeaseListener(leaseEvent -> {
-            if (vaultCredsPath.equals(leaseEvent.getSource().getPath())) {
-                log.info("==> Received event: {}", leaseEvent);
+            // if paths don't match do nothing;
+            if (!vaultCredsPath.equals(leaseEvent.getSource().getPath())) {
+                return;
+            }
 
-                if (leaseEvent.getSource().getMode() == RequestedSecret.Mode.RENEW) {
-                    log.info("==> Replace RENEW lease by a rotate one.");
+            // check if event published (contains our new creds) and if mode is rotate
+            if (leaseEvent instanceof SecretLeaseCreatedEvent secretLeaseCreatedEvent
+                    && leaseEvent.getSource().getMode() == RequestedSecret.Mode.ROTATE) {
+                String username = (String) secretLeaseCreatedEvent.getSecrets().get("username");
+                String password = (String) secretLeaseCreatedEvent.getSecrets().get("password");
+
+                log.info("==> Applying rotated db creds: {}", username);
+                // keep in sync so framework can read them at runtime
+                System.setProperty("spring.datasource.username", username);
+                System.setProperty("spring.datasource.password", password);
+
+                updateDataSource(username, password);
+                // if its an expired event, try again
+            } else if (leaseEvent instanceof SecretLeaseExpiredEvent) {
+                log.warn("==> Lease expired for path: {}. Reregistering rotation", vaultCredsPath);
+                try {
                     leaseContainer.requestRotatingSecret(vaultCredsPath);
-                } else if (leaseEvent instanceof SecretLeaseCreatedEvent secretLeaseCreatedEvent
-                        && leaseEvent.getSource().getMode() == RequestedSecret.Mode.ROTATE) {
-                    String username = (String) secretLeaseCreatedEvent.getSecrets().get("username");
-                    String password = (String) secretLeaseCreatedEvent.getSecrets().get("password");
-
-                    log.info("==> Update System properties username & password");
-                    System.setProperty("spring.datasource.username", username);
-                    System.setProperty("spring.datasource.password", password);
-
-                    log.info("==> spring.datasource.username: {}", username);
-
-                    updateDataSource(username, password);
-                } else if (leaseEvent instanceof SecretLeaseExpiredEvent) {
-                    log.warn("==> Lease expired for path: {}", leaseEvent.getSource().getPath());
-
-                    try {
-                        leaseContainer.requestRotatingSecret(vaultCredsPath);
-                    } catch (Exception e) {
-                        log.error(
-                                "==> Failed to request new Vault crednetials after lease expiry: {}",
-                                e.getMessage(), e);
-                    }
+                } catch (Exception e) {
+                    log.error("==> Failed to reregister rotation: {}", e.getMessage(), e);
                 }
             }
         });
@@ -80,18 +76,17 @@ public class VaultLeaseConfig {
      * @param password password extracted from the lease event's secrets
      */
     private void updateDataSource(String username, String password) {
-        HikariDataSource hikariDataSource =
-                (HikariDataSource) applicationContext.getBean("dataSource");
+        HikariDataSource dataSource = (HikariDataSource) applicationContext.getBean("dataSource");
 
-        log.info("==> Soft evict database connections");
-        HikariPoolMXBean hikariPoolMXBean = hikariDataSource.getHikariPoolMXBean();
-        if (hikariPoolMXBean != null) {
-            hikariPoolMXBean.softEvictConnections();
+        HikariPoolMXBean pool = dataSource.getHikariPoolMXBean();
+        if (pool != null) {
+            log.info("==> Soft evict database connections");
+            pool.softEvictConnections();
         }
 
         log.info("==> Update database credentials");
-        HikariConfigMXBean hikariConfigMXBean = hikariDataSource.getHikariConfigMXBean();
-        hikariConfigMXBean.setUsername(username);
-        hikariConfigMXBean.setPassword(password);
+        HikariConfigMXBean config = dataSource.getHikariConfigMXBean();
+        config.setUsername(username);
+        config.setPassword(password);
     }
 }

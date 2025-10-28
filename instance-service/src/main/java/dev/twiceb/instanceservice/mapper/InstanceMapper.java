@@ -3,7 +3,7 @@ package dev.twiceb.instanceservice.mapper;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.mapper.BasicMapper;
@@ -40,7 +40,7 @@ public class InstanceMapper {
         return instanceService.updateConfigurations(request);
     }
 
-    public IssuedTokens adminSignup(AdminSignupRequest request) {
+    public AuthAdminResult adminSignup(AdminSignupRequest request) {
         return instanceService.adminSignup(request);
     }
 

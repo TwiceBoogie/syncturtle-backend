@@ -7,16 +7,22 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.twiceb.common.dto.response.ApiErrorResponse;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 @AllArgsConstructor
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -28,6 +34,7 @@ public class GlobalReactiveExceptionHandler implements ErrorWebExceptionHandler 
     @Override
     @SuppressWarnings("null")
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+        log.info("inside GlobalReactiveExceptionHandler");
         if (exchange.getResponse().isCommitted()) {
             return Mono.error(ex);
         }
@@ -54,10 +61,26 @@ public class GlobalReactiveExceptionHandler implements ErrorWebExceptionHandler 
             body = new ApiErrorResponse("INTERNAL SERVER ERROR", Map.of());
         }
 
-        var res = exchange.getResponse();
+        ServerHttpRequest req = exchange.getRequest();
+        HttpMethod method = req.getMethod();
+        String path = req.getURI().getRawPath();
+
+        if (status.is4xxClientError()) {
+            log.warn("Resolved exception [{}] for {} {} -> {} {}: {}",
+                    ex.getClass().getSimpleName(), method, path, status.value(),
+                    status.getReasonPhrase(), ex.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Resolved stacktrace (debug only)", ex);
+            }
+        } else {
+            log.error("Resolved exception [{}] for {} {} -> {} {}", ex.getClass().getSimpleName(),
+                    method, path, status.value(), status.getReasonPhrase(), ex);
+        }
+
+        ServerHttpResponse res = exchange.getResponse();
         res.setStatusCode(status);
         res.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        var bufFactory = res.bufferFactory();
+        DataBufferFactory bufFactory = res.bufferFactory();
 
         try {
             byte[] json = mapper.writeValueAsBytes(body);

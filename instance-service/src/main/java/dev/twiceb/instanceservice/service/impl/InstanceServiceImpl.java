@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.response.InstanceStatusResult;
@@ -161,7 +160,7 @@ public class InstanceServiceImpl implements InstanceService {
 
     @Override
     @Transactional
-    public IssuedTokens adminSignup(AdminSignupRequest payload) {
+    public AuthAdminResult adminSignup(AdminSignupRequest payload) {
         // check if instance exist;
         Instance instance =
                 instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
@@ -192,12 +191,12 @@ public class InstanceServiceImpl implements InstanceService {
 
         // we create user in user-service and it sends a UserEvent
         // user-service is source of truth
-        AuthAdminResult adminTokenGrant = userClient.createUser(payload);
+        AuthAdminResult res = userClient.createUser(payload);
         instance.finishSetup(payload.getCompanyName());
         instance = instanceRepository.save(instance);
-        InstanceAdmin instanceAdmin = InstanceAdmin.create(instance, adminTokenGrant.getUserId());
+        InstanceAdmin instanceAdmin = InstanceAdmin.create(instance, res.getUserId());
         iAdminRepository.save(instanceAdmin);
-        return adminTokenGrant.getTokenGrant();
+        return res;
     }
 
     @Override
@@ -208,7 +207,11 @@ public class InstanceServiceImpl implements InstanceService {
         if (instance == null) {
             throw new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED);
         }
-        return iAdminRepository.findAllByInstanceId(instance);
+        List<InstanceAdminProjection> projections = iAdminRepository.findAllByInstanceId(instance);
+        for (InstanceAdminProjection instanceAdminProjection : projections) {
+            log.info("instance: {}", instanceAdminProjection.getUser());
+        }
+        return projections;
     }
 
     private Map<InstanceConfigurationKey, String> toUpdateMap(

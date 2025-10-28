@@ -2,7 +2,7 @@ package dev.twiceb.instanceservice.service;
 
 import java.util.List;
 import java.util.Map;
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.response.InstanceStatusResult;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
@@ -21,7 +21,7 @@ public interface InstanceService {
     Map<InstanceConfigurationKey, String> updateConfigurations(
             InstanceConfigurationUpdateRequest request);
 
-    IssuedTokens adminSignup(AdminSignupRequest payload);
+    AuthAdminResult adminSignup(AdminSignupRequest payload);
 
     InstanceStatusResult getInstanceStatus();
 

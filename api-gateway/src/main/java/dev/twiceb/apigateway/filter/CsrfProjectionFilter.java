@@ -33,7 +33,7 @@ public class CsrfProjectionFilter implements GlobalFilter, Ordered {
         // boolean protectedPath = path.equals("/api/v1/auth/refresh");
         boolean unsafe = HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method)
                 || HttpMethod.PATCH.equals(method) || HttpMethod.DELETE.equals(method);
-        log.info("Inside csrfProjectionFilter");
+
         if (!unsafe) {
             return chain.filter(exchange);
         }

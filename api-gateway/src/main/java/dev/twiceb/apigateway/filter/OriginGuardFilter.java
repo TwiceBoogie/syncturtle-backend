@@ -25,7 +25,7 @@ public class OriginGuardFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-        log.info("Inside OriginGuardFilter", path);
+
         if (!path.equals("/api/v1/auth/refresh")) {
             return chain.filter(exchange);
         }

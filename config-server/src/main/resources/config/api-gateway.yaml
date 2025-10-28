@@ -16,10 +16,10 @@ spring:
       config.lifecycle.enabled: true
 
     gateway:
-    # CORS for browser apps hitting the gateawu
+      # CORS for browser apps hitting the gateawu
       globalcors:
         cors-configurations:
-          '[/**]':
+          "[/**]":
             allowedOriginPattern:
               - "http://localhost"
             allowedMethods:
@@ -41,6 +41,61 @@ spring:
           lower-case-service-id: true
 
       routes:
+        - id: admin_signup
+          uri: lb://instance-service
+          predicates:
+            - Path=/api/v1/instances/admins/sign-up
+          filters:
+            - StripPrefix=2
+            - name: SessionIssue
+              args:
+                cookieName: "admin-session"
+                sessionTtlMinutes: 15
+                absoluteTtlDays: 15
+                blockIfAuthenticated: true
+
+        - id: admin_login
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/auth/admin/login
+          filters:
+            - StripPrefix=2
+            - RewritePath=/auth/admin/login, /auth/login
+            - AddRequestHeader=X-Login-Context, ADMIN
+            - name: SessionIssue
+              args:
+                cookieName: "admin-session"
+                sessionTtlMinutes: 15
+                absoluteTtlDays: 15
+                blockIfAuthenticated: true
+
+        - id: user_login_register
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/auth/login,/api/v1/auth/magic-sign-in,/api/v1/auth/sign-up,/api/v1/auth/magic-sign-up
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Login-Context, APP
+            - name: SessionIssue
+              args:
+                cookieName: "session"
+                sessionTtlMinutes: 30
+                absoluteTtlDays: 30
+                blockIfAuthenticated: true
+
+        - id: instance_admins
+          uri: lb://instance-service
+          predicates:
+            - Path=/api/v1/instances/admins/**
+          filters:
+            - StripPrefix=2
+            - name: SessionAuth
+              args:
+                cookieNames: ["admin-session"]
+                sessionTtlMinutes: 15
+                absoluteTtlDays: 15
+                requiredRoles: ["ADMIN"]
+
         # refresh token endpoint, rate-limited by IP
         - id: auth-public
           uri: lb://user-service
@@ -70,7 +125,12 @@ spring:
             - Path=/api/v1/users/**
           filters:
             - StripPrefix=2
-            - name: Auth
+            - name: SessionAuth
+              args:
+                cookieNames: ["session", "admin-session"]
+                sessionTtlMinutes: 30
+                absoluteTtlDays: 30
+                requiredRoles: ["USER"]
 
         - id: instance-public
           uri: lb://instance-service
@@ -85,7 +145,11 @@ spring:
             - Path=/api/v1/workspaces/**
           filters:
             - StripPrefix=2
-            - name: Auth
+            - name: SessionAuth
+              args:
+                cookieName: "session"
+                sessionTtlMinutes: 30
+                absoluteTtlDays: 30
 
         - id: password-service
           uri: lb://password-service
@@ -93,8 +157,11 @@ spring:
             - Path=/api/v1/password/**
           filters:
             - StripPrefix=2
-            - name: Auth
-            # - name: DeviceAuth
+            - name: SessionAuth
+              args:
+                cookieName: "session"
+                sessionTtlMinutes: 30
+                absoluteTtlDays: 30
 
         - id: task-service
           uri: lb://task-service

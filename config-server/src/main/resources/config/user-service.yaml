@@ -1,20 +1,70 @@
 server:
   port: 8001
+
 spring:
   application:
     name: user-service
+
+  # vt (java 21) better dev throughput
+  threads:
+    virtual:
+      enabled: true
+
+  # ds/hikari (vault rotates creds; keep lifetime below ttl)
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/user
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # must be < db lease ttl (vault db ttl=1h -> max-lifetime ~30m)
+      max-lifetime: 1800000 # 30m
+      keepalive-time: 300000 # 5m
+      minimum-idle: 2
+      maximum-pool-size: 10
+      pool-name: hikari-user-svc
+
+  # jpa/hibernate6
+  jpa:
+    database: postgresql
+    open-in-view: false
+    show-sql: false # use loggers instead
+    # database-platform: org.hibernate.dialect.PostgreSQLDialect # hibernate 6 auto-detects postgres
+    properties:
+      hibernate:
+        format_sql: true #multiline + indentation
+        highlight_sql: true
+        jdbc:
+          time_zone: UTC
+        generate_statistics: false
+        # temp:
+        #   "[use_jdbc_metadata_defaults]": false // hibernate 5 era settings
+
+  # liquibase (its own thing)
+  liquibase:
+    enabled: true
+    # so it does not borrow the main datasource which vault populates later
+    # removes any race with vaults datasoruce creds
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/user
+    user: ${LIQUIBASE_COMMAND_USERNAME:}
+    password: ${LIQUIBASE_COMMAND_PASSWORD:}
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  # vault (approle + dynamic db/rabbit creds)
   cloud:
     vault:
       uri: http://localhost:8200
+      fail-fast: true
       authentication: APPROLE
       app-role:
         role-id: ${VAULT_USER_SERVICE_ROLE_ID:}
         secret-id: ${VAULT_USER_SERVICE_SECRET_ID:}
-#      ssl:
-#        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
-#        trust-store-password: changeit
-      fail-fast: true
-      config.lifecycle.enabled: true
+      #      ssl:
+      #        trust-store: file:${KEYSTORE:/Users/sebastian/IdeaProjects/personaVault/work/keystore.jks}
+      #        trust-store-password: changeit
+      config:
+        lifecycle:
+          enabled: true
+          expiry-threshold: 5m
+          min-renewal: 2m
       database:
         enabled: true
         role: user-service
@@ -28,36 +78,16 @@ spring:
         backend: rabbitmq
         username-property: spring.rabbitmq.username
         password-property: spring.rabbitmq.password
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/user
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false # use loggers instead
-    database: postgresql
-    # database-platform: org.hibernate.dialect.PostgreSQLDialect # hibernate 6 auto-detects postgres
-    open-in-view: false
-    generate-ddl: false
-    properties:
-      hibernate:
-        jdbc:
-          time_zone: UTC
-        format_sql: true #multiline + indentation
-        highligh_sql: true
-        use_sql_comments: true
-        # temp:
-        #   "[use_jdbc_metadata_defaults]": false // hibernate 5 era settings
-  liquibase:
-    enabled: true
-    # so it does not borrow the main datasource which vault populates later
-    # removes any race with vaults datasoruce creds
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/user
-    user: ${LIQUIBASE_COMMAND_USERNAME:}
-    password: ${LIQUIBASE_COMMAND_PASSWORD:}
-    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  # rabbitmq (basic)
   rabbitmq:
     addresses: ${RABBITMQ_HOST:localhost}:5672
+    listener:
+      simple:
+        # auto-ack off so failures route through own error handling
+        acknowledge-mode: auto
+
+  # kafka
   kafka:
     bootstrap-servers: ${BROKER_HOST:localhost:9092}
     consumer:
@@ -72,6 +102,7 @@ eureka:
   instance:
     hostname: ${HOST_NAME:localhost}
 
+# actuator/tracing (zipling)
 management:
   endpoints:
     web:
@@ -85,9 +116,21 @@ management:
       probability: 1.0
 
 logging:
+  # include trace/span ids + app name (works with micrometer)
+  pattern:
+    level: "%5p [${spring.application.name:},traceId=%X{traceId:-},spanId=%X{spanId:-}]"
+  # root at info
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE # bound params (hibernate 6)
+    root: INFO
+    kafka: WARN
+    org.springframework.kafka.listener: INFO
+    vault: INFO
+    sql: INFO
+  group:
+    sql: org.hibernate.SQL,org.hibernate.orm.jdbc.bind,org.hibernate.orm.jdbc.extract
+    kafka: org.apache.kafka,org.springframework.kafka
+    vault: org.springframework.vault,org.springframework.cloud.vault
+
 rabbitmq:
   exchanges:
     internal-direct: email.exchange
@@ -100,3 +143,6 @@ rabbitmq:
 
 app:
   root-domain: ${ROOT_DOMAIN:127.0.0.1.nip.io:3000}
+  kafka:
+    dlt-suffix: .DLT # <topic>.DLT
+    max-attempts: 3 # attempts before publishing to DLT

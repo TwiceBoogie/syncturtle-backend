@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users (
   mobile_phone             VARCHAR(32),
   display_name             VARCHAR(255) NOT NULL,
   user_status              VARCHAR(32)  NOT NULL,
+  role                     SMALLINT NOT NULL CHECK (role >= 0),
   notification_count       BIGINT       NOT NULL,
   login_policy_id          BIGINT       NOT NULL,
   notify_password_change   BOOLEAN      NOT NULL,
@@ -412,7 +413,7 @@ CREATE TABLE IF NOT EXISTS workspace_memberships_lite (
   created_at  TIMESTAMPTZ NOT NULL,
   updated_at  TIMESTAMPTZ NOT NULL,
   version     BIGINT NOT NULL,
-  PRIMARY KEY (tenant_id, user_id)
+  PRIMARY KEY (workspace_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_wsm_user_active ON workspace_memberships_lite(user_id, is_active);
 
@@ -423,6 +424,6 @@ CREATE TABLE IF NOT EXISTS workspace_invites_lite (
   role        INT NOT NULL,
   accepted    BOOLEAN NOT NULL,
   responded_at TIMESTAMPTZ,
-  PRIMARY KEY (tenant_id, email)
+  PRIMARY KEY (workspace_id, email)
 );
 CREATE INDEX IF NOT EXISTS idx_invites_email_pending ON workspace_invites_lite(email) WHERE accepted = FALSE;

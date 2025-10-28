@@ -1,11 +1,11 @@
 package dev.twiceb.userservice.service.impl;
 
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.request.RequestMetadata;
 import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.AuthMedium;
+import dev.twiceb.common.event.UserEvent;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.userservice.domain.enums.LoginContext;
 import dev.twiceb.userservice.domain.model.LoginPolicy;
@@ -15,19 +15,20 @@ import dev.twiceb.userservice.domain.repository.LoginPolicyRepository;
 import dev.twiceb.userservice.domain.repository.ProfileRepository;
 import dev.twiceb.userservice.domain.repository.UserRepository;
 import dev.twiceb.userservice.dto.internal.AuthUserResult;
-import dev.twiceb.userservice.dto.internal.TokenProvenance;
 import dev.twiceb.userservice.dto.request.AuthContextRequest;
 import dev.twiceb.userservice.dto.request.MagicCodeRequest;
 import dev.twiceb.userservice.dto.request.RegistrationRequest;
+import dev.twiceb.userservice.events.UserChangedEvent;
 import dev.twiceb.userservice.service.AuthProvider;
 import dev.twiceb.userservice.service.LoginService;
 import dev.twiceb.userservice.service.RegistrationService;
-import dev.twiceb.userservice.service.TokenService;
 import dev.twiceb.userservice.service.security.BcryptHasher;
 import dev.twiceb.userservice.service.util.RedirectionPathHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static dev.twiceb.common.util.StringHelper.normalizeEmail;
 import java.time.Instant;
 import java.util.Map;
 
@@ -37,8 +38,9 @@ import java.util.Map;
 public class RegistrationServiceImpl implements RegistrationService {
 
     // service
-    private final TokenService tokenService;
     private final LoginService loginService;
+    // publisher
+    private final ApplicationEventPublisher publisher;
     // helpers
     private final RedirectionPathHelper redirectionPathHelper;
     // repositories
@@ -69,18 +71,18 @@ public class RegistrationServiceImpl implements RegistrationService {
             loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.APP, metadata);
 
             // 5: mintt tokens w/ provenance and create refresh/access token
-            TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
-                    .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
-                    .context(LoginContext.APP)
-                    // .deviceId(device.getId())
-                    .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
-                    .now(Instant.now()).build();
-            IssuedTokens issuedTokens = tokenService.issueTokens(user, provenance);
+            // TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
+            // .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
+            // .context(LoginContext.APP)
+            // // .deviceId(device.getId())
+            // .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
+            // .now(Instant.now()).build();
+            // IssuedTokens issuedTokens = tokenService.issueTokens(user, provenance);
 
             // get redirection path
             String path = redirectionPathHelper.getRedirectionPath(user);
 
-            return new AuthUserResult(path, issuedTokens);
+            return new AuthUserResult(path, user.getId(), user.getRole());
         } catch (AuthException e) {
             // might do something here
             throw e;
@@ -114,17 +116,17 @@ public class RegistrationServiceImpl implements RegistrationService {
                     metadata);
 
             // 5: mintt tokens w/ provenance and create refresh/access token
-            TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
-                    .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
-                    .context(LoginContext.APP)
-                    // .deviceId(device.getId())
-                    .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
-                    .now(Instant.now()).build();
-            IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
+            // TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
+            // .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
+            // .context(LoginContext.APP)
+            // // .deviceId(device.getId())
+            // .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
+            // .now(Instant.now()).build();
+            // IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
 
             // 6: get redirection path
             String path = redirectionPathHelper.getRedirectionPath(user);
-            return new AuthUserResult(path, tokenGrant);
+            return new AuthUserResult(path, user.getId(), user.getRole());
         } catch (AuthException e) {
             // might do something here
             throw e;
@@ -138,7 +140,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         RequestMetadata meta = request.getMetadata();
 
         // normalize email
-        String email = payload.getEmail().trim().toLowerCase();
+        String email = normalizeEmail(payload.getEmail());
         LoginPolicy policyRef = lPolicyRepository.getReferenceById(1L);
         User user = User.createWithPasswordAdmin(email, hasher.hash(payload.getPassword()),
                 policyRef, payload.getFirstName(), payload.getLastName());
@@ -146,16 +148,20 @@ public class RegistrationServiceImpl implements RegistrationService {
         Profile profile = Profile.create(user, payload.getCompanyName());
         profileRepository.save(profile);
 
+        publisher.publishEvent(new UserChangedEvent(UserEvent.Type.USER_CREATED, user.getId(),
+                user.getEmail(), user.getFirstName(), user.getLastName(), user.getDisplayName(),
+                user.getDateJoined(), Instant.now(), user.getVersion()));
+
         // 4: log user and ?store device info?
         loginService.success(user, true, AuthMedium.PASSWORD, LoginContext.ADMIN, meta);
 
         // 5: mintt tokens w/ provenance and create refresh/access token
-        TokenProvenance provenance = TokenProvenance.builder().ip(meta.getIpAddress())
-                .userAgent(meta.getUserAgent()).domain(meta.getDomain()).context(LoginContext.APP)
-                // .deviceId(device.getId())
-                .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
-                .now(Instant.now()).build();
-        IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
-        return new AuthAdminResult(user.getId(), tokenGrant);
+        // TokenProvenance provenance = TokenProvenance.builder().ip(meta.getIpAddress())
+        // .userAgent(meta.getUserAgent()).domain(meta.getDomain()).context(LoginContext.APP)
+        // // .deviceId(device.getId())
+        // .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
+        // .now(Instant.now()).build();
+        // IssuedTokens tokenGrant = tokenService.issueTokens(user, provenance);
+        return new AuthAdminResult(user.getId(), user.getRole());
     }
 }

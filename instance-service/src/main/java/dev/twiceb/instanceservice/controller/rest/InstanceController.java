@@ -2,11 +2,11 @@ package dev.twiceb.instanceservice.controller.rest;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.constants.PathConstants;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.request.RequestMetadata;
-import dev.twiceb.common.spring.ServletHostResolverAdapterAutoConfiguration.ServletHostResolverAdapter;
+import dev.twiceb.common.util.ExpandRoles;
 import dev.twiceb.instanceservice.controller.util.CacheControl;
 import dev.twiceb.instanceservice.controller.util.CacheResponse;
 import dev.twiceb.instanceservice.controller.util.InvalidateCacheRedis;
@@ -19,12 +19,7 @@ import dev.twiceb.instanceservice.util.PermissionClasses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +35,6 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 public class InstanceController {
 
     private final InstanceMapper instanceMapper;
-    private final ServletHostResolverAdapter resolverAdapter;
 
     @GetMapping()
     @CacheResponse(cacheName = "instance", ttl = 60 * 60 * 2, user = false)
@@ -71,7 +65,7 @@ public class InstanceController {
     }
 
     @PostMapping("/admins/sign-up")
-    @InvalidateCacheRedis(cacheName = "instance", path = "instances")
+    @InvalidateCacheRedis(cacheName = "instance", path = "instances", multiple = true, user = false)
     public ResponseEntity<Void> adminSignup(@Valid @RequestBody AdminSignupRequest request,
             BindingResult bindingResult, @RequestAttribute("requestMetadata") RequestMetadata meta,
             HttpServletRequest httpRequest) {
@@ -80,18 +74,10 @@ public class InstanceController {
             System.out.println(request);
         }
 
-        IssuedTokens tokenGrant = instanceMapper.adminSignup(request);
-
-        ResponseCookie cookie = ResponseCookie.from("admin_token", tokenGrant.getRc().getToken())
-                .httpOnly(true).secure(false).sameSite("Strict").path("/")
-                .maxAge(Duration.between(Instant.now(), tokenGrant.getRc().getExp())).build();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-        String base = resolverAdapter.resolve(httpRequest, true, false, false, null);
-        URI location = resolverAdapter.buildUrl(base + "/general", null);
-
-        return ResponseEntity.created(location).headers(headers).build();
+        AuthAdminResult res = instanceMapper.adminSignup(request);
+        String roles = String.join(",", ExpandRoles.expand(res.getRole()));
+        return ResponseEntity.ok().header("X-Internal-UserId", res.getUserId().toString())
+                .header("X-Internal-Roles", roles).build();
     }
 
 }

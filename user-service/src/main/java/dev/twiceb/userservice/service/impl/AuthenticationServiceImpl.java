@@ -2,7 +2,8 @@ package dev.twiceb.userservice.service.impl;
 
 import dev.twiceb.common.application.internal.bundle.IssuedTokens;
 import dev.twiceb.common.dto.context.AuthContext;
-import dev.twiceb.common.dto.context.RequestMetadataContext;
+import dev.twiceb.common.dto.internal.AuthAdminResult;
+import dev.twiceb.common.dto.internal.AuthUserResult;
 import dev.twiceb.common.dto.internal.MagicCodeResult;
 import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.request.RequestMetadata;
@@ -127,11 +128,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public IssuedTokens magicLogin(AuthContextRequest<MagicCodeRequest> request) {
+    public AuthUserResult magicLogin(AuthContextRequest<MagicCodeRequest> request) {
         AuthProvider provider = verifyAuthByBeanName.get("emailAuthProvider");
 
         MagicCodeRequest payload = request.getPayload();
-        RequestMetadata metadata = request.getMetadata();
+        // RequestMetadata metadata = request.getMetadata();
         String email = payload.getEmail().trim().toLowerCase();
 
         boolean isUserExist = userRepository.existsByEmail(email);
@@ -163,14 +164,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // 3: device upsert
 
             // 4: mintt tokens w/ provenance
-            TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
-                    .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
-                    .context(LoginContext.APP)
-                    // .deviceId(device.getId())
-                    .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
-                    .now(Instant.now()).build();
+            // TokenProvenance provenance = TokenProvenance.builder().ip(metadata.getIpAddress())
+            // .userAgent(metadata.getUserAgent()).domain(metadata.getDomain())
+            // .context(LoginContext.APP)
+            // // .deviceId(device.getId())
+            // .requestId(metadata.getRequestId()).correlationId(metadata.getCorrelationId())
+            // .now(Instant.now()).build();
 
-            return tokenService.issueTokens(user, provenance);
+            return new AuthUserResult("", user.getId(), user.getRole());
         } catch (AuthException e) {
             // log login attempt failure and rethrow
             throw e;
@@ -194,7 +195,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public IssuedTokens login(AuthContextRequest<AuthenticationRequest> request) {
+    public AuthUserResult login(AuthContextRequest<AuthenticationRequest> request) {
         // get provider
         AuthProvider provider = verifyAuthByBeanName.get("emailAuthProvider");
 
@@ -227,14 +228,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // 3: device upsert
 
             // 4: mintt tokens w/ provenance
-            TokenProvenance provenance =
-                    TokenProvenance.builder().ip(meta.getIpAddress()).userAgent(meta.getUserAgent())
-                            .domain(meta.getDomain()).context(LoginContext.APP)
-                            // .deviceId(device.getId())
-                            .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
-                            .now(Instant.now()).build();
+            // TokenProvenance provenance =
+            // TokenProvenance.builder().ip(meta.getIpAddress()).userAgent(meta.getUserAgent())
+            // .domain(meta.getDomain()).context(LoginContext.APP)
+            // // .deviceId(device.getId())
+            // .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
+            // .now(Instant.now()).build();
 
-            return tokenService.issueTokens(user, provenance);
+            return new AuthUserResult("", user.getId(), user.getRole());
         } catch (AuthException e) {
             // log login attempt failure and rethrow
             loginService.failure(user, false, null, null, meta);
@@ -250,7 +251,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public IssuedTokens createAdminUser(AdminSignupRequest payload) {
+    public AuthAdminResult createAdminUser(AdminSignupRequest payload) {
         // zxcbn here
         // normalize email
         String email = payload.getEmail().trim().toLowerCase();
@@ -261,13 +262,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Profile profile = Profile.create(user, payload.getCompanyName());
         profileRepository.save(profile);
         // either grab from the Context or pass it thorugh as an argument;
-        RequestMetadata meta = RequestMetadataContext.get();
-        TokenProvenance provenance = TokenProvenance.builder().ip(meta.getIpAddress())
-                .userAgent(meta.getUserAgent()).domain(meta.getDomain()).context(LoginContext.APP)
-                // .deviceId(device.getId())
-                .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
-                .now(Instant.now()).build();
+        // RequestMetadata meta = RequestMetadataContext.get();
+        // TokenProvenance provenance = TokenProvenance.builder().ip(meta.getIpAddress())
+        // .userAgent(meta.getUserAgent()).domain(meta.getDomain()).context(LoginContext.APP)
+        // // .deviceId(device.getId())
+        // .requestId(meta.getRequestId()).correlationId(meta.getCorrelationId())
+        // .now(Instant.now()).build();
 
-        return tokenService.issueTokens(user, provenance);
+        return new AuthAdminResult(user.getId(), user.getRole());
     }
 }

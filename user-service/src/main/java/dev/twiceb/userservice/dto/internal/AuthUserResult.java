@@ -1,6 +1,7 @@
 package dev.twiceb.userservice.dto.internal;
 
-import dev.twiceb.common.application.internal.bundle.IssuedTokens;
+import java.util.UUID;
+import dev.twiceb.common.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,5 +9,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AuthUserResult {
     private final String redirectionPath;
-    private final IssuedTokens tokenGrant;
+    private final UUID userId;
+    private final UserRole role;
 }

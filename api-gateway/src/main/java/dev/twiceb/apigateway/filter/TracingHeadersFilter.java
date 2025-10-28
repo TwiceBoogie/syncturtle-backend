@@ -26,8 +26,6 @@ public class TracingHeadersFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        log.info("Inside TracingHeadersFilter");
-
         ServerHttpRequest request = exchange.getRequest();
 
         String requestId = firstNonBlank(request.getHeaders().getFirst(MetadataHeaders.REQUEST_ID),

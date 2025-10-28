@@ -3,7 +3,9 @@ package dev.twiceb.userservice.domain.model;
 import static dev.twiceb.common.util.StringHelper.*;
 
 import dev.twiceb.common.enums.AuthMedium;
+import dev.twiceb.common.enums.UserRole;
 import dev.twiceb.common.enums.UserStatus;
+import dev.twiceb.userservice.domain.model.support.UserRoleConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -57,6 +59,10 @@ public class User extends AuditableEntity {
     @Column(name = "user_status", length = 32, nullable = false)
     private UserStatus userStatus;
 
+    @Convert(converter = UserRoleConverter.class)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
     @Column(name = "notification_count", nullable = false)
     private long notificationCount;
 
@@ -94,6 +100,10 @@ public class User extends AuditableEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     // User -> LoginAttemptPolicy (child = User owns FK)
     @ManyToOne(fetch = FetchType.LAZY, optional = false) // multi users can share a policy
     @JoinColumn(name = "login_policy_id", nullable = false)
@@ -104,7 +114,7 @@ public class User extends AuditableEntity {
         requirePolicy(policyRef);
         requirePassword(passwordHash);
         return baseCreate(email, passwordHash, AuthMedium.PASSWORD, policyRef, firstName, lastName,
-                false);
+                false, UserRole.SUPER_USER);
     }
 
     // factory for email/password users
@@ -112,17 +122,20 @@ public class User extends AuditableEntity {
             LoginPolicy policyRef) {
         requirePolicy(policyRef);
         requirePassword(passwordHash);
-        return baseCreate(email, passwordHash, AuthMedium.PASSWORD, policyRef, "", "", false);
+        return baseCreate(email, passwordHash, AuthMedium.PASSWORD, policyRef, "", "", false,
+                UserRole.USER);
     }
 
     // factory for magic/passwordless users
     public static User createPasswordless(String email, LoginPolicy policyRef) {
         requirePolicy(policyRef);
-        return baseCreate(email, null, AuthMedium.MAGIC_LINK, policyRef, "", "", true);
+        return baseCreate(email, null, AuthMedium.MAGIC_LINK, policyRef, "", "", true,
+                UserRole.USER);
     }
 
     private static User baseCreate(String email, String passwordHash, AuthMedium method,
-            LoginPolicy policyRef, String firstName, String lastName, boolean autoSetPassword) {
+            LoginPolicy policyRef, String firstName, String lastName, boolean autoSetPassword,
+            UserRole userRole) {
         String normEmail = normalizeEmail(email);
         if (isBlank(normEmail) || !isEmailish(normEmail)) {
             throw new IllegalArgumentException("Email must be valid");
@@ -133,6 +146,7 @@ public class User extends AuditableEntity {
         user.displayName = deriveDisplayNameFromEmail(normEmail);
         user.username = generateRandomUsername();
         user.userStatus = UserStatus.ACTIVE;
+        user.role = userRole;
         user.notificationCount = 0L;
         user.notifyPasswordChange = true;
         user.isPasswordExpired = false;

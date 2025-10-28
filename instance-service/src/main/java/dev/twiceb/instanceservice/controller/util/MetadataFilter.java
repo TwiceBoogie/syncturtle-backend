@@ -34,7 +34,6 @@ public class MetadataFilter extends OncePerRequestFilter {
             log.info("IpAddress: {}", ipAddress);
         }
 
-        log.info(request.getHeader(MetadataHeaders.FORWARDED_HOST));
         String domain = Optional.ofNullable(request.getHeader(MetadataHeaders.FORWARDED_HOST))
                 .orElseGet(() -> request.getHeader(MetadataHeaders.HOST));
         if (domain.contains(",")) {
@@ -51,7 +50,6 @@ public class MetadataFilter extends OncePerRequestFilter {
                         .domain(domain).requestId(requestId).correlationId(correlationId)
                         .acceptLanguage(request.getHeader(MetadataHeaders.ACCEPT_LANGUAGE))
                         .httpMethod(request.getMethod()).build();
-        log.info("Metadata: {}", metadata);
         // attach it to the incoming request
         // must call @RequestAttribute('requestMetadata') to actually use it
         request.setAttribute("requestMetadata", metadata);
