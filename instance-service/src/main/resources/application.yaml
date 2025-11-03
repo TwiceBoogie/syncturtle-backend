@@ -11,6 +11,7 @@ app:
   config-keys:
     enable-signup: ${ENABLE_SIGNUP:1}
     enable-email-password: ${ENABLE_EMAIL_PASSWORD:1}
+    disable-workspace-creation: ${DISABLE_WORKSPACE_CREATION:0}
     enable-smtp: ${ENABLE_SMTP:0}
     email-host: ${EMAIL_HOST:}
     email-host-user: ${EMAIL_HOST_USER:}

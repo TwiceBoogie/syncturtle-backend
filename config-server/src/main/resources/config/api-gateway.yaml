@@ -41,6 +41,16 @@ spring:
           lower-case-service-id: true
 
       routes:
+        # public reads (GET/HEAD/Options)
+        - id: instances-public-read
+          uri: lb://instance-service
+          order: -10
+          predicates:
+            - Path=/api/v1/instances,/api/v1/instances/**
+            - Method=GET,HEAD,OPTIONS
+          filters:
+            - StripPrefix=2
+
         - id: admin_signup
           uri: lb://instance-service
           predicates:
@@ -53,6 +63,20 @@ spring:
                 sessionTtlMinutes: 15
                 absoluteTtlDays: 15
                 blockIfAuthenticated: true
+
+        - id: instances-protected-write
+          uri: lb://instance-service
+          predicates:
+            - Path=/api/v1/instances/**
+            - Method=POST,PUT,PATCH,DELETE
+          filters:
+            - StripPrefix=2
+            - name: SessionAuth
+              args:
+                cookieNames: ["admin-session"]
+                sessionTtlMinutes: 15
+                absoluteTtlDays: 15
+                requiredRoles: ["ADMIN"]
 
         - id: admin_login
           uri: lb://user-service
@@ -83,18 +107,18 @@ spring:
                 absoluteTtlDays: 30
                 blockIfAuthenticated: true
 
-        - id: instance_admins
-          uri: lb://instance-service
-          predicates:
-            - Path=/api/v1/instances/admins/**
-          filters:
-            - StripPrefix=2
-            - name: SessionAuth
-              args:
-                cookieNames: ["admin-session"]
-                sessionTtlMinutes: 15
-                absoluteTtlDays: 15
-                requiredRoles: ["ADMIN"]
+        # - id: instance_admins
+        #   uri: lb://instance-service
+        #   predicates:
+        #     - Path=/api/v1/instances/admins/**
+        #   filters:
+        #     - StripPrefix=2
+        #     - name: SessionAuth
+        #       args:
+        #         cookieNames: ["admin-session"]
+        #         sessionTtlMinutes: 15
+        #         absoluteTtlDays: 15
+        #         requiredRoles: ["ADMIN"]
 
         # refresh token endpoint, rate-limited by IP
         - id: auth-public
@@ -131,13 +155,6 @@ spring:
                 sessionTtlMinutes: 30
                 absoluteTtlDays: 30
                 requiredRoles: ["USER"]
-
-        - id: instance-public
-          uri: lb://instance-service
-          predicates:
-            - Path=/api/v1/instances/**
-          filters:
-            - StripPrefix=2
 
         - id: workspace-service
           uri: lb://workspace-service

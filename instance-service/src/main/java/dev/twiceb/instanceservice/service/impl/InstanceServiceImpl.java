@@ -22,6 +22,8 @@ import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.AuthException;
 import dev.twiceb.instanceservice.client.UserClient;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
+import dev.twiceb.instanceservice.dto.request.InstanceInfoUpdateRequest;
+import dev.twiceb.instanceservice.dto.response.InstanceConfigurationResponse;
 import dev.twiceb.instanceservice.domain.model.Instance;
 import dev.twiceb.instanceservice.domain.model.InstanceAdmin;
 import dev.twiceb.instanceservice.domain.model.InstanceConfiguration;
@@ -49,6 +51,7 @@ public class InstanceServiceImpl implements InstanceService {
     private static final Set<InstanceConfigurationKey> BOOL_KEYS = Set.of(
             InstanceConfigurationKey.ENABLE_SIGNUP,
             InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN,
+            InstanceConfigurationKey.DISABLE_WORKSPACE_CREATION,
             InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD, InstanceConfigurationKey.ENABLE_SMTP,
             InstanceConfigurationKey.EMAIL_HOST, InstanceConfigurationKey.IS_GITHUB_ENABLED,
             InstanceConfigurationKey.IS_GITLAB_ENABLED, InstanceConfigurationKey.IS_GOOGLE_ENABLED);
@@ -88,6 +91,17 @@ public class InstanceServiceImpl implements InstanceService {
     }
 
     @Override
+    @Transactional
+    public InstanceProjection updateInstanceInfo(InstanceInfoUpdateRequest request) {
+        Instance instance =
+                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElseThrow();
+        instance.updateInfo(request.getInstanceName(), request.getDomain(), request.getNamespace());
+        instanceRepository.save(instance);
+        return instanceRepository.findFirstByOrderByCreatedAtAsc(InstanceProjection.class)
+                .orElseThrow();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public InstanceStatusResult getInstanceStatus() {
         InstanceStatusProjection instance = instanceRepository
@@ -111,6 +125,18 @@ public class InstanceServiceImpl implements InstanceService {
                 .appBaseUrl(appProperties.getBaseUrls().getApp()).build();
 
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InstanceConfigurationResponse> getAllInstanceConfigurations() {
+        List<InstanceConfiguration> rows = iConfigurationRepository.findAll();
+
+        return rows.stream()
+                .map(ic -> InstanceConfigurationResponse.builder().id(ic.getId())
+                        .createdAt(ic.getCreatedAt()).updatedAt(ic.getUpdatedAt()).key(ic.getKey())
+                        .value(cHelper.decryptIfNeeded(ic)).build())
+                .toList();
     }
 
     @Override

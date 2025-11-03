@@ -8,8 +8,10 @@ import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.mapper.BasicMapper;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
+import dev.twiceb.instanceservice.dto.request.InstanceInfoUpdateRequest;
 import dev.twiceb.instanceservice.dto.response.ConfigDataResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceAdminResponse;
+import dev.twiceb.instanceservice.dto.response.InstanceConfigurationResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceInfoResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceSetupResponse;
 import dev.twiceb.instanceservice.service.InstanceService;
@@ -33,6 +35,15 @@ public class InstanceMapper {
                 config.isSmtpConfigured(), config.getAdminBaseUrl(), config.getAppBaseUrl()));
         response.setInstance(instance);
         return response;
+    }
+
+    public List<InstanceConfigurationResponse> getAllInstanceConfigurations() {
+        return instanceService.getAllInstanceConfigurations();
+    }
+
+    public InstanceInfoResponse updateInstanceInfo(InstanceInfoUpdateRequest request) {
+        return mapper.convertToResponse(instanceService.updateInstanceInfo(request),
+                InstanceInfoResponse.class);
     }
 
     public Map<InstanceConfigurationKey, String> updateConfigurations(

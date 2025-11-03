@@ -14,7 +14,9 @@ import dev.twiceb.instanceservice.service.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PermissionInterceptor implements HandlerInterceptor {
@@ -39,6 +41,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
         }
 
         UUID userId = AuthContext.get();
+        log.info("UserId: {}", userId);
 
         @SuppressWarnings("unchecked")
         Map<String, String> pathVars = (Map<String, String>) request

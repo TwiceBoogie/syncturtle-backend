@@ -32,6 +32,7 @@ public class InstanceConfigurator {
             // auth / workspace
             InstanceConfigurationKey.ENABLE_SIGNUP, InstanceConfigurationKey.ENABLE_EMAIL_PASSWORD,
             InstanceConfigurationKey.ENABLE_MAGIC_LINK_LOGIN,
+            InstanceConfigurationKey.DISABLE_WORKSPACE_CREATION,
 
             // smtp
             InstanceConfigurationKey.ENABLE_SMTP, InstanceConfigurationKey.EMAIL_HOST,

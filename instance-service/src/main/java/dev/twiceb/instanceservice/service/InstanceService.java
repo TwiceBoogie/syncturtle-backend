@@ -7,6 +7,8 @@ import dev.twiceb.common.dto.request.AdminSignupRequest;
 import dev.twiceb.common.dto.response.InstanceStatusResult;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
+import dev.twiceb.instanceservice.dto.request.InstanceInfoUpdateRequest;
+import dev.twiceb.instanceservice.dto.response.InstanceConfigurationResponse;
 import dev.twiceb.instanceservice.service.impl.InstanceServiceImpl.ConfigResult;
 import dev.twiceb.instanceservice.domain.projection.InstanceAdminProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceProjection;
@@ -14,7 +16,11 @@ import dev.twiceb.instanceservice.domain.projection.InstanceProjection;
 public interface InstanceService {
     InstanceProjection getInstanceInfo();
 
+    InstanceProjection updateInstanceInfo(InstanceInfoUpdateRequest request);
+
     ConfigResult getConfigurationValues();
+
+    List<InstanceConfigurationResponse> getAllInstanceConfigurations();
 
     Long getConfigVersion();
 

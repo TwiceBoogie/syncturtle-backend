@@ -119,6 +119,14 @@ public class Instance extends AuditableEntity {
             this.slug = makeSlug(this.instanceName);
     }
 
+    public void updateInfo(String instanceName, String domain, String namespace) {
+        this.instanceName = normalize(instanceName);
+        this.domain = normalize(domain);
+        this.namespace = normalize(namespace);
+        if (!isBlank(instanceName))
+            this.slug = makeSlug(this.instanceName);
+    }
+
     private static String makeSlug(String name) {
         String base =
                 name.trim().toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS login_policies (
   max_attempts       INT          NOT NULL,
   lockout_duration   INTERVAL,
   reset_duration     INTERVAL,
+  is_default         BOOLEAN NOT NULL,
   created_by               VARCHAR(36),
   updated_by               VARCHAR(36),
   CONSTRAINT pk_login_policies PRIMARY KEY (id),
@@ -381,11 +382,11 @@ CREATE TABLE IF NOT EXISTS user_statistics (
 -- Seed data (explicit columns—no DB defaults)
 -- =========================================
 INSERT INTO login_policies
-  (policy_name, max_attempts, lockout_duration, reset_duration, created_at, updated_at)
+  (policy_name, max_attempts, lockout_duration, reset_duration, is_default, created_at, updated_at)
 VALUES
-  ('Default Policy',       5, '5 minutes', '24 hours', now(), now()),
-  ('High Security Policy', 3, '15 minutes','48 hours', now(), now()),
-  ('No Lockout Policy',   10,  NULL,       NULL,       now(), now())
+  ('Default Policy',       5, '5 minutes', '24 hours', true, now(), now()),
+  ('High Security Policy', 3, '15 minutes','48 hours', false, now(), now()),
+  ('No Lockout Policy',   10,  NULL,       NULL      , false,  now(), now())
 ON CONFLICT DO NOTHING;
 
 -- =========================================
