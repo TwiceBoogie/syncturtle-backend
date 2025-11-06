@@ -1,11 +1,11 @@
-<h1 align="center">Personal-Management-System (Backend)</h1>
+<h1 align="center">SyncTurtle (Backend) WIP</h1>
 
 ## Documentation / Demo
 
 - Documentation - available [here](#)
 - Demo - click [here](#)
-    - Login: admin
-    - Password: admin
+  - Login: admin
+  - Password: admin
 
 ## Description
 
