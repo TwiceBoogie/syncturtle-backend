@@ -2,6 +2,7 @@ package dev.twiceb.instanceservice.service.impl;
 
 import static dev.twiceb.common.util.StringHelper.normalizeEmail;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -136,7 +137,7 @@ public class InstanceServiceImpl implements InstanceService {
                 .map(ic -> InstanceConfigurationResponse.builder().id(ic.getId())
                         .createdAt(ic.getCreatedAt()).updatedAt(ic.getUpdatedAt()).key(ic.getKey())
                         .value(cHelper.decryptIfNeeded(ic)).build())
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override

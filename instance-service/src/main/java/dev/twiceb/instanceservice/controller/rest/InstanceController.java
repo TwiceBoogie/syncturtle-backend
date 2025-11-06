@@ -13,6 +13,7 @@ import dev.twiceb.instanceservice.controller.util.InvalidateCacheRedis;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
 import dev.twiceb.instanceservice.dto.request.InstanceInfoUpdateRequest;
 import dev.twiceb.instanceservice.dto.response.InstanceAdminResponse;
+import dev.twiceb.instanceservice.dto.response.InstanceConfigurationResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceInfoResponse;
 import dev.twiceb.instanceservice.dto.response.InstanceSetupResponse;
 import dev.twiceb.instanceservice.mapper.InstanceMapper;
@@ -21,6 +22,7 @@ import dev.twiceb.instanceservice.util.PermissionClasses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 
+@Slf4j
 @RestController
 @RequestMapping("/instances")
 @RequiredArgsConstructor
@@ -53,6 +56,12 @@ public class InstanceController {
     }
 
     // patch method on itself?
+
+    @GetMapping(PathConstants.CONFIGURATION)
+    @CacheResponse(cacheName = "instance", ttl = 60 * 60 * 2, user = false)
+    public ResponseEntity<List<InstanceConfigurationResponse>> getInstanceConfigurations() {
+        return ResponseEntity.ok().body(instanceMapper.getAllInstanceConfigurations());
+    }
 
     @PatchMapping(PathConstants.CONFIGURATION)
     @InvalidateCacheRedis(cacheName = "instance", path = "instances", multiple = true, user = false)
@@ -79,8 +88,8 @@ public class InstanceController {
             HttpServletRequest httpRequest) {
         // check if payload is valid
         if (bindingResult.hasErrors()) {
-            System.out.println("error has occured");
-            System.out.println(request);
+            log.info("error has occured");
+            log.info("request: {}", request);
         }
 
         AuthAdminResult res = instanceMapper.adminSignup(request);

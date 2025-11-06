@@ -1,17 +1,23 @@
 package dev.twiceb.instanceservice.controller.util;
 
 import static dev.twiceb.common.constants.PathConstants.AUTH_USER_ID_HEADER;
+
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.twiceb.instanceservice.dto.internal.CachedHttpResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CacheResponseAspect {
 
     private final RedisTemplate<String, CachedHttpResponse> template;
+    private final ObjectMapper objectMapper;
 
     // https://docs.spring.io/spring-framework/reference/core/aop/ataspectj/advice.html#aop-ataspectj-around-advice
     @Around("@annotation(cacheAnno)")
@@ -49,21 +56,33 @@ public class CacheResponseAspect {
         String cacheKey =
                 cacheAnno.cacheName() + ":" + userId + ":" + normalizedPath.replace("/", "_");
         log.info("CacheKey: {}", cacheKey);
-        ValueOperations<String, CachedHttpResponse> ops = template.opsForValue();
 
+        ValueOperations<String, CachedHttpResponse> ops = template.opsForValue();
         CachedHttpResponse cached = ops.get(cacheKey);
-        if (cached instanceof CachedHttpResponse cachedResponse && cached != null) {
+        if (cached != null) {
             log.info("--> returning a ResponseEntity <--");
-            return ResponseEntity.status(cachedResponse.getStatus()).body(cachedResponse.getBody());
+            HttpHeaders headers = new HttpHeaders();
+            if (cached.getHeaders() != null) {
+                headers.setAll(cached.getHeaders());
+            }
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return new ResponseEntity<>(cached.getBody(), headers,
+                    HttpStatus.valueOf(cached.getStatus()));
         }
 
         // this would keep going and call the service layer
         Object result = joinPoint.proceed();
         log.info("--> controller method called and returned <--");
+
         if (result instanceof ResponseEntity<?> response
                 && response.getStatusCode().is2xxSuccessful()) {
+            log.info("response: {}", response);
+            byte[] json = objectMapper.writeValueAsBytes(response.getBody());
+            log.info("headers: {}", response.getHeaders());
+            Map<String, String> headers = response.getHeaders().toSingleValueMap();
+            log.info("headers: {}", headers);
             CachedHttpResponse toCache =
-                    new CachedHttpResponse(response.getStatusCode().value(), response.getBody());
+                    new CachedHttpResponse(response.getStatusCode().value(), headers, json);
             ops.set(cacheKey, toCache, Duration.ofSeconds(cacheAnno.ttl()));
         }
 

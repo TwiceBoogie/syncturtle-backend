@@ -38,7 +38,7 @@ public class UserContextFilter extends OncePerRequestFilter {
                 }
             }
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
+        } finally {
             AuthContext.clear();
             MDC.remove(MDC_USER_ID);
         }
