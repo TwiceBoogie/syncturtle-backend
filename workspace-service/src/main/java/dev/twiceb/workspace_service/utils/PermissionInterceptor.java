@@ -14,7 +14,9 @@ import dev.twiceb.workspace_service.service.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PermissionInterceptor implements HandlerInterceptor {
@@ -25,8 +27,10 @@ public class PermissionInterceptor implements HandlerInterceptor {
     @SuppressWarnings("null")
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
             Object handler) throws Exception {
+        log.info("Inside PermissionInterceptor");
+        // don't short-circuit non handlermethod
         if (!(handler instanceof HandlerMethod hm)) {
-            return false;
+            return true;
         }
 
         PermissionClasses ann = hm.getMethodAnnotation(PermissionClasses.class);

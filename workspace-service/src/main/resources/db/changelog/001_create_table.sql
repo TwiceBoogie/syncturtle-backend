@@ -68,3 +68,16 @@ CREATE INDEX IF NOT EXISTS idx_wm_workspace ON workspace_members(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_wm_member ON workspace_members(member_id);
 CREATE INDEX IF NOT EXISTS idx_wm_user_active ON workspace_members(member_id, is_active)
     WHERE deleted_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS users_lite (
+    id  UUID PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(36) NOT NULL,
+    last_name VARCHAR(36) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    date_joined TIMESTAMPTZ NOT NULL,
+    version BIGINT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_lite_email_lower
+  ON users_lite (lower(email));

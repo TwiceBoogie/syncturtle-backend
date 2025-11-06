@@ -1,14 +1,18 @@
 package dev.twiceb.workspace_service.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
+import org.springframework.data.repository.query.Param;
 import dev.twiceb.workspace_service.model.Workspace;
-import dev.twiceb.workspace_service.repository.projections.WorkspacesProjection;
-import feign.Param;
+import dev.twiceb.workspace_service.repository.projections.WorkspaceMeProjection;
+import dev.twiceb.workspace_service.repository.projections.WorkspaceProjection;
+
 import jakarta.persistence.QueryHint;
 
 public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
@@ -35,5 +39,27 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
             )
             AND (:search IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', :SEARCH, '%')))
             """)
-    List<WorkspacesProjection> findMyWorkspaces(UUID userId, String search);
+    List<WorkspaceMeProjection> findMyWorkspaces(UUID userId, String search);
+
+    @Query("""
+            SELECT w, u AS user
+            FROM Workspace w
+            LEFT JOIN User u ON u.id = w.ownerId
+            WHERE (:pattern IS NULL OR LOWER(w.name) LIKE :pattern)
+            ORDER BY w.createdAt DESC, w.id DESC
+            """)
+    List<WorkspaceProjection> findWorkspacesFirstPage(@Param("pattern") String pattern);
+
+    @Query("""
+            SELECT w, u AS user
+            FROM Workspace w
+            LEFT JOIN User u ON u.id = w.ownerId
+            WHERE (w.createdAt < :lastCreatedAt OR
+                  (w.createdAt = :lastCreatedAt AND w.id < :lastId))
+            AND (:pattern IS NULL OR LOWER(w.name) LIKE :pattern)
+            ORDER BY w.createdAt DESC, w.id DESC
+            """)
+    List<WorkspaceProjection> findWorkspacesAfter(@Param("lastId") UUID lastId,
+            @Param("lastCreatedAt") Instant lastCreatedAt, @Param("pattern") String pattern,
+            Pageable pageable);
 }

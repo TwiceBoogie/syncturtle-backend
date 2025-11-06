@@ -9,7 +9,9 @@ import dev.twiceb.workspace_service.repository.WorkspaceMemberRepository;
 import dev.twiceb.workspace_service.service.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WorkspaceBasePermission implements Permission {
@@ -19,9 +21,12 @@ public class WorkspaceBasePermission implements Permission {
     @Override
     public boolean hasPermission(HttpServletRequest request, UUID userId,
             Map<String, String> pathVars) {
+        log.info("Inside WorkspaceBasePermission");
+        log.info("UserId: {}", userId);
         if (userId == null) {
             return false;
         }
+        log.info("pathVars: {}", pathVars);
         String slug = pathVars.get("slug");
         if (slug == null)
             return false;

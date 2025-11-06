@@ -27,6 +27,7 @@ public class ContextFilter extends OncePerRequestFilter {
             @SuppressWarnings("null") FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            log.info("inside ContextFilter");
             String userIdHeader = request.getHeader(AUTH_USER_ID_HEADER);
             if (userIdHeader != null) {
                 try {
@@ -38,7 +39,7 @@ public class ContextFilter extends OncePerRequestFilter {
                 }
             }
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
+        } finally {
             AuthContext.clear();
             MDC.remove(MDC_USER_ID);
         }
