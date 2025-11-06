@@ -156,6 +156,21 @@ spring:
                 absoluteTtlDays: 30
                 requiredRoles: ["USER"]
 
+        - id: instance-workspace
+          uri: lb://workspace-service
+          order: -11
+          predicates:
+            - Path=/api/v1/instances/workspaces
+          filters:
+            - StripPrefix=2
+            - RewritePath=/instances/workspaces, /workspaces
+            - name: SessionAuth
+              args:
+                cookieNames: ["admin-session"]
+                sessionTtlMinutes: 15
+                absoluteTtlDays: 15
+                requiredRoles: ["ADMIN"]
+
         - id: workspace-service
           uri: lb://workspace-service
           predicates:
