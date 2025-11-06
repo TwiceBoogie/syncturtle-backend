@@ -13,12 +13,12 @@
 	</parent>
 
 	<groupId>dev.twiceb</groupId>
-	<artifactId>personavault</artifactId>
+	<artifactId>syncturtle</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>personavault</name>
-	<description>personavault</description>
+	<name>syncturtle</name>
+	<description>syncturtle</description>
 
 	<modules>
 		<module>common</module>
