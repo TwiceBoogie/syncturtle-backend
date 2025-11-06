@@ -46,14 +46,12 @@ public class SessionAuthGatewayFilterFactory
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             // pre
-            log.info("Inside SessionAuthGateway");
 
             Pick pick = pickCookie(exchange, config.getCookieNames());
             if (pick == null) {
-                log.info("pick: {}", pick);
                 return Mono.error(new AuthException(AuthErrorCodes.AUTHENTICATION_FAILED));
             }
-            log.info("pick: {}", pick);
+
             Instant now = Instant.now();
             return pick.getService().find(pick.getSessionId())
                     .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED)))
