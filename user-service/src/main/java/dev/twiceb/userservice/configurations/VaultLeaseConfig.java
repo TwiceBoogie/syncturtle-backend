@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.vault.core.lease.SecretLeaseContainer;
@@ -15,15 +16,17 @@ import org.springframework.vault.core.lease.event.SecretLeaseCreatedEvent;
 import org.springframework.vault.core.lease.event.SecretLeaseExpiredEvent;
 
 /**
- * This class manages lease rotation of dynamic database credentials obtained from HashiCorpVault
+ * This class manages lease rotation of dynamic database credentials obtained
+ * from HashiCorpVault
  */
 // https://itnext.io/how-to-rotate-expired-spring-cloud-vault-relational-db-credentials-without-restarting-the-app-66976fbb4bbe
 @Slf4j
-@RequiredArgsConstructor
 @Configuration
+@RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "spring.cloud.vault", name = "enabled", havingValue = "true")
 public class VaultLeaseConfig {
 
-    @Value("${spring.cloud.vault.database.role}")
+    @Value("${spring.cloud.vault.database.role:}")
     private String databaseRole;
 
     private final ApplicationContext applicationContext;
@@ -31,8 +34,7 @@ public class VaultLeaseConfig {
     @PostConstruct
     private void postConstruct() {
         final String vaultCredsPath = "database/creds/%s".formatted(databaseRole);
-        SecretLeaseContainer leaseContainer =
-                applicationContext.getBean(SecretLeaseContainer.class);
+        SecretLeaseContainer leaseContainer = applicationContext.getBean(SecretLeaseContainer.class);
 
         // start in rotate mode
         leaseContainer.addRequestedSecret(RequestedSecret.rotating(vaultCredsPath));
@@ -68,8 +70,10 @@ public class VaultLeaseConfig {
     }
 
     /***
-     * Updates the HikariDataSource bean with new database credentials. It performs a soft eviction
-     * of database connections to force the use of updated creds. The HikariConfigMXBean is then
+     * Updates the HikariDataSource bean with new database credentials. It performs
+     * a soft eviction
+     * of database connections to force the use of updated creds. The
+     * HikariConfigMXBean is then
      * used to update the username and password in the HikariDataSource.
      * 
      * @param username username extracted from the lease event's secrets

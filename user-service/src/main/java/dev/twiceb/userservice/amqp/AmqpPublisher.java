@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,8 @@ import java.util.Arrays;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AmqpPublisher {
+@ConditionalOnProperty(name = "app.amqp.enabled", havingValue = "true", matchIfMissing = true)
+public class AmqpPublisher implements MessagePublisher {
 
     private final AmqpTemplate amqpTemplate;
     private final BasicMapper basicMapper;
@@ -37,6 +39,7 @@ public class AmqpPublisher {
     @Value("${rabbitmq.routing-keys.internal-mail}")
     private String routingKey;
 
+    @Override
     public void userCreated(UserPrincipalProjection user) {
         if (isTestEnvironment()) {
             log.info("==> Skipping AMQP message send in test environment.");
@@ -44,11 +47,11 @@ public class AmqpPublisher {
         }
 
         log.info("==> converting and sending to amqp exchange");
-        UserPrincipalResponse userData =
-                basicMapper.convertToResponse(user, UserPrincipalResponse.class);
+        UserPrincipalResponse userData = basicMapper.convertToResponse(user, UserPrincipalResponse.class);
         amqpTemplate.convertAndSend(this.fanoutExchange, "", userData);
     }
 
+    @Override
     public void sendEmail(EmailRequest emailRequest) {
         if (isTestEnvironment()) {
             log.info("==> Skipping email send in test environment.");

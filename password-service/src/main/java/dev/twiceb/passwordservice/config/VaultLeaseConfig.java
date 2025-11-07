@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.vault.core.lease.SecretLeaseContainer;
@@ -20,8 +21,9 @@ import org.springframework.vault.core.lease.event.SecretLeaseExpiredEvent;
  */
 // https://itnext.io/how-to-rotate-expired-spring-cloud-vault-relational-db-credentials-without-restarting-the-app-66976fbb4bbe
 @Slf4j
-@RequiredArgsConstructor
 @Configuration
+@RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "spring.cloud.vault", name = "enabled", havingValue = "true")
 public class VaultLeaseConfig {
 
     @Value("${spring.cloud.vault.database.role}")

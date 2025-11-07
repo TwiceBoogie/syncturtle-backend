@@ -10,9 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 import dev.twiceb.common.dto.request.EmailRequest;
 import dev.twiceb.common.dto.response.UserPrincipalResponse;
-import lombok.Getter;
 
-@Getter
 @Configuration
 public class AmqpConfig {
 

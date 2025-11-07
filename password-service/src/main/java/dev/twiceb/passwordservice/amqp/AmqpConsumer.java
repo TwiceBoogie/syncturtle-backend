@@ -7,6 +7,7 @@ import dev.twiceb.passwordservice.repository.RotationPolicyRepository;
 import dev.twiceb.passwordservice.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import dev.twiceb.common.dto.response.UserPrincipalResponse;
@@ -21,14 +22,16 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AmqpConsumer {
+@ConditionalOnProperty(prefix = "app.amqp", name = "enabled", havingValue = "true")
+public class AmqpConsumer implements MessagePublisher {
 
     private final UserRepository userRepository;
     private final EnvelopeEncryption envelopeEncryption;
     private final RotationPolicyRepository rotationPolicyRepository;
 
-    @RabbitListener(queues = "q.passwordsvc")
+    @Override
     @Transactional
+    @RabbitListener(queues = "q.passwordsvc")
     public void userCreatedListener(UserPrincipalResponse res) {
         Optional.ofNullable(res).filter(response -> !userRepository.existsById(response.getId()))
                 .ifPresentOrElse(this::processUser,

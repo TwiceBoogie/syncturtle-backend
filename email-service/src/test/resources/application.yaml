@@ -1,0 +1,53 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: email-service
+
+  main:
+    banner-mode: "off"
+
+  cloud:
+    config:
+      enabled: false
+    vault:
+      enabled: false
+  config:
+    import: ""
+
+  mail:
+    host: ""
+    username: ""
+    password: ""
+    port: 0
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  rabbitmq:
+    addresses:
+      - "127.0.0.1:0"
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  health:
+    rabbit:
+      enabled: false
+
+mail:
+  debug: false

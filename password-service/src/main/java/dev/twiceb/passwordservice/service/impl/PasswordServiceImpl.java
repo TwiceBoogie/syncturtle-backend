@@ -5,11 +5,12 @@ import java.util.*;
 
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.util.AuthUtil;
-import dev.twiceb.passwordservice.broker.producer.PasswordChangeProducer;
+import dev.twiceb.passwordservice.broker.producer.KafkaMessageProducer;
 import dev.twiceb.passwordservice.dto.request.*;
 import dev.twiceb.passwordservice.model.*;
 import dev.twiceb.passwordservice.repository.*;
 import dev.twiceb.passwordservice.repository.projection.*;
+import dev.twiceb.passwordservice.repository.support.OldPasswordStore;
 import dev.twiceb.passwordservice.service.UserService;
 import dev.twiceb.passwordservice.service.util.DictionaryCommonWords;
 import dev.twiceb.passwordservice.service.util.PasswordComplexityAnalyzer;
@@ -45,8 +46,8 @@ public class PasswordServiceImpl implements PasswordService {
     private final PasswordHelperService passwordHelperService;
     private final EncryptionKeyRepository encryptionKeyRepository;
     private final DictionaryCommonWords dictionaryCommonWords;
-    private final PasswordChangeProducer passwordChangeProducer;
-    private final OldPasswordRepository oldPasswordRepository;
+    private final KafkaMessageProducer passwordChangeProducer;
+    private final OldPasswordStore oldPasswordStore;
     private final UserService userService;
 
     @Override
@@ -152,7 +153,7 @@ public class PasswordServiceImpl implements PasswordService {
         encryptNewPassword(keychain, password);
         UUID deviceKeyId = getUserDeviceId();
         addAndSaveNewChangeLog(keychain, "password update", "password", deviceKeyId);
-        OldPasswordDTO oldPasswordDTO = storeOldPassword(keychain);
+        OldPasswordDTO oldPasswordDTO = oldPasswordStore.saveOldPassword(keychain);
         passwordChangeProducer.sendPasswordChangeEvent(authUser.getId(),
                 Instant.parse(oldPasswordDTO.getTimestamp()), deviceKeyId);
         return Map.of("message", "Password updated successfully.");
@@ -225,25 +226,6 @@ public class PasswordServiceImpl implements PasswordService {
         return 0;
     }
 
-    private OldPasswordDTO storeOldPassword(Keychain keychain) {
-        // VaultKeyValueOperations operations = vaultTemplate.opsForKeyValue("secret",
-        // VaultKeyValueOperationsSupport.KeyValueBackend.KV_2);
-        // StringBuilder completeSecretPath = new StringBuilder();
-        // completeSecretPath.append(VAULT_PATH).append(username).append("/").append(keychain.getId());
-        //
-        OldPasswordDTO oldPasswordDTO = new OldPasswordDTO();
-        oldPasswordDTO.setId(String.valueOf(keychain.getId()));
-        oldPasswordDTO.setPassword(Base64.getEncoder().encodeToString(keychain.getPassword()));
-        oldPasswordDTO.setDekId(String.valueOf(keychain.getEncryptionKey().getId()));
-        oldPasswordDTO.setTtl("1h");
-        oldPasswordDTO.setVector(Base64.getEncoder().encodeToString(keychain.getVector()));
-        oldPasswordDTO.setTimestamp(Instant.now().toString());
-        return oldPasswordRepository.save(oldPasswordDTO);
-        // operations.put(completeSecretPath.toString(), oldPasswordDTO);
-        // return oldPasswordDTO;
-
-    }
-
     private EncryptionKey selectAndValidateEncryptionKey(UUID id, UUID authUserId) {
         EncryptionKey key = encryptionKeyRepository.findById(id).orElseThrow(
                 () -> new ApiRequestException(NO_RESOURCE_FOUND, HttpStatus.NOT_FOUND));
@@ -259,8 +241,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     private String decryptOldPassword(Keychain keychain) {
         EncryptionKey key = keychain.getEncryptionKey();
-        SecretKey secretKey =
-                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         return passwordHelperService.decryptPassword(keychain.getPassword(), secretKey,
                 keychain.getVector());
     }
@@ -300,8 +281,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     private void encryptNewPassword(Keychain keychain, String password) {
         EncryptionKey key = keychain.getEncryptionKey();
-        SecretKey secretKey =
-                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         IvParameterSpec newVector = passwordHelperService.generateNewIv();
         keychain.setPassword(passwordHelperService.encryptPassword(password, secretKey, newVector));
         key.setDek(Base64.getEncoder().encodeToString(secretKey.getEncoded()));
@@ -310,11 +290,9 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     private Keychain buildSecureKeychain(EncryptionKey key, CreatePasswordRequest request) {
-        SecretKey secretKey =
-                passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
+        SecretKey secretKey = passwordHelperService.rebuildSecretKey(key.getDek(), key.getAlgorithm());
         IvParameterSpec vector = passwordHelperService.generateNewIv();
-        byte[] encryptedPassword =
-                passwordHelperService.encryptPassword(request.getPassword(), secretKey, vector);
+        byte[] encryptedPassword = passwordHelperService.encryptPassword(request.getPassword(), secretKey, vector);
         // String encryptedPasswordBase64 =
         // Base64.getEncoder().encodeToString(encryptedPassword);
         // String vectorBase64 = Base64.getEncoder().encodeToString(vector.getIV());

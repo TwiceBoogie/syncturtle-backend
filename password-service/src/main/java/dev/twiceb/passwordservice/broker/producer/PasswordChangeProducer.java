@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -20,11 +21,13 @@ import static dev.twiceb.common.constants.PathConstants.AUTH_USER_ID_HEADER;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PasswordChangeProducer {
+@ConditionalOnProperty(prefix = "app.kafka", name = "enabled", havingValue = "true")
+public class PasswordChangeProducer implements KafkaMessageProducer {
 
     private final KafkaTemplate<String, PasswordChangeEvent> kafkaTemplate;
     private static final int MAX_RETRIES = 3;
 
+    @Override
     public void sendPasswordChangeEvent(UUID authUserId, Instant expirationTime, UUID deviceKeyId) {
         ProducerRecord<String, PasswordChangeEvent> record = getPasswordChangeEvent(
                 PASSWORD_CHANGE_TOPIC, authUserId, expirationTime, deviceKeyId);
@@ -32,8 +35,7 @@ public class PasswordChangeProducer {
     }
 
     private void sendWithRetry(ProducerRecord<String, PasswordChangeEvent> record, int attempt) {
-        CompletableFuture<SendResult<String, PasswordChangeEvent>> future =
-                kafkaTemplate.send(record);
+        CompletableFuture<SendResult<String, PasswordChangeEvent>> future = kafkaTemplate.send(record);
         future.whenComplete((result, ex) -> {
             if (ex == null) {
                 handleSuccess(result.getProducerRecord(), result.getRecordMetadata());
@@ -53,8 +55,7 @@ public class PasswordChangeProducer {
             UUID authUserId, Instant expirationTime, UUID deviceKeyId) {
         // Adding metadata
         PasswordChangeEvent event = toPasswordChangeEvent(expirationTime, deviceKeyId);
-        ProducerRecord<String, PasswordChangeEvent> producerRecord =
-                new ProducerRecord<>(topic, event);
+        ProducerRecord<String, PasswordChangeEvent> producerRecord = new ProducerRecord<>(topic, event);
 
         producerRecord.headers().add(AUTH_USER_ID_HEADER,
                 authUserId.toString().getBytes(StandardCharsets.UTF_8));

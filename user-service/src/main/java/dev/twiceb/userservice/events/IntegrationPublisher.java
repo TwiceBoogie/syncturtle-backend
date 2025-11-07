@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import dev.twiceb.common.event.UserEvent;
-import dev.twiceb.userservice.broker.producer.UserEventProducer;
+import dev.twiceb.userservice.broker.producer.KafkaMessageProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IntegrationPublisher {
 
-    private final UserEventProducer producer;
+    private final KafkaMessageProducer producer;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onUserChanged(UserChangedEvent event) {
