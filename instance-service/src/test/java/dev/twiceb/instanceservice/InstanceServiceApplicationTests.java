@@ -1,13 +1,25 @@
 package dev.twiceb.instanceservice;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.Assert.assertEquals;
 
-@SpringBootTest
-class InstanceServiceApplicationTests {
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import dev.twiceb.instanceservice.domain.repository.InstanceRepository;
+
+class InstanceServiceApplicationTests extends IntegrationTestBase {
+
+	@Autowired
+	private InstanceRepository instanceRepository;
 
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void checkInstanceRegistration() {
+		long count = instanceRepository.count();
+		assertEquals(1l, count);
 	}
 
 }

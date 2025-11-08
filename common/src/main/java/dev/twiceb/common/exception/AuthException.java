@@ -32,4 +32,8 @@ public class AuthException extends RuntimeException {
         return Map.of("error_code", String.valueOf(errorCode.getCode()), "error_message",
                 errorCode.getMessage());
     }
+
+    public AuthErrorCodes getErrorCode() {
+        return errorCode;
+    }
 }

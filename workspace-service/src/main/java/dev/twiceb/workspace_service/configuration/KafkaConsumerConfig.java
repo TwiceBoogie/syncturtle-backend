@@ -9,6 +9,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
+@ConditionalOnProperty(prefix = "app.kafka", name = "enabled", havingValue = "true")
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
@@ -102,8 +104,7 @@ public class KafkaConsumerConfig {
     @Bean
     ConcurrentKafkaListenerContainerFactory<String, InstanceEvent> instanceKafkaFactory(
             ConsumerFactory<String, InstanceEvent> cf, DefaultErrorHandler errorHandler) {
-        ConcurrentKafkaListenerContainerFactory<String, InstanceEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, InstanceEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         factory.setCommonErrorHandler(errorHandler);
         factory.setConcurrency(1);
@@ -120,8 +121,7 @@ public class KafkaConsumerConfig {
     @Bean
     ConcurrentKafkaListenerContainerFactory<String, PlanEvent> planKafkaFactory(
             ConsumerFactory<String, PlanEvent> cf, DefaultErrorHandler errorHandler) {
-        ConcurrentKafkaListenerContainerFactory<String, PlanEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, PlanEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         factory.setCommonErrorHandler(errorHandler);
         factory.setConcurrency(1);

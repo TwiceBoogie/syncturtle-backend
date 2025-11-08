@@ -35,9 +35,48 @@ spring:
     listener:
       simple:
         auto-startup: false
+      direct:
+        auto-startup: false
   kafka:
     bootstrap-servers:
       - 127.0.0.1:0
+
+app:
+  skip-env-var: false
+  config-keys:
+    enable-signup: "1"
+    enable-email-password: "1"
+    disable-workspace-creation: "0"
+    enable-smtp: "0"
+    email-host: ""
+    email-host-user: ""
+    email-host-passwrod: ""
+    email-port: "587"
+    email-from: ""
+    email-use-tls: "1"
+    email-use-ssl: ""
+    enable-magic-link-login: 0
+    google-client-id: ""
+    google-client-secret: ""
+    github-client-id: ""
+    github-client-secret: ""
+    gitlab-host: ""
+    gitlab-client-id: ""
+    gitlab-client-secret: ""
+  use-minio: true
+  file-size-limit: 5242880
+  debug: true
+  hard-delete-after-days: 60
+  web-url: http://${WEB_URL:localhost}
+  secret-key: "secret-key"
+  is-test: true
+  base-urls:
+    admin: "${ADMIN_BASE_URL:http://localhost:3001/god-mode/}"
+    app: "${APP_BASE_URL:http://localhost:3000/}"
+  amqp:
+    enabled: false
+  kafka:
+    enabled: false
 
 eureka:
   client:
