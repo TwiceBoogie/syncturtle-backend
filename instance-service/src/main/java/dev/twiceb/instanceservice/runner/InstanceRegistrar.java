@@ -18,44 +18,43 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class InstanceRegistrar {
 
-    private final AppProperties appProperties;
-    private final BuildProperties buildProperties;
-    private final InstanceRepository instanceRepository;
-    private final InstanceEventPublisher publisher;
+	private final AppProperties appProperties;
+	private final BuildProperties buildProperties;
+	private final InstanceRepository instanceRepository;
+	private final InstanceEventPublisher publisher;
 
-    @Transactional
-    public void run(String machineSignature) {
-        // check if instance is registerd
-        Instance instance =
-                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
+	@Transactional
+	public void run(String machineSignature) {
+		// check if instance is registerd
+		Instance instance = instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
 
-        // if instance is null then register this instance
-        if (instance == null) {
-            instance = Instance.register(buildProperties.getVersion(), buildProperties.getVersion(),
-                    machineSignature, appProperties.isTest());
+		// if instance is null then register this instance
+		if (instance == null) {
+			instance = Instance.register(buildProperties.getVersion(), buildProperties.getVersion(),
+					machineSignature, appProperties.isTest());
 
-            instance = instanceRepository.save(instance);
+			instance = instanceRepository.save(instance);
 
-            InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_CREATED)
-                    .id(instance.getId()).slug(nvl(instance.getSlug(), ""))
-                    .edition(instance.getEdition()).version(instance.getVersion())
-                    .occurredAt(instance.getCreatedAt()).schemaVersion(1).build();
+			InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_CREATED)
+					.id(instance.getId()).slug(nvl(instance.getSlug(), ""))
+					.edition(instance.getEdition()).version(instance.getVersion())
+					.occurredAt(instance.getCreatedAt()).schemaVersion(1).build();
 
-            publisher.publish(event);
-            log.info("New instance registered with signature: " + machineSignature);
-        } else {
-            // update instance details
-            instance.updateBinaryCheck(buildProperties.getVersion(), buildProperties.getVersion(),
-                    appProperties.isTest());
-            instance = instanceRepository.save(instance);
+			publisher.publish(event);
+			log.info("New instance registered with signature: " + machineSignature);
+		} else {
+			// update instance details
+			instance.updateBinaryCheck(buildProperties.getVersion(), buildProperties.getVersion(),
+					appProperties.isTest());
+			instance = instanceRepository.save(instance);
 
-            InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_UPDATED)
-                    .id(instance.getId()).slug(nvl(instance.getSlug(), ""))
-                    .edition(instance.getEdition()).version(instance.getVersion())
-                    .occurredAt(instance.getUpdatedAt()).schemaVersion(1).build();
-            publisher.publish(event);
-            log.info("Instance already registered - updating");
-        }
+			InstanceEvent event = InstanceEvent.builder().type(Type.INSTANCE_UPDATED)
+					.id(instance.getId()).slug(nvl(instance.getSlug(), ""))
+					.edition(instance.getEdition()).version(instance.getVersion())
+					.occurredAt(instance.getUpdatedAt()).schemaVersion(1).build();
+			publisher.publish(event);
+			log.info("Instance already registered - updating");
+		}
 
-    }
+	}
 }

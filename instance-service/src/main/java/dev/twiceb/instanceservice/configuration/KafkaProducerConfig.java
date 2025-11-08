@@ -5,6 +5,7 @@ import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -15,6 +16,7 @@ import dev.twiceb.common.event.PlanEvent;
 import dev.twiceb.common.event.UserCreateEvent;
 
 @Configuration
+@ConditionalOnProperty(prefix = "app.kafka", name = "enabled", havingValue = "true")
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
@@ -46,21 +48,21 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     KafkaTemplate<String, InstanceEvent> instanceEventTemplate(
             DefaultKafkaProducerFactory<String, Object> pf) {
         return new KafkaTemplate(pf);
     }
 
     @Bean
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     KafkaTemplate<String, UserCreateEvent> userCreateTemplate(
             DefaultKafkaProducerFactory<String, Object> pf) {
         return new KafkaTemplate(pf);
     }
 
     @Bean
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     KafkaTemplate<String, PlanEvent> planEventTemplate(
             DefaultKafkaProducerFactory<String, Object> pf) {
         return new KafkaTemplate(pf);

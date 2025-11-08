@@ -9,6 +9,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -26,6 +27,7 @@ import org.springframework.util.backoff.ExponentialBackOff;
 import dev.twiceb.common.event.UserEvent;
 
 @Configuration
+@ConditionalOnProperty(prefix = "app.kafka", name = "enabled", havingValue = "true")
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
@@ -67,8 +69,7 @@ public class KafkaConsumerConfig {
     @Bean
     ConcurrentKafkaListenerContainerFactory<String, UserEvent> userKafkaFactory(
             ConsumerFactory<String, UserEvent> cf, DefaultErrorHandler errorHandler) {
-        ConcurrentKafkaListenerContainerFactory<String, UserEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, UserEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         factory.setCommonErrorHandler(errorHandler);
         factory.setConcurrency(1);

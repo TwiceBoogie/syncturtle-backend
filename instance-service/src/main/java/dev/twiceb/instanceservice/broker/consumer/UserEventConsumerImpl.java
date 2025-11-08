@@ -1,5 +1,6 @@
 package dev.twiceb.instanceservice.broker.consumer;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserEventConsumer {
+@ConditionalOnProperty(prefix = "app.kafka", name = "enabled", havingValue = "true")
+public class UserEventConsumerImpl {
 
     private final UserLiteRepository userLiteRepository;
 
-    @KafkaListener(topics = KafkaTopicConstants.USER_EVENTS_V1, groupId = "user-svc-lite-v1",
-            containerFactory = "userKafkaFactory")
+    @KafkaListener(topics = KafkaTopicConstants.USER_EVENTS_V1, groupId = "user-svc-lite-v1", containerFactory = "userKafkaFactory")
     public void onUser(UserEvent event) {
         switch (event.getType()) {
             case USER_CREATED, USER_UPDATED -> upsert(event);
@@ -27,7 +28,7 @@ public class UserEventConsumer {
     }
 
     @Transactional
-    void upsert(UserEvent event) {
+    private void upsert(UserEvent event) {
         UserLite existing = userLiteRepository.findById(event.getId()).orElse(null);
         if (existing != null && existing.getVersion() != null && event.getVersion() != null
                 && event.getVersion() <= existing.getVersion()) {

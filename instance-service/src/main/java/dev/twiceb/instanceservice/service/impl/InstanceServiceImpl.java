@@ -21,6 +21,7 @@ import dev.twiceb.common.enums.AuthErrorCodes;
 import dev.twiceb.common.enums.InstanceConfigurationKey;
 import dev.twiceb.common.exception.ApiRequestException;
 import dev.twiceb.common.exception.AuthException;
+import dev.twiceb.common.repository.projections.OnlyId;
 import dev.twiceb.instanceservice.client.UserClient;
 import dev.twiceb.instanceservice.dto.request.InstanceConfigurationUpdateRequest;
 import dev.twiceb.instanceservice.dto.request.InstanceInfoUpdateRequest;
@@ -31,7 +32,7 @@ import dev.twiceb.instanceservice.domain.model.InstanceConfiguration;
 import dev.twiceb.instanceservice.domain.repository.InstanceAdminRepository;
 import dev.twiceb.instanceservice.domain.repository.InstanceConfigurationRepository;
 import dev.twiceb.instanceservice.domain.repository.InstanceRepository;
-import dev.twiceb.instanceservice.domain.projection.OnlyId;
+
 import dev.twiceb.instanceservice.domain.projection.InstanceAdminProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceConfigVersionProjection;
 import dev.twiceb.instanceservice.domain.projection.InstanceProjection;
@@ -94,8 +95,7 @@ public class InstanceServiceImpl implements InstanceService {
     @Override
     @Transactional
     public InstanceProjection updateInstanceInfo(InstanceInfoUpdateRequest request) {
-        Instance instance =
-                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElseThrow();
+        Instance instance = instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElseThrow();
         instance.updateInfo(request.getInstanceName(), request.getDomain(), request.getNamespace());
         instanceRepository.save(instance);
         return instanceRepository.findFirstByOrderByCreatedAtAsc(InstanceProjection.class)
@@ -117,8 +117,8 @@ public class InstanceServiceImpl implements InstanceService {
     @Override
     @Transactional(readOnly = true)
     public ConfigResult getConfigurationValues() {
-        Map<InstanceConfigurationKey, String> config =
-                iConfigurationRepository.findByKeyIn(MANAGED_KEYS).stream().collect(Collectors
+        Map<InstanceConfigurationKey, String> config = iConfigurationRepository.findByKeyIn(MANAGED_KEYS).stream()
+                .collect(Collectors
                         .toMap(InstanceConfiguration::getKey, InstanceConfiguration::getValue));
 
         ConfigResult result = ConfigResult.builder().configKeys(config)
@@ -158,8 +158,7 @@ public class InstanceServiceImpl implements InstanceService {
                 .orElseThrow(() -> new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED));
 
         Map<InstanceConfigurationKey, String> updates = toUpdateMap(request);
-        List<InstanceConfiguration> iConfigs =
-                iConfigurationRepository.findByKeyIn(updates.keySet());
+        List<InstanceConfiguration> iConfigs = iConfigurationRepository.findByKeyIn(updates.keySet());
 
         boolean bumpNeeded = false;
         for (InstanceConfiguration iConfig : iConfigs) {
@@ -189,15 +188,13 @@ public class InstanceServiceImpl implements InstanceService {
     @Transactional
     public AuthAdminResult adminSignup(AdminSignupRequest payload) {
         // check if instance exist;
-        Instance instance =
-                instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
+        Instance instance = instanceRepository.findFirstByOrderByCreatedAtAsc(Instance.class).orElse(null);
         if (instance == null) {
             throw new AuthException(AuthErrorCodes.INSTANCE_NOT_CONFIGURED);
         }
 
         // check if instance already has admin;
-        UUID instanceAdminId =
-                iAdminRepository.findFirstIdByOrderByCreatedAtAsc().map(OnlyId::getId).orElse(null);
+        UUID instanceAdminId = iAdminRepository.findFirstIdByOrderByCreatedAtAsc().map(OnlyId::getId).orElse(null);
         if (instanceAdminId != null) {
             throw new AuthException(AuthErrorCodes.ADMIN_ALREADY_EXIST);
         }
