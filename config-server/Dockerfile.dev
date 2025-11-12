@@ -1,0 +1,47 @@
+FROM eclipse-temurin:21-jdk-alpine
+
+ARG SERVICE=config-server
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN apk add --no-cache bash coreutils findutils
+
+#create non-root user for mount volumes
+RUN addgroup -S dev -g ${GROUP_ID} && adduser -S dev -G dev -u ${USER_ID}
+
+WORKDIR /workspace
+
+# to warm maven dependency cache; copy wrapper and root pom
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw
+
+COPY api-gateway/pom.xml api-gateway/pom.xml
+COPY common/pom.xml common/pom.xml
+COPY config-server/pom.xml config-server/pom.xml
+COPY email-service/pom.xml email-service/pom.xml
+COPY eureka-server/pom.xml eureka-server/pom.xml
+COPY file-service/pom.xml file-service/pom.xml
+COPY instance-service/pom.xml instance-service/pom.xml
+COPY notification-service/pom.xml notification-service/pom.xml
+COPY password-service/pom.xml password-service/pom.xml
+COPY task-service/pom.xml task-service/pom.xml
+COPY user-service/pom.xml user-service/pom.xml
+COPY workspace-service/pom.xml workspace-service/pom.xml
+
+# go offline and cache dependencies to local maven repo
+RUN ./mvnw -q -DskipTests -pl ${SERVICE} -am dependency:go-offline
+
+ENV MAVEN_OPTS="-Dmaven.repo.local=/workspace/.m2"
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+# Remote debug on 5005 (suspend=n for immediate start)
+ENV SPRING_BOOT_JDWP="-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+
+# ---- expose app & debug ports (override app port in compose if needed)
+EXPOSE 8888 5005
+
+USER dev:dev
+
+# NOTE: we do NOT copy source here. We will bind mount the whole repo so edits reflect live.
+# Default CMD runs the chosen service with spring-boot:run (great with DevTools)
+CMD ./mvnw -q -DskipTests -pl ${SERVICE} -am spring-boot:run ${SPRING_BOOT_JDWP}

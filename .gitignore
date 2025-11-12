@@ -7,6 +7,7 @@ work/
 # vault/
 intermediate_bundle.pem
 vault_intermediate.csr
+secrets/
 
 ### STS ###
 .apt_generated
