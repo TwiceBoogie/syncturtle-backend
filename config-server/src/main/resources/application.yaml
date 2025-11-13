@@ -14,13 +14,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  zipkin:
-    tracing:
-      endpoint: http://${ZIPKIN_HOST:localhost}:9411
-  tracing:
-    sampling:
-      probability: 1.0
+        include: "health,info,metrics,prometheus"
 eureka:
   client:
     service-url:

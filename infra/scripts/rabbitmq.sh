@@ -1,8 +1,8 @@
 #!/bin/sh
 set -euo pipefail
 
-echo "🐰 RabbitMQ username: ${RABBITMQ_USERNAME:-NOT SET}"
-echo "🐰 RabbitMQ password: ${RABBITMQ_PASSWORD:-NOT SET}"
+echo "RabbitMQ username: ${RABBITMQ_USERNAME:-NOT SET}"
+echo "RabbitMQ password: ${RABBITMQ_PASSWORD:-NOT SET}"
 
 if [ -z "${RABBITMQ_USERNAME:-}" ] || [ -z "${RABBITMQ_PASSWORD:-}" ]; then
   echo "❌ RABBITMQ_USERNAME or RABBITMQ_PASSWORD not set"
@@ -14,7 +14,7 @@ until rabbitmqctl status > /dev/null 2>&1; do
   sleep 1
 done
 
-echo "✅ Declaring queues and exchanges..."
+echo "Declaring queues and exchanges..."
 
 rabbitmqadmin -u "$RABBITMQ_USERNAME" -p "$RABBITMQ_PASSWORD" declare exchange name=user.events type=fanout
 rabbitmqadmin -u "$RABBITMQ_USERNAME" -p "$RABBITMQ_PASSWORD" declare exchange name=email.exchange type=direct

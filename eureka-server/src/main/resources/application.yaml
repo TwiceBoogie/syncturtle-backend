@@ -15,13 +15,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  endpoint:
-    shutdown:
-      enabled: true
-  zipkin:
-    tracing:
-      endpoint: http://${ZIPKIN_HOST:localhost}:9411
-  tracing:
-    sampling:
-      probability: 1.0
+        include: "health,info,metrics,prometheus"

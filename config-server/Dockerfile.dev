@@ -34,14 +34,15 @@ RUN ./mvnw -q -DskipTests -pl ${SERVICE} -am dependency:go-offline
 
 ENV MAVEN_OPTS="-Dmaven.repo.local=/workspace/.m2"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
-# Remote debug on 5005 (suspend=n for immediate start)
+ENV SERVICE=${SERVICE}
 ENV SPRING_BOOT_JDWP="-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
-# ---- expose app & debug ports (override app port in compose if needed)
-EXPOSE 8888 5005
+COPY infra/dev/run-dev.sh /usr/local/bin/run-dev.sh
+RUN chmod +x /usr/local/bin/run-dev.sh
 
 USER dev:dev
+EXPOSE 8888 5005
 
 # NOTE: we do NOT copy source here. We will bind mount the whole repo so edits reflect live.
 # Default CMD runs the chosen service with spring-boot:run (great with DevTools)
-CMD ./mvnw -q -DskipTests -pl ${SERVICE} -am spring-boot:run ${SPRING_BOOT_JDWP}
+ENTRYPOINT [ "/usr/local/bin/run-dev.sh" ]

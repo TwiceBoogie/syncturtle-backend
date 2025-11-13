@@ -14,7 +14,6 @@ WORKDIR /workspace
 # to warm maven dependency cache; copy wrapper and root pom
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw
 
 COPY api-gateway/pom.xml api-gateway/pom.xml
 COPY common/pom.xml common/pom.xml
@@ -30,18 +29,20 @@ COPY user-service/pom.xml user-service/pom.xml
 COPY workspace-service/pom.xml workspace-service/pom.xml
 
 # go offline and cache dependencies to local maven repo
-RUN ./mvnw -q -DskipTests -pl ${SERVICE} -am dependency:go-offline
+RUN chmod +x mvnw \
+    && ./mvnw -q -DskipTests -pl ${SERVICE} -am dependency:go-offline
 
 ENV MAVEN_OPTS="-Dmaven.repo.local=/workspace/.m2"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
-# Remote debug on 5005 (suspend=n for immediate start)
+ENV SERVICE=${SERVICE}
 ENV SPRING_BOOT_JDWP="-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
-# ---- expose app & debug ports (override app port in compose if needed)
-EXPOSE 8761 5005
+COPY infra/dev/run-dev.sh /usr/local/bin/run-dev.sh
+RUN chmod +x /usr/local/bin/run-dev.sh
 
 USER dev:dev
+EXPOSE 8761 5005
 
 # NOTE: we do NOT copy source here. We will bind mount the whole repo so edits reflect live.
 # Default CMD runs the chosen service with spring-boot:run (great with DevTools)
-CMD ./mvnw -q -DskipTests -pl ${SERVICE} -am spring-boot:run ${SPRING_BOOT_JDWP}
+ENTRYPOINT [ "/usr/local/bin/run-dev.sh" ]
